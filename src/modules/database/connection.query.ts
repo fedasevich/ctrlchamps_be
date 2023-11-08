@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import User from '../../entities/user.entity';
+import User from 'src/common/entities/user.entity';
 
 export async function runQuery(): Promise<void> {
     try {

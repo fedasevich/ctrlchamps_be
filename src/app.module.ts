@@ -4,7 +4,8 @@ import { AppService } from './app.service';
 
 @Module({
   imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [ AppController ],
+  providers: [ AppService ],
 })
-export class AppModule {}
+// eslint-disable-next-line import/prefer-default-export
+export class AppModule { }
