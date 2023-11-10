@@ -29,7 +29,7 @@ export class AuthController {
     description: 'Internal server error',
   })
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto): Promise<object> {
+  async login(@Body() loginDto: LoginDto): Promise<{ access_token: string }> {
     try {
       const token = await this.authService.login(loginDto);
 
@@ -50,7 +50,9 @@ export class AuthController {
     description: 'Internal server error',
   })
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() registerDto: RegisterDto): Promise<object> {
+  async register(
+    @Body() registerDto: RegisterDto,
+  ): Promise<{ message: string }> {
     try {
       await this.authService.register(registerDto);
 
