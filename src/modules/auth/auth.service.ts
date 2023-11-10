@@ -1,55 +1,88 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 
-import User from 'src/common/entities/user.entity';
-import { Repository } from 'typeorm';
+import { hash } from 'bcrypt';
+import { ErrorMessage } from 'common/enums';
+import { UserService } from 'modules/users/user.service';
+
+import { UserCreateDto } from './dto/user-create.dto';
+import { Token } from './types';
 
 @Injectable()
 export class AuthService {
+  private readonly saltRounds = this.configService.get('PASSWORD_SALT_ROUNDS');
+
   constructor(
-    @InjectRepository(User)
-    private readonly authRepository: Repository<User>,
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
-  async login(credentials: {
-    name: string;
-    password: string;
-  }): Promise<string> {
-    const { name, password } = credentials;
-
+  async signUp(userDto: UserCreateDto): Promise<Token> {
     try {
-      const user = await this.authRepository.findOne({ where: { name } });
+      const userByEmail = await this.userService.findByEmail(userDto.email);
+      const userByPhoneNumber = await this.userService.findByPhoneNumber(
+        userDto.phoneNumber,
+      );
 
-      if (!user || user.password !== password) {
-        throw new Error('Invalid credentials');
+      if (userByEmail) {
+        throw new HttpException(
+          ErrorMessage.UserEmailAlreadyExist,
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
-      return 'jwt_token';
+      if (userByPhoneNumber) {
+        throw new HttpException(
+          ErrorMessage.UserPhoneNumberAlreadyExist,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const passwordHash = await this.hashPassword(userDto.password);
+
+      const id = await this.userService.create({
+        ...userDto,
+        password: passwordHash,
+      });
+
+      const token = await this.createToken(id);
+
+      return {
+        token,
+      };
     } catch (error) {
-      throw new Error(error);
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async register(newUser: {
-    name: string;
-    password: string;
-    age: number;
-  }): Promise<void> {
-    const { name, password, age } = newUser;
-
+  private async hashPassword(password: string): Promise<string> {
     try {
-      const existingUser = await this.authRepository.findOne({
-        where: { name },
-      });
-
-      if (existingUser) {
-        throw new Error('User with such name already exists');
-      }
-      const user = this.authRepository.create({ name, password, age });
-
-      await this.authRepository.save(user);
+      return await hash(password, Number(this.saltRounds));
     } catch (error) {
-      throw new Error(error);
+      throw new HttpException(
+        ErrorMessage.FailedHashPassword,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  private async createToken(userId: string): Promise<string> {
+    try {
+      return this.jwtService.sign({ id: userId });
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedCreateToken,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
