@@ -22,9 +22,6 @@ export class AuthService {
   async signUp(userDto: UserCreateDto): Promise<Token> {
     try {
       const userByEmail = await this.userService.findByEmail(userDto.email);
-      const userByPhoneNumber = await this.userService.findByPhoneNumber(
-        userDto.phoneNumber,
-      );
 
       if (userByEmail) {
         throw new HttpException(
@@ -32,6 +29,10 @@ export class AuthService {
           HttpStatus.BAD_REQUEST,
         );
       }
+
+      const userByPhoneNumber = await this.userService.findByPhoneNumber(
+        userDto.phoneNumber,
+      );
 
       if (userByPhoneNumber) {
         throw new HttpException(
