@@ -12,22 +12,17 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async findByEmail(email: string): Promise<User> {
+  async findByEmailOrPhoneNumber(
+    email: string,
+    phoneNumber: string,
+  ): Promise<User> {
     try {
       return await this.userRepository
         .createQueryBuilder('user')
-        .where('user.email = :email', { email })
-        .getOne();
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  async findByPhoneNumber(phoneNumber: string): Promise<User> {
-    try {
-      return await this.userRepository
-        .createQueryBuilder('user')
-        .where('user.phoneNumber = :phoneNumber', { phoneNumber })
+        .where('user.email = :email OR user.phoneNumber = :phoneNumber', {
+          email,
+          phoneNumber,
+        })
         .getOne();
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);

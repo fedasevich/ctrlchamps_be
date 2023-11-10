@@ -21,22 +21,16 @@ export class AuthService {
 
   async signUp(userDto: UserCreateDto): Promise<Token> {
     try {
-      const userByEmail = await this.userService.findByEmail(userDto.email);
-
-      if (userByEmail) {
-        throw new HttpException(
-          ErrorMessage.UserEmailAlreadyExist,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
-      const userByPhoneNumber = await this.userService.findByPhoneNumber(
+      const existingUser = await this.userService.findByEmailOrPhoneNumber(
+        userDto.email,
         userDto.phoneNumber,
       );
 
-      if (userByPhoneNumber) {
+      if (existingUser) {
         throw new HttpException(
-          ErrorMessage.UserPhoneNumberAlreadyExist,
+          existingUser.email === userDto.email
+            ? ErrorMessage.UserEmailAlreadyExist
+            : ErrorMessage.UserPhoneNumberAlreadyExist,
           HttpStatus.BAD_REQUEST,
         );
       }
