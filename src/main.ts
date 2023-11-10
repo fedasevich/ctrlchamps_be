@@ -1,15 +1,26 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { runQuery } from './modules/database/connection.query';
-import 'reflect-metadata';
-// eslint-disable-next-line import/no-extraneous-dependencies, import/order
-import 'dotenv/config';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
+import { AppModule } from './app.module';
+import 'reflect-metadata';
 
 async function bootstrap(): Promise<void> {
-    await runQuery();
+  try {
     const app = await NestFactory.create(AppModule);
-    await app.listen(3000);
+
+    const config = new DocumentBuilder()
+      .setTitle('Afyanex Care')
+      .setDescription('The Afyanex Care API description')
+      .setVersion('1.0')
+      .addTag('API Afyanex Care')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+
+    await app.listen(process.env.APP_PORT);
+  } catch (error) {
+    throw Error(error);
+  }
 }
 
 bootstrap();

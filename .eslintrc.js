@@ -1,32 +1,66 @@
 module.exports = {
-  parser: "@typescript-eslint/parser",
-  plugins: ["@typescript-eslint", "prettier"],
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    project: 'tsconfig.json',
+    sourceType: 'module',
+  },
+  plugins: ['@typescript-eslint/eslint-plugin'],
+  extends: [
+    'airbnb-base',
+    'airbnb-typescript',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:prettier/recommended',
+  ],
+  root: true,
+  env: {
+    node: true,
+    jest: true,
+  },
+  ignorePatterns: ['.eslintrc.js'],
   rules: {
     'padding-line-between-statements': [
       'error',
       { blankLine: 'always', prev: '*', next: 'return' },
-      { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' },
-      { blankLine: 'any', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
-      { blankLine: 'always', prev: 'directive', next: '*' },
-      { blankLine: 'any', prev: 'directive', next: 'directive' },
-      { blankLine: 'always', prev: ['case', 'default'], next: '*' },
     ],
-  },
-  overrides: [
-    {
-      files: ['src/*.ts', 'src/*/*.ts'],
-      extends: [
-        "airbnb-base",
-        "airbnb-typescript/base",
-        "prettier",
-        "plugin:@typescript-eslint/eslint-recommended",
-        "plugin:@typescript-eslint/recommended",
-      ],
-      parserOptions: {
-        parser: "@typescript-eslint/parser",
-        project: "./tsconfig.json",
-        sourceType: "module",
+    "import/no-extraneous-dependencies": ["off"],
+    '@typescript-eslint/interface-name-prefix': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    '@typescript-eslint/interface-name-prefix': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'error',
+    '@typescript-eslint/no-explicit-any': 'error',
+    "import/extensions": [
+      "warn",
+      "always",
+      {
+        ts: "never",
       },
-    },
-  ],
+    ],
+    "import/prefer-default-export": "off",
+    'no-useless-constructor': 'off',
+    'no-empty-function': 'off',
+    'no-unused-vars': 'off',
+    'consistent-return': 'off',
+    'no-useless-catch': 'off',
+    'import/order': ['error', {
+      'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+      'pathGroups': [
+        {
+          'pattern': '@nestjs/**',
+          'group': 'external',
+          'position': 'before',
+        },
+      ],
+      'pathGroupsExcludedImportTypes': ['builtin'],
+      'newlines-between': 'always',
+      'alphabetize': {
+        'order': 'asc',
+        'caseInsensitive': true,
+      }
+    }],
+    'react/jsx-filename-extension': 'off',
+    '@typescript-eslint/indent': 'off',
+    'object-curly-newline': 'off',
+  },
 };
