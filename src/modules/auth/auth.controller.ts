@@ -49,7 +49,7 @@ export class AuthController {
   })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post(AuthApiPath.AccountCheck)
-  async checkEmail(@Body() userDto: AccountCheckDto): Promise<void> {
+  async accountCheck(@Body() userDto: AccountCheckDto): Promise<void> {
     await this.authService.accountCheck(userDto);
   }
 }
