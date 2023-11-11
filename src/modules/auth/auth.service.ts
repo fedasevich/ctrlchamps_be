@@ -6,6 +6,7 @@ import { hash } from 'bcrypt';
 import { ErrorMessage } from 'common/enums';
 import { UserService } from 'modules/users/user.service';
 
+import { AccountCheckDto } from './dto/account-check.dto';
 import { UserCreateDto } from './dto/user-create.dto';
 import { Token } from './types';
 
@@ -21,19 +22,10 @@ export class AuthService {
 
   async signUp(userDto: UserCreateDto): Promise<Token> {
     try {
-      const existingUser = await this.userService.findByEmailOrPhoneNumber(
-        userDto.email,
-        userDto.phoneNumber,
-      );
-
-      if (existingUser) {
-        throw new HttpException(
-          existingUser.email === userDto.email
-            ? ErrorMessage.UserEmailAlreadyExist
-            : ErrorMessage.UserPhoneNumberAlreadyExist,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
+      await this.accountCheck({
+        email: userDto.email,
+        phoneNumber: userDto.phoneNumber,
+      });
 
       const passwordHash = await this.hashPassword(userDto.password);
 
@@ -78,6 +70,33 @@ export class AuthService {
         ErrorMessage.FailedCreateToken,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  async accountCheck(userDto: AccountCheckDto): Promise<void> {
+    try {
+      const existingUser = await this.userService.findByEmailOrPhoneNumber(
+        userDto.email,
+        userDto.phoneNumber,
+      );
+
+      if (existingUser) {
+        throw new HttpException(
+          existingUser.email === userDto.email
+            ? ErrorMessage.UserEmailAlreadyExist
+            : ErrorMessage.UserPhoneNumberAlreadyExist,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
