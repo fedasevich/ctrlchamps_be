@@ -1,10 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { IsEmail, IsNotEmpty, Matches, MaxLength } from 'class-validator';
-import {
-  UserCreateValidationMessage,
-  UserCreateValidationRule,
-} from 'modules/users/enums';
+import { UserCreateValidationMessage } from 'modules/users/enums/user-create.validation-message.enum';
+import { UserCreateValidationRule } from 'modules/users/enums/user-create.validation-rule.enum';
 
 export class AccountCheckDto {
   @ApiProperty({

@@ -3,12 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { hash } from 'bcrypt';
-import { ErrorMessage } from 'common/enums';
+import { ErrorMessage } from 'common/enums/error-message.enum';
 import { UserService } from 'modules/users/user.service';
 
 import { AccountCheckDto } from './dto/account-check.dto';
 import { UserCreateDto } from './dto/user-create.dto';
-import { Token } from './types';
+import { Token } from './types/token.type';
 
 @Injectable()
 export class AuthService {

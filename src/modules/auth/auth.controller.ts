@@ -2,13 +2,14 @@ import { Controller, Post, Body, HttpStatus, HttpCode } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { User } from 'common/entities/user.entity';
-import { ApiPath, ErrorMessage } from 'common/enums';
+import { ApiPath } from 'common/enums/api-path.enum';
+import { ErrorMessage } from 'common/enums/error-message.enum';
 
 import { AuthService } from './auth.service';
 import { AccountCheckDto } from './dto/account-check.dto';
 import { UserCreateDto } from './dto/user-create.dto';
 import { AuthApiPath } from './enums';
-import { Token } from './types';
+import { Token } from './types/token.type';
 
 @ApiTags('Authorization')
 @Controller(ApiPath.Auth)
