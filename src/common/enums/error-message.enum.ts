@@ -3,4 +3,5 @@ export enum ErrorMessage {
   UserPhoneNumberAlreadyExist = 'User with this phone number already exists',
   FailedHashPassword = 'Failed to hash the password',
   FailedCreateToken = 'Failed to create the token',
+  BadLoginCredentials = 'Failed to sign in due to bad credentials',
 }

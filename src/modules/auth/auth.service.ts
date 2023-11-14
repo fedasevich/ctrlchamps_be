@@ -2,12 +2,13 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-import { hash } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { ErrorMessage } from 'common/enums/error-message.enum';
 import { UserService } from 'modules/users/user.service';
 
 import { AccountCheckDto } from './dto/account-check.dto';
 import { UserCreateDto } from './dto/user-create.dto';
+import { UserLoginDto } from './dto/user-login.dto';
 import { Token } from './types/token.type';
 
 @Injectable()
@@ -44,6 +45,30 @@ export class AuthService {
         error instanceof HttpException &&
         error.getStatus() === HttpStatus.BAD_REQUEST
       ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async signIn(dto: UserLoginDto): Promise<Token> {
+    try {
+      const user = await this.userService.findByEmailOrPhoneNumber(dto.email);
+      const validPassword =
+        user && (await compare(dto.password, user.password));
+      if (!user || !validPassword) {
+        throw new HttpException(
+          ErrorMessage.BadLoginCredentials,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      return {
+        token: await this.createToken(user.id),
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
