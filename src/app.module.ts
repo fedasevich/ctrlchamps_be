@@ -4,13 +4,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import User from './common/entities/user.entity';
+import { User } from './common/entities/user.entity';
 import { AuthModule } from './modules/auth/auth.module';
-
 import 'dotenv/config';
+import { UserModule } from './modules/users/user.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -26,6 +29,7 @@ import 'dotenv/config';
       inject: [ConfigService],
     }),
     AuthModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],

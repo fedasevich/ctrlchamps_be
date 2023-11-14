@@ -1,64 +1,56 @@
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  HttpException,
-} from '@nestjs/common';
+import { Controller, Post, Body, HttpStatus, HttpCode } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
+import { User } from 'common/entities/user.entity';
+import { ApiPath } from 'common/enums/api-path.enum';
+import { ErrorMessage } from 'common/enums/error-message.enum';
 
-@ApiTags('Auth')
-@Controller('auth')
+import { AuthService } from './auth.service';
+import { AccountCheckDto } from './dto/account-check.dto';
+import { UserCreateDto } from './dto/user-create.dto';
+import { AuthApiPath } from './enums';
+import { Token } from './types/token.type';
+
+@ApiTags('Authorization')
+@Controller(ApiPath.Auth)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('login')
-  @ApiOperation({ summary: 'Login user with name and password' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Login successfully',
-    type: String,
-  })
-  @ApiResponse({
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: 'Internal server error',
-  })
-  @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto): Promise<{ access_token: string }> {
-    try {
-      const token = await this.authService.login(loginDto);
-
-      return { access_token: token };
-    } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  @Post('register')
-  @ApiOperation({ summary: 'Register user with name, age and password' })
+  @Post(AuthApiPath.SignUp)
+  @ApiOperation({ summary: 'User Sign up' })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'User registered successfully',
+    type: User,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserEmailAlreadyExist,
   })
   @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: 'Internal server error',
   })
-  @HttpCode(HttpStatus.CREATED)
-  async register(
-    @Body() registerDto: RegisterDto,
-  ): Promise<{ message: string }> {
-    try {
-      await this.authService.register(registerDto);
+  async signUp(@Body() userDto: UserCreateDto): Promise<Token> {
+    return this.authService.signUp(userDto);
+  }
 
-      return { message: 'User registered successfully' };
-    } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+  @ApiOperation({ summary: 'Check user email and phone number' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'No existing user found with the provided credentials',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserEmailAlreadyExist,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(AuthApiPath.AccountCheck)
+  async accountCheck(@Body() userDto: AccountCheckDto): Promise<void> {
+    await this.authService.accountCheck(userDto);
   }
 }
