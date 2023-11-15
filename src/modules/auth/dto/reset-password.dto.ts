@@ -3,14 +3,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsNotEmpty,
-  IsOptional,
-  Matches,
+  IsString,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 import { UserCreateValidationMessage } from 'modules/users/enums/user-create.validation-message.enum';
 import { UserCreateValidationRule } from 'modules/users/enums/user-create.validation-rule.enum';
 
-export class AccountCheckDto {
+export class ResetPasswordDto {
   @ApiProperty({
     description: "User's email",
     example: 'user@gmail.com',
@@ -21,11 +21,11 @@ export class AccountCheckDto {
   email: string;
 
   @ApiProperty({
-    description: "User's phoneNumber",
-    example: '+15551234567',
+    description: "User's password",
+    example: 'A234567!',
   })
-  @IsOptional()
-  @MaxLength(UserCreateValidationRule.MaxPhoneNumberLength)
-  @Matches(UserCreateValidationRule.PhoneNumberRegex)
-  phoneNumber?: string;
+  @MinLength(UserCreateValidationRule.MinPasswordLength)
+  @IsNotEmpty()
+  @IsString()
+  password: string;
 }

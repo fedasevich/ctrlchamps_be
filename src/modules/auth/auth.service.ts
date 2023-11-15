@@ -3,12 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { hash } from 'bcrypt';
-import { ErrorMessage } from 'common/enums';
+import { ErrorMessage } from 'common/enums/error-message.enum';
 import { UserService } from 'modules/users/user.service';
 
 import { AccountCheckDto } from './dto/account-check.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserCreateDto } from './dto/user-create.dto';
-import { Token } from './types';
+import { Token } from './types/token.type';
 
 @Injectable()
 export class AuthService {
@@ -80,14 +81,50 @@ export class AuthService {
         userDto.phoneNumber,
       );
 
-      if (existingUser) {
+      if (!existingUser && !userDto.phoneNumber) {
         throw new HttpException(
-          existingUser.email === userDto.email
-            ? ErrorMessage.UserEmailAlreadyExist
-            : ErrorMessage.UserPhoneNumberAlreadyExist,
+          ErrorMessage.UserNotExist,
           HttpStatus.BAD_REQUEST,
         );
       }
+
+      if (
+        existingUser?.email === userDto.email &&
+        existingUser.phoneNumber === userDto.phoneNumber
+      ) {
+        throw new HttpException(
+          ErrorMessage.UserEmailAndPhoneAlreadyExists,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (existingUser && userDto.phoneNumber) {
+        throw new HttpException(
+          existingUser.email === userDto.email
+            ? ErrorMessage.UserEmailAlreadyExists
+            : ErrorMessage.UserPhoneNumberAlreadyExists,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async resetPassword({ email, password }: ResetPasswordDto): Promise<void> {
+    try {
+      await this.accountCheck({ email });
+
+      const passwordHash = await this.hashPassword(password);
+
+      await this.userService.update(email, { password: passwordHash });
     } catch (error) {
       if (
         error instanceof HttpException &&
