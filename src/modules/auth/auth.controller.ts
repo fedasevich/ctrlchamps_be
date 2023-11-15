@@ -40,7 +40,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Sign in user' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Successfully signed in',
+    description: 'User signed in successfully',
+    schema: {
+      example: {
+        token:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0MDg5Yjg2LTYzZTctNGZhOC1iZjAwLWRhNmRkMDBkZjFmYSIsImlhdCI6MTcwMDA4MDIxOSwiZXhw',
+      },
+    },
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
