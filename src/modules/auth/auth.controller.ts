@@ -36,7 +36,8 @@ export class AuthController {
     return this.authService.signUp(userDto);
   }
 
-  @ApiOperation({ summary: 'User Sign in' })
+  @Post(AuthApiPath.SignIn)
+  @ApiOperation({ summary: 'Sign in user' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Successfully signed in',
@@ -49,7 +50,6 @@ export class AuthController {
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: 'Internal server error',
   })
-  @Post(AuthApiPath.SignIn)
   @HttpCode(HttpStatus.OK)
   async signIn(@Body() loginDto: UserLoginDto): Promise<Token> {
     return this.authService.signIn(loginDto);
