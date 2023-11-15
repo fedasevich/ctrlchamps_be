@@ -14,7 +14,7 @@ export class UserService {
 
   async findByEmailOrPhoneNumber(
     email: string,
-    phoneNumber: string,
+    phoneNumber?: string,
   ): Promise<User> {
     try {
       return await this.userRepository
@@ -39,6 +39,21 @@ export class UserService {
         .execute();
 
       return user.generatedMaps[0].id as string;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async update(email: string, userDto: Partial<User>): Promise<void> {
+    try {
+      await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set(userDto)
+        .where('user.email = :email', {
+          email,
+        })
+        .execute();
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
