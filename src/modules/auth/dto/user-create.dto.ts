@@ -11,10 +11,10 @@ import {
   IsOptional,
   MaxLength,
 } from 'class-validator';
+import { Country } from 'modules/users/enums/country.enum';
 import { UserCreateValidationMessage } from 'modules/users/enums/user-create.validation-message.enum';
 import { UserCreateValidationRule } from 'modules/users/enums/user-create.validation-rule.enum';
 import { UserRole } from 'modules/users/enums/user-role.enum';
-import { Country } from 'src/modules/users/enums/country.enum';
 
 export class UserCreateDto {
   @ApiProperty({
