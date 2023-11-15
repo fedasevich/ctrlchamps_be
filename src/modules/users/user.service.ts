@@ -14,7 +14,7 @@ export class UserService {
 
   async findByEmailOrPhoneNumber(
     email: string,
-    phoneNumber: string,
+    phoneNumber?: string,
   ): Promise<User> {
     try {
       return await this.userRepository
