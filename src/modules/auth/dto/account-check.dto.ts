@@ -23,6 +23,7 @@ export class AccountCheckDto {
   @ApiProperty({
     description: "User's phoneNumber",
     example: '+15551234567',
+    required: false,
   })
   @IsOptional()
   @MaxLength(UserCreateValidationRule.MaxPhoneNumberLength)
