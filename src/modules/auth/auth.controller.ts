@@ -1,7 +1,6 @@
 import { Controller, Post, Body, HttpStatus, HttpCode } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { User } from 'common/entities/user.entity';
 import { ApiPath } from 'common/enums/api-path.enum';
 import { ErrorMessage } from 'common/enums/error-message.enum';
 
@@ -22,7 +21,12 @@ export class AuthController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'User registered successfully',
-    type: User,
+    schema: {
+      example: {
+        token:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImZhOWQ4YzQ1LTUyZDMtNDkwYi04NDJhLTIxODdhMGFmZWRjMCIsImlhdCI6MTcwMDA4ODk3MCwiZXhwIjoxNzAwMzQ4MTcwfQ.Qt_tTSecxBA0CwyZ4NUgC40zSxpZRV2icds8TlOwgCk',
+      },
+    },
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
