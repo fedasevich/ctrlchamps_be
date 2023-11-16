@@ -112,7 +112,7 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post(AuthApiPath.ResetPassword)
   async resetPassword(@Body() userDto: ResetPasswordDto): Promise<void> {
-    await this.authService.resetPassword(userDto);
+    await this.authService.resetPassword(userDto.email, userDto.password);
   }
 
   @ApiOperation({ summary: 'Verify user account' })
@@ -170,7 +170,7 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post(AuthApiPath.RequestResetOtp)
   async requestResetOtp(@Body() resetOtpDto: ResetOtpDto): Promise<void> {
-    await this.authService.requestResetOtp(resetOtpDto);
+    await this.authService.requestResetOtp(resetOtpDto.email);
   }
 
   @ApiOperation({ summary: 'Verify reset otp' })
@@ -191,6 +191,9 @@ export class AuthController {
   async verifyResetOtp(
     @Body() verifyResetOtpDto: VerifyResetOtpDto,
   ): Promise<void> {
-    await this.authService.verifyResetOtp(verifyResetOtpDto);
+    await this.authService.verifyResetOtp(
+      verifyResetOtpDto.email,
+      verifyResetOtpDto.code,
+    );
   }
 }

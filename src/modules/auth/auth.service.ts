@@ -10,11 +10,7 @@ import { OtpPurpose } from 'modules/otp-code/enums/otp-purpose.enum';
 import { OtpCodeService } from 'modules/otp-code/otp-code.service';
 import { UserService } from 'modules/users/user.service';
 
-import { ResetOtpDto } from '../otp-code/dto/reset-otp.dto';
-import { VerifyResetOtpDto } from '../otp-code/dto/verify-reset-otp-dto';
-
 import { AccountCheckDto } from './dto/account-check.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { Token } from './types/token.type';
@@ -254,7 +250,7 @@ export class AuthService {
     }
   }
 
-  async resetPassword({ email, password }: ResetPasswordDto): Promise<void> {
+  async resetPassword(email: string, password: string): Promise<void> {
     try {
       await this.accountCheck({ email });
 
@@ -273,7 +269,7 @@ export class AuthService {
     }
   }
 
-  async requestResetOtp({ email }: ResetOtpDto): Promise<void> {
+  async requestResetOtp(email: string): Promise<void> {
     try {
       const user = await this.userService.findByEmailOrPhoneNumber(email);
 
@@ -301,7 +297,7 @@ export class AuthService {
     }
   }
 
-  async verifyResetOtp({ email, code }: VerifyResetOtpDto): Promise<boolean> {
+  async verifyResetOtp(email: string, code: string): Promise<boolean> {
     try {
       const user = await this.userService.findByEmailOrPhoneNumber(email);
 
