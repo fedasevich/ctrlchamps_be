@@ -2,7 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { Country } from 'modules/users/enums/country.enum';
 import { UserRole } from 'modules/users/enums/user-role.enum';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+
+// eslint-disable-next-line import/no-cycle
+import { OtpCode } from './otp-code.entity';
 
 @Entity()
 export class User {
@@ -65,6 +68,14 @@ export class User {
   isOpenToClientHomeLiving?: boolean | null;
 
   @ApiProperty({
+    description: 'Indicates whether the user account was verified via otp code',
+    example: 'true',
+    required: false,
+  })
+  @Column({ default: null, nullable: true })
+  isVerified?: boolean | null;
+
+  @ApiProperty({
     description: "User's role",
     example: 'Caregiver',
   })
@@ -111,4 +122,8 @@ export class User {
   })
   @Column()
   address: string;
+
+  @ApiProperty({ type: () => OtpCode, isArray: true })
+  @OneToMany(() => OtpCode, (otpCode) => otpCode.user)
+  otpCodes: OtpCode[];
 }

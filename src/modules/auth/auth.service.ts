@@ -1,9 +1,13 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { hash } from 'bcrypt';
 import { ErrorMessage } from 'common/enums/error-message.enum';
+import { EmailService } from 'modules/email/services/email.service';
+import { OtpCodeVerifyDto } from 'modules/otp-code/dto/otp-code-verify.dto';
+import { OtpPurpose } from 'modules/otp-code/enums/otp-purpose.enum';
+import { OtpCodeService } from 'modules/otp-code/otp-code.service';
 import { UserService } from 'modules/users/user.service';
 
 import { AccountCheckDto } from './dto/account-check.dto';
@@ -12,12 +16,20 @@ import { Token } from './types/token.type';
 
 @Injectable()
 export class AuthService {
-  private readonly saltRounds = this.configService.get('PASSWORD_SALT_ROUNDS');
+  private readonly saltRounds = this.configService.get<number>(
+    'PASSWORD_SALT_ROUNDS',
+  );
+
+  private readonly otpCodeTemplateId = this.configService.get<string>(
+    'SENDGRID_OTP_TEMPLATE_ID',
+  );
 
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
+    private readonly otpCodeService: OtpCodeService,
   ) {}
 
   async signUp(userDto: UserCreateDto): Promise<Token> {
@@ -33,6 +45,8 @@ export class AuthService {
         ...userDto,
         password: passwordHash,
       });
+
+      await this.sendActivationEmail(id, userDto.email);
 
       const token = await this.createToken(id);
 
@@ -57,6 +71,94 @@ export class AuthService {
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedHashPassword,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async requestNewVerificationCode(userId: string): Promise<void> {
+    try {
+      const user = await this.userService.findById(userId);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.NoExistingUser,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (user.isVerified) {
+        throw new HttpException(
+          ErrorMessage.UserAlreadyVerified,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.sendActivationEmail(user.id, user.email);
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async verifyAccount(
+    userId: string,
+    otpCodeVerifyDto: OtpCodeVerifyDto,
+  ): Promise<boolean> {
+    try {
+      const otpCodeVerificationResult = await this.otpCodeService.verifyOtpCode(
+        userId,
+        OtpPurpose.ACCOUNT_VERIFICATION,
+        otpCodeVerifyDto.code,
+      );
+
+      if (!otpCodeVerificationResult) {
+        throw new HttpException(
+          ErrorMessage.VerificationCodeIncorrect,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.userService.verifyAccount(userId);
+
+      return otpCodeVerificationResult;
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private async sendActivationEmail(
+    userId: string,
+    email: string,
+  ): Promise<void> {
+    try {
+      const otpAccountVerificationCode =
+        await this.otpCodeService.createOtpCode(
+          userId,
+          OtpPurpose.ACCOUNT_VERIFICATION,
+        );
+
+      await this.emailService.sendEmail({
+        to: email,
+        templateId: this.otpCodeTemplateId,
+        dynamicTemplateData: { otpCode: otpAccountVerificationCode },
+      });
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedSendVerificationCode,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

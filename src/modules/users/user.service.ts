@@ -12,6 +12,19 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
+  async findById(userId: string): Promise<User> {
+    try {
+      return await this.userRepository
+        .createQueryBuilder('user')
+        .where('user.id = :userId', {
+          userId,
+        })
+        .getOne();
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   async findByEmailOrPhoneNumber(
     email: string,
     phoneNumber: string,
@@ -39,6 +52,14 @@ export class UserService {
         .execute();
 
       return user.generatedMaps[0].id as string;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async verifyAccount(userId: string): Promise<void> {
+    try {
+      await this.userRepository.update(userId, { isVerified: true });
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

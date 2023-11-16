@@ -1,9 +1,17 @@
-import { Controller, Post, Body, HttpStatus, HttpCode } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { User } from 'common/entities/user.entity';
 import { ApiPath } from 'common/enums/api-path.enum';
 import { ErrorMessage } from 'common/enums/error-message.enum';
+import { OtpCodeVerifyDto } from 'modules/otp-code/dto/otp-code-verify.dto';
 
 import { AuthService } from './auth.service';
 import { AccountCheckDto } from './dto/account-check.dto';
@@ -52,5 +60,44 @@ export class AuthController {
   @Post(AuthApiPath.AccountCheck)
   async accountCheck(@Body() userDto: AccountCheckDto): Promise<void> {
     await this.authService.accountCheck(userDto);
+  }
+
+  @ApiOperation({ summary: 'Verify user account' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.VerificationCodeIncorrect,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(AuthApiPath.VerifyAccount)
+  async verifyAccount(
+    @Param('userId') userId: string,
+    @Body() otpCodeVerifyDto: OtpCodeVerifyDto,
+  ): Promise<void> {
+    await this.authService.verifyAccount(userId, otpCodeVerifyDto);
+  }
+
+  @ApiOperation({ summary: 'Request new verification code' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.NoExistingUser,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserAlreadyVerified,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(AuthApiPath.RequestNewVerificationCode)
+  async requestNewVerificationCode(
+    @Param('userId') userId: string,
+  ): Promise<void> {
+    await this.authService.requestNewVerificationCode(userId);
   }
 }
