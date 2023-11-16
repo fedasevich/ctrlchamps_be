@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { AccountCheckDto } from './dto/account-check.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserCreateDto } from './dto/user-create.dto';
+import { UserLoginDto } from './dto/user-login.dto';
 import { AuthApiPath } from './enums/auth-api-path.enum';
 import { Token } from './types/token.type';
 
@@ -38,6 +39,31 @@ export class AuthController {
   })
   async signUp(@Body() userDto: UserCreateDto): Promise<Token> {
     return this.authService.signUp(userDto);
+  }
+
+  @Post(AuthApiPath.SignIn)
+  @ApiOperation({ summary: 'Sign in user' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User signed in successfully',
+    schema: {
+      example: {
+        token:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0MDg5Yjg2LTYzZTctNGZhOC1iZjAwLWRhNmRkMDBkZjFmYSIsImlhdCI6MTcwMDA4MDIxOSwiZXhw',
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: ErrorMessage.BadLoginCredentials,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.OK)
+  async signIn(@Body() loginDto: UserLoginDto): Promise<Token> {
+    return this.authService.signIn(loginDto);
   }
 
   @ApiOperation({ summary: 'Check user email and phone number' })
