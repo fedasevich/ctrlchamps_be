@@ -48,7 +48,11 @@ export class AuthService {
         password: passwordHash,
       });
 
-      await this.sendActivationEmail(id, userDto.email);
+      await this.sendOtpCodeEmail(
+        id,
+        userDto.email,
+        OtpPurpose.ACCOUNT_VERIFICATION,
+      );
 
       const token = await this.createToken(id);
 
@@ -120,7 +124,11 @@ export class AuthService {
         );
       }
 
-      await this.sendActivationEmail(user.id, user.email);
+      await this.sendOtpCodeEmail(
+        user.id,
+        user.email,
+        OtpPurpose.ACCOUNT_VERIFICATION,
+      );
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -166,16 +174,14 @@ export class AuthService {
     }
   }
 
-  private async sendActivationEmail(
+  private async sendOtpCodeEmail(
     userId: string,
     email: string,
+    purpose: OtpPurpose,
   ): Promise<void> {
     try {
       const otpAccountVerificationCode =
-        await this.otpCodeService.createOtpCode(
-          userId,
-          OtpPurpose.ACCOUNT_VERIFICATION,
-        );
+        await this.otpCodeService.createOtpCode(userId, purpose);
 
       await this.emailService.sendEmail({
         to: email,
