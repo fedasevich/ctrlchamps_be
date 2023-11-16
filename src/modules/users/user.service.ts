@@ -57,9 +57,24 @@ export class UserService {
     }
   }
 
-  async verifyAccount(userId: string): Promise<void> {
+    async verifyAccount(userId: string): Promise<void> {
     try {
       await this.userRepository.update(userId, { isVerified: true });
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+  
+  async update(email: string, userDto: Partial<User>): Promise<void> {
+    try {
+      await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set(userDto)
+        .where('user.email = :email', {
+          email,
+        })
+        .execute();
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

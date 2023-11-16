@@ -8,16 +8,16 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { User } from 'common/entities/user.entity';
 import { ApiPath } from 'common/enums/api-path.enum';
 import { ErrorMessage } from 'common/enums/error-message.enum';
 import { OtpCodeVerifyDto } from 'modules/otp-code/dto/otp-code-verify.dto';
 
 import { AuthService } from './auth.service';
 import { AccountCheckDto } from './dto/account-check.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserLoginDto } from './dto/user-login.dto';
-import { AuthApiPath } from './enums';
+import { AuthApiPath } from './enums/auth-api-path.enum';
 import { Token } from './types/token.type';
 
 @ApiTags('Authorization')
@@ -30,11 +30,16 @@ export class AuthController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'User registered successfully',
-    type: User,
+    schema: {
+      example: {
+        token:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImZhOWQ4YzQ1LTUyZDMtNDkwYi04NDJhLTIxODdhMGFmZWRjMCIsImlhdCI6MTcwMDA4ODk3MCwiZXhwIjoxNzAwMzQ4MTcwfQ.Qt_tTSecxBA0CwyZ4NUgC40zSxpZRV2icds8TlOwgCk',
+      },
+    },
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: ErrorMessage.UserEmailAlreadyExist,
+    description: ErrorMessage.UserEmailAlreadyExists,
   })
   @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -76,7 +81,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: ErrorMessage.UserEmailAlreadyExist,
+    description: ErrorMessage.UserEmailAlreadyExists,
   })
   @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -88,7 +93,26 @@ export class AuthController {
     await this.authService.accountCheck(userDto);
   }
 
-  @ApiOperation({ summary: 'Verify user account' })
+  @ApiOperation({ summary: 'Reset User`s password' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: "User's password reset successfully",
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserNotExist,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(AuthApiPath.ResetPassword)
+  async resetPassword(@Body() userDto: ResetPasswordDto): Promise<void> {
+    await this.authService.resetPassword(userDto);
+  }
+  
+    @ApiOperation({ summary: 'Verify user account' })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: ErrorMessage.VerificationCodeIncorrect,
@@ -125,5 +149,8 @@ export class AuthController {
     @Param('userId') userId: string,
   ): Promise<void> {
     await this.authService.requestNewVerificationCode(userId);
+  }
+
+  
   }
 }

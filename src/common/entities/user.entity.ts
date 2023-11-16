@@ -60,12 +60,12 @@ export class User {
 
   @ApiProperty({
     description:
-      "Indicates whether the user is open to living in a client's home",
+      "Indicates whether the user is open to living in a seeker's home",
     example: 'true',
     required: false,
   })
   @Column({ default: null, nullable: true })
-  isOpenToClientHomeLiving?: boolean | null;
+  isOpenToSeekerHomeLiving?: boolean | null;
 
   @ApiProperty({
     description: 'Indicates whether the user account was verified via otp code',

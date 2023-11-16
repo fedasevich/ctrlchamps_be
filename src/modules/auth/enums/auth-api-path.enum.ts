@@ -4,4 +4,5 @@ export enum AuthApiPath {
   AccountCheck = '/account-check',
   VerifyAccount = '/verify-account/:userId',
   RequestNewVerificationCode = '/request-new-verification-code/:userId',
+  ResetPassword = '/reset-password',
 }

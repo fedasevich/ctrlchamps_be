@@ -11,6 +11,7 @@ import { OtpCodeService } from 'modules/otp-code/otp-code.service';
 import { UserService } from 'modules/users/user.service';
 
 import { AccountCheckDto } from './dto/account-check.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { Token } from './types/token.type';
@@ -207,14 +208,50 @@ export class AuthService {
         userDto.phoneNumber,
       );
 
-      if (existingUser) {
+      if (!existingUser && !userDto.phoneNumber) {
         throw new HttpException(
-          existingUser.email === userDto.email
-            ? ErrorMessage.UserEmailAlreadyExist
-            : ErrorMessage.UserPhoneNumberAlreadyExist,
+          ErrorMessage.UserNotExist,
           HttpStatus.BAD_REQUEST,
         );
       }
+
+      if (
+        existingUser?.email === userDto.email &&
+        existingUser.phoneNumber === userDto.phoneNumber
+      ) {
+        throw new HttpException(
+          ErrorMessage.UserEmailAndPhoneAlreadyExists,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (existingUser && userDto.phoneNumber) {
+        throw new HttpException(
+          existingUser.email === userDto.email
+            ? ErrorMessage.UserEmailAlreadyExists
+            : ErrorMessage.UserPhoneNumberAlreadyExists,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async resetPassword({ email, password }: ResetPasswordDto): Promise<void> {
+    try {
+      await this.accountCheck({ email });
+
+      const passwordHash = await this.hashPassword(password);
+
+      await this.userService.update(email, { password: passwordHash });
     } catch (error) {
       if (
         error instanceof HttpException &&

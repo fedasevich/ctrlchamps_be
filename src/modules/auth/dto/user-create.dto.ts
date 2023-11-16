@@ -72,13 +72,13 @@ export class UserCreateDto {
 
   @ApiProperty({
     description:
-      "Indicates whether the user is open to living in a client's home",
+      "Indicates whether the user is open to living in a seeker's home",
     example: 'true',
     required: false,
   })
   @IsOptional()
   @IsBoolean()
-  isOpenToClientHomeLiving?: boolean | null;
+  isOpenToSeekerHomeLiving?: boolean | null;
 
   @ApiProperty({
     description: "User's role",
