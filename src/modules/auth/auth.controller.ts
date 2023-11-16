@@ -12,6 +12,9 @@ import { ApiPath } from 'common/enums/api-path.enum';
 import { ErrorMessage } from 'common/enums/error-message.enum';
 import { OtpCodeVerifyDto } from 'modules/otp-code/dto/otp-code-verify.dto';
 
+import { ResetOtpDto } from '../otp-code/dto/reset-otp.dto';
+import { VerifyResetOtpDto } from '../otp-code/dto/verify-reset-otp-dto';
+
 import { AuthService } from './auth.service';
 import { AccountCheckDto } from './dto/account-check.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -149,5 +152,45 @@ export class AuthController {
     @Param('userId') userId: string,
   ): Promise<void> {
     await this.authService.requestNewVerificationCode(userId);
+  }
+
+  @ApiOperation({ summary: 'Request reset OTP' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'OTP sent successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserNotExist,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(AuthApiPath.RequestResetOtp)
+  async requestResetOtp(@Body() resetOtpDto: ResetOtpDto): Promise<void> {
+    await this.authService.requestResetOtp(resetOtpDto);
+  }
+
+  @ApiOperation({ summary: 'Verify reset otp' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'OTP verified successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.VerificationCodeIncorrect,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(AuthApiPath.VerifyResetOtp)
+  async verifyResetOtp(
+    @Body() verifyResetOtpDto: VerifyResetOtpDto,
+  ): Promise<void> {
+    await this.authService.verifyResetOtp(verifyResetOtpDto);
   }
 }

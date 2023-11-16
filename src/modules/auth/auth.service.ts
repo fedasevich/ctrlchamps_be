@@ -10,6 +10,9 @@ import { OtpPurpose } from 'modules/otp-code/enums/otp-purpose.enum';
 import { OtpCodeService } from 'modules/otp-code/otp-code.service';
 import { UserService } from 'modules/users/user.service';
 
+import { ResetOtpDto } from '../otp-code/dto/reset-otp.dto';
+import { VerifyResetOtpDto } from '../otp-code/dto/verify-reset-otp-dto';
+
 import { AccountCheckDto } from './dto/account-check.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserCreateDto } from './dto/user-create.dto';
@@ -258,6 +261,64 @@ export class AuthService {
       const passwordHash = await this.hashPassword(password);
 
       await this.userService.update(email, { password: passwordHash });
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async requestResetOtp({ email }: ResetOtpDto): Promise<void> {
+    try {
+      const user = await this.userService.findByEmailOrPhoneNumber(email);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserNotExist,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.sendOtpCodeEmail(
+        user.id,
+        user.email,
+        OtpPurpose.RESET_PASSWORD,
+      );
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async verifyResetOtp({ email, code }: VerifyResetOtpDto): Promise<boolean> {
+    try {
+      const user = await this.userService.findByEmailOrPhoneNumber(email);
+
+      const verificationResult = await this.otpCodeService.verifyOtpCode(
+        user.id,
+        OtpPurpose.RESET_PASSWORD,
+        code,
+      );
+
+      if (!verificationResult) {
+        throw new HttpException(
+          ErrorMessage.VerificationCodeIncorrect,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return verificationResult;
     } catch (error) {
       if (
         error instanceof HttpException &&
