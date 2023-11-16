@@ -1,13 +1,20 @@
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
+
 import 'reflect-metadata';
 
 async function bootstrap(): Promise<void> {
   try {
     const app = await NestFactory.create(AppModule);
+    const configService = new ConfigService();
+
+    app.enableCors({
+      origin: configService.get('CORS_ORIGIN'),
+    });
 
     app.useGlobalPipes(new ValidationPipe());
 
