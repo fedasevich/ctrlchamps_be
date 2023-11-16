@@ -1,21 +1,46 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
-import { ClientResponse, MailDataRequired, MailService } from '@sendgrid/mail';
+import { MailService } from '@sendgrid/mail';
+import { EmailErrorMessage } from 'modules/email/enums/email-error-message.enum';
+import { IEmailService } from 'modules/email/interfaces/email-service.interface';
 
-import { IEmailService } from '../../interfaces/email-service.interface';
+import { SendGridEmail } from './interfaces/sendgrid-email.interface';
+import { SendGridEmailResponse } from './types/sendgrid-email-response.type';
 
 @Injectable()
 export class SendGridEmailService
-  implements
-    IEmailService<MailDataRequired, [ClientResponse, Record<string, never>]>
+  implements IEmailService<SendGridEmail, SendGridEmailResponse>
 {
-  constructor(@Inject(MailService) private mailService: MailService) {}
+  private readonly fromEmail = this.configService.get<string>(
+    'SENDGRID_FROM_EMAIL',
+  );
 
-  async sendEmail(
-    mail: MailDataRequired,
-  ): Promise<[ClientResponse, Record<string, never>]> {
-    const transport = await this.mailService.send(mail);
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly mailService: MailService,
+  ) {}
 
-    return transport;
+  async sendEmail(mail: SendGridEmail): Promise<SendGridEmailResponse> {
+    try {
+      const transport = await this.mailService.send({
+        ...mail,
+        from: this.fromEmail,
+      });
+
+      if (transport[0].statusCode !== HttpStatus.ACCEPTED) {
+        throw new HttpException(
+          EmailErrorMessage.FailedSendEmail,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return transport;
+    } catch (error) {
+      throw new HttpException(
+        EmailErrorMessage.FailedSendEmail,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
