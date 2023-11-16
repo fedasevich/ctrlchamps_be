@@ -7,4 +7,5 @@ export enum ErrorMessage {
   VerificationCodeIncorrect = 'Verification code provided is incorrect',
   NoExistingUser = 'No existing user found with the provided credentials',
   UserAlreadyVerified = 'User with this credentials already verified',
+  BadLoginCredentials = 'Failed to sign in due to bad credentials',
 }
