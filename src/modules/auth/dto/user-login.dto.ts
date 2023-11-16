@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
-import { UserCreateValidationMessage } from 'src/modules/users/enums/user-create.validation-message.enum';
+import { UserCreateValidationMessage } from 'modules/users/enums/user-create.validation-message.enum';
 
 export class UserLoginDto {
   @ApiProperty({
