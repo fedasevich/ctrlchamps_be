@@ -108,7 +108,7 @@ export class AuthService {
 
       if (!user) {
         throw new HttpException(
-          ErrorMessage.NoExistingUser,
+          ErrorMessage.UserNotExist,
           HttpStatus.BAD_REQUEST,
         );
       }

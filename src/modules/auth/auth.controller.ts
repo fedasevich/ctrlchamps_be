@@ -111,8 +111,8 @@ export class AuthController {
   async resetPassword(@Body() userDto: ResetPasswordDto): Promise<void> {
     await this.authService.resetPassword(userDto);
   }
-  
-    @ApiOperation({ summary: 'Verify user account' })
+
+  @ApiOperation({ summary: 'Verify user account' })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: ErrorMessage.VerificationCodeIncorrect,
@@ -133,7 +133,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Request new verification code' })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: ErrorMessage.NoExistingUser,
+    description: ErrorMessage.UserNotExist,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -149,8 +149,5 @@ export class AuthController {
     @Param('userId') userId: string,
   ): Promise<void> {
     await this.authService.requestNewVerificationCode(userId);
-  }
-
-  
   }
 }
