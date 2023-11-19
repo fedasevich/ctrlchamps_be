@@ -2,10 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { Country } from 'modules/users/enums/country.enum';
 import { UserRole } from 'modules/users/enums/user-role.enum';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-
-// eslint-disable-next-line import/no-cycle
-import { OtpCode } from './otp-code.entity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class User {
@@ -123,7 +120,10 @@ export class User {
   @Column()
   address: string;
 
-  @ApiProperty({ type: () => OtpCode, isArray: true })
-  @OneToMany(() => OtpCode, (otpCode) => otpCode.user)
-  otpCodes: OtpCode[];
+  @ApiProperty({
+    description: 'Otp code',
+    example: '1234',
+  })
+  @Column({ default: null, nullable: true })
+  otpCode?: string | null;
 }
