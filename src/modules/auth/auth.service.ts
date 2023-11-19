@@ -274,11 +274,7 @@ export class AuthService {
         );
       }
 
-      await this.sendOtpCodeEmail(
-        user.id,
-        user.email,
-        OtpPurpose.RESET_PASSWORD,
-      );
+      await this.sendOtpCodeEmail(email);
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -291,24 +287,20 @@ export class AuthService {
     }
   }
 
-  async verifyResetOtp(email: string, code: string): Promise<boolean> {
+  async verifyResetOtp(email: string, otpCode: string): Promise<void> {
     try {
       const user = await this.userService.findByEmailOrPhoneNumber(email);
 
-      const verificationResult = await this.otpCodeService.verifyOtpCode(
-        user.id,
-        OtpPurpose.RESET_PASSWORD,
-        code,
-      );
-
-      if (!verificationResult) {
+      if (user.otpCode !== otpCode) {
         throw new HttpException(
-          ErrorMessage.VerificationCodeIncorrect,
+          ErrorMessage.OtpCodeIncorrect,
           HttpStatus.BAD_REQUEST,
         );
       }
 
-      return verificationResult;
+      await this.userService.update(email, {
+        otpCode: null,
+      });
     } catch (error) {
       if (
         error instanceof HttpException &&
