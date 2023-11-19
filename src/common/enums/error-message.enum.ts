@@ -4,7 +4,7 @@ export enum ErrorMessage {
   FailedHashPassword = 'Failed to hash the password',
   FailedCreateToken = 'Failed to create the token',
   FailedSendVerificationCode = 'Failed to send the verification code',
-  VerificationCodeIncorrect = 'Verification code provided is incorrect',
+  OtpCodeIncorrect = 'OTP code provided is incorrect',
   UserAlreadyVerified = 'User with this credentials already verified',
   UserNotExist = "An account matching that email doesn't exist",
   UserEmailAndPhoneAlreadyExists = 'User with these email and phone already exists',

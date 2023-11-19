@@ -5,15 +5,13 @@ import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcrypt';
 import { ErrorMessage } from 'common/enums/error-message.enum';
 import { EmailService } from 'modules/email/services/email.service';
-import { OtpCodeVerifyDto } from 'modules/otp-code/dto/otp-code-verify.dto';
-import { OtpPurpose } from 'modules/otp-code/enums/otp-purpose.enum';
-import { OtpCodeService } from 'modules/otp-code/otp-code.service';
 import { UserService } from 'modules/users/user.service';
 
 import { AccountCheckDto } from './dto/account-check.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserLoginDto } from './dto/user-login.dto';
+import { generateOtpCode } from './helpers/generate-otp-code.helper';
 import { Token } from './types/token.type';
 
 @Injectable()
@@ -31,7 +29,6 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
-    private readonly otpCodeService: OtpCodeService,
   ) {}
 
   async signUp(userDto: UserCreateDto): Promise<Token> {
@@ -48,11 +45,7 @@ export class AuthService {
         password: passwordHash,
       });
 
-      await this.sendOtpCodeEmail(
-        id,
-        userDto.email,
-        OtpPurpose.ACCOUNT_VERIFICATION,
-      );
+      await this.sendOtpCodeEmail(userDto.email);
 
       const token = await this.createToken(id);
 
@@ -124,11 +117,7 @@ export class AuthService {
         );
       }
 
-      await this.sendOtpCodeEmail(
-        user.id,
-        user.email,
-        OtpPurpose.ACCOUNT_VERIFICATION,
-      );
+      await this.sendOtpCodeEmail(user.email);
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -141,27 +130,35 @@ export class AuthService {
     }
   }
 
-  async verifyAccount(
-    userId: string,
-    otpCodeVerifyDto: OtpCodeVerifyDto,
-  ): Promise<boolean> {
+  async verifyAccount(userId: string, otpCode: string): Promise<void> {
     try {
-      const otpCodeVerificationResult = await this.otpCodeService.verifyOtpCode(
-        userId,
-        OtpPurpose.ACCOUNT_VERIFICATION,
-        otpCodeVerifyDto.code,
-      );
+      const user = await this.userService.findById(userId);
 
-      if (!otpCodeVerificationResult) {
+      if (!user) {
         throw new HttpException(
-          ErrorMessage.VerificationCodeIncorrect,
+          ErrorMessage.UserNotExist,
           HttpStatus.BAD_REQUEST,
         );
       }
 
-      await this.userService.verifyAccount(userId);
+      if (user.isVerified) {
+        throw new HttpException(
+          ErrorMessage.UserAlreadyVerified,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
-      return otpCodeVerificationResult;
+      if (user.otpCode !== otpCode) {
+        throw new HttpException(
+          ErrorMessage.OtpCodeIncorrect,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.userService.update(user.email, {
+        isVerified: true,
+        otpCode: null,
+      });
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -174,19 +171,16 @@ export class AuthService {
     }
   }
 
-  private async sendOtpCodeEmail(
-    userId: string,
-    email: string,
-    purpose: OtpPurpose,
-  ): Promise<void> {
+  private async sendOtpCodeEmail(email: string): Promise<void> {
     try {
-      const otpAccountVerificationCode =
-        await this.otpCodeService.createOtpCode(userId, purpose);
+      const otpCode = generateOtpCode();
+
+      await this.userService.update(email, { otpCode });
 
       await this.emailService.sendEmail({
         to: email,
         templateId: this.otpCodeTemplateId,
-        dynamicTemplateData: { otpCode: otpAccountVerificationCode },
+        dynamicTemplateData: { otpCode },
       });
     } catch (error) {
       throw new HttpException(

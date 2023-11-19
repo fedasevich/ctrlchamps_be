@@ -1,7 +1,7 @@
 import {
   FOUR_DIGIT_HIGHEST_OTP,
   SMALLEST_FOUR_DIGIT_OTP,
-} from 'modules/otp-code/constants/otp-code.constants';
+} from 'src/modules/auth/constants/otp-code.constants';
 
 export const generateOtpCode = (): string => {
   const fourDigitOtpCode = (

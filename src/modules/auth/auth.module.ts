@@ -5,7 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { User } from 'common/entities/user.entity';
 import { EmailModule } from 'modules/email/email.module';
-import { OtpCodeModule } from 'modules/otp-code/otp-code.module';
 import { UserService } from 'modules/users/user.service';
 
 import { AuthController } from './auth.controller';
@@ -22,7 +21,6 @@ import { AuthService } from './auth.service';
       inject: [ConfigService],
     }),
     EmailModule,
-    OtpCodeModule,
   ],
   providers: [AuthService, UserService],
   controllers: [AuthController],
