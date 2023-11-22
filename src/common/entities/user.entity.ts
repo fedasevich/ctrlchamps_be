@@ -69,8 +69,8 @@ export class User {
     example: 'true',
     required: false,
   })
-  @Column({ default: null, nullable: true })
-  isVerified?: boolean | null;
+  @Column({ default: false })
+  isVerified: boolean;
 
   @ApiProperty({
     description: "User's role",
