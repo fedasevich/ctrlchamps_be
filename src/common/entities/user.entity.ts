@@ -2,7 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { Country } from 'modules/users/enums/country.enum';
 import { UserRole } from 'modules/users/enums/user-role.enum';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { UserAdditionalInfo } from 'src/common/entities/user.profile.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 
 @Entity()
 export class User {
@@ -111,4 +118,10 @@ export class User {
   })
   @Column()
   address: string;
+
+  @OneToOne(() => UserAdditionalInfo, (additionalInfo) => additionalInfo.user, {
+    cascade: true,
+  })
+  @JoinColumn()
+  additionalInfo: UserAdditionalInfo;
 }
