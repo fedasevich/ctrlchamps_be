@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import 'dotenv/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { User } from './common/entities/user.entity';
 import { AuthModule } from './modules/auth/auth.module';
-import 'dotenv/config';
 import { UserModule } from './modules/users/user.module';
 
 @Module({
@@ -18,11 +18,11 @@ import { UserModule } from './modules/users/user.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         type: 'mysql',
-        host: 'localhost',
-        port: 3306,
+        host: configService.get<string>('DATABASE_HOST'),
+        port: configService.get<number>('DATABASE_PORT'),
         username: configService.get<string>('DATABASE_USERNAME'),
         password: configService.get<string>('DATABASE_PASSWORD'),
-        database: 'test',
+        database: configService.get<string>('DATABASE_NAME'),
         entities: [User],
         synchronize: true,
       }),
