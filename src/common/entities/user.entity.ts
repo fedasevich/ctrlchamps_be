@@ -121,6 +121,7 @@ export class User {
 
   @OneToOne(() => UserAdditionalInfo, (additionalInfo) => additionalInfo.user, {
     cascade: true,
+    nullable: true,
   })
   @JoinColumn()
   additionalInfo: UserAdditionalInfo;
