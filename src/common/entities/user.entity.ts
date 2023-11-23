@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { Country } from 'modules/users/enums/country.enum';
 import { UserRole } from 'modules/users/enums/user-role.enum';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class User {
@@ -65,6 +65,14 @@ export class User {
   isOpenToSeekerHomeLiving?: boolean | null;
 
   @ApiProperty({
+    description: 'Indicates whether the user account was verified via otp code',
+    example: 'true',
+    required: false,
+  })
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @ApiProperty({
     description: "User's role",
     example: 'Caregiver',
   })
@@ -111,4 +119,11 @@ export class User {
   })
   @Column()
   address: string;
+
+  @ApiProperty({
+    description: 'Otp code',
+    example: '1234',
+  })
+  @Column({ default: null, nullable: true })
+  otpCode?: string | null;
 }
