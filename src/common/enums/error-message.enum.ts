@@ -9,4 +9,5 @@ export enum ErrorMessage {
   UserNotExist = "An account matching that email doesn't exist",
   UserEmailAndPhoneAlreadyExists = 'User with these email and phone already exists',
   BadLoginCredentials = 'Failed to sign in due to bad credentials',
+  FailedSendSuccessEmail = 'Failed to send email',
 }

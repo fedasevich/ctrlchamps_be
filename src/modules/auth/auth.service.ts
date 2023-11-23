@@ -6,6 +6,7 @@ import { compare, hash } from 'bcrypt';
 import { ErrorMessage } from 'common/enums/error-message.enum';
 import { EmailService } from 'modules/email/services/email.service';
 import { UserService } from 'modules/users/user.service';
+import { UserRole } from 'modules/users/enums/user-role.enum';
 
 import { AccountCheckDto } from './dto/account-check.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -22,6 +23,22 @@ export class AuthService {
 
   private readonly otpCodeTemplateId = this.configService.get<string>(
     'SENDGRID_OTP_TEMPLATE_ID',
+  );
+
+  private readonly caregiverVerifiedTemplateId = this.configService.get<string>(
+    'SENDGRID_CAREGIVER_TEMPLATE_ID',
+  );
+
+  private readonly seekerVerifiedTemplateId = this.configService.get<string>(
+    'SENDGRID_SEEKER_TEMPLATE_ID',
+  );
+
+  private readonly caregiverRedirectLink = this.configService.get<string>(
+    'CAREGIVER_REDIRECT_LINK',
+  );
+
+  private readonly seekerRedirectLink = this.configService.get<string>(
+    'SEEKER_REDIRECT_LINK',
   );
 
   constructor(
@@ -159,6 +176,7 @@ export class AuthService {
         isVerified: true,
         otpCode: null,
       });
+      await this.sendVerifiedEmail(user.email, user.role);
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -187,6 +205,40 @@ export class AuthService {
         ErrorMessage.FailedSendVerificationCode,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  private async sendVerifiedEmail(email: string, role: string): Promise<void> {
+    if (role === UserRole.Caregiver) {
+      const link = this.caregiverRedirectLink;
+
+      try {
+        await this.emailService.sendEmail({
+          to: email,
+          templateId: this.caregiverVerifiedTemplateId,
+          dynamicTemplateData: { link },
+        });
+      } catch (error) {
+        throw new HttpException(
+          ErrorMessage.FailedSendSuccessEmail,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    } else if (role === UserRole.Seeker) {
+      const link = this.seekerRedirectLink;
+
+      try {
+        await this.emailService.sendEmail({
+          to: email,
+          templateId: this.seekerVerifiedTemplateId,
+          dynamicTemplateData: { link },
+        });
+      } catch (error) {
+        throw new HttpException(
+          ErrorMessage.FailedSendSuccessEmail,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 
