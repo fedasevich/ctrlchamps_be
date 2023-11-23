@@ -1,9 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { UserAdditionalInfo } from 'src/common/entities/user.profile.entity';
+import { TypeOfWork } from 'src/common/enums/work-type.enum';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-
-import { TypeOfWork } from '../enums/work-type.enum';
 
 @Entity()
 export class WorkExperience {

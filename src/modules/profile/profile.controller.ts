@@ -3,10 +3,10 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Certificate } from 'src/common/entities/certificate.entity';
 import { WorkExperience } from 'src/common/entities/work-experience.entity';
+import { ProfileService } from 'src/modules/profile/profile.service';
 
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { CreateWorkExperienceDto } from './dto/work-experience.dto';
-import { ProfileService } from './profile.service';
 
 @ApiTags('Complete profile')
 @Controller('profile')
@@ -14,7 +14,7 @@ export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
   @Post('/certificate/:userId')
-  @ApiOperation({ summary: 'Certificate Added' })
+  @ApiOperation({ summary: 'Add certificate' })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Certificate added successfully',
@@ -31,7 +31,7 @@ export class ProfileController {
   }
 
   @Post('/work-experience/:userId')
-  @ApiOperation({ summary: 'Work Experience Added' })
+  @ApiOperation({ summary: 'Add Work Experience' })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Work Experience added successfully',
