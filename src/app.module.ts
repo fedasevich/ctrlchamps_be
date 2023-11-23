@@ -10,8 +10,9 @@ import { User } from './common/entities/user.entity';
 import { UserAdditionalInfo } from './common/entities/user.profile.entity';
 import { WorkExperience } from './common/entities/work-experience.entity';
 import { AuthModule } from './modules/auth/auth.module';
+import { EmailModule } from './modules/email/email.module';
+
 import { ProfileModule } from './modules/profile/profile.module';
-import { UserModule } from './modules/users/user.module';
 
 @Module({
   imports: [

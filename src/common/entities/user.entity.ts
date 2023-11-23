@@ -72,6 +72,14 @@ export class User {
   isOpenToSeekerHomeLiving?: boolean | null;
 
   @ApiProperty({
+    description: 'Indicates whether the user account was verified via otp code',
+    example: 'true',
+    required: false,
+  })
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @ApiProperty({
     description: "User's role",
     example: 'Caregiver',
   })
@@ -118,6 +126,13 @@ export class User {
   })
   @Column()
   address: string;
+
+  @ApiProperty({
+    description: 'Otp code',
+    example: '1234',
+  })
+  @Column({ default: null, nullable: true })
+  otpCode?: string | null;
 
   @OneToOne(() => UserAdditionalInfo, (additionalInfo) => additionalInfo.user, {
     cascade: true,
