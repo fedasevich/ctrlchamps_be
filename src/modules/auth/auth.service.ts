@@ -209,36 +209,24 @@ export class AuthService {
   }
 
   private async sendVerifiedEmail(email: string, role: string): Promise<void> {
-    if (role === UserRole.Caregiver) {
-      const link = this.caregiverRedirectLink;
-
-      try {
-        await this.emailService.sendEmail({
-          to: email,
-          templateId: this.caregiverVerifiedTemplateId,
-          dynamicTemplateData: { link },
-        });
-      } catch (error) {
-        throw new HttpException(
-          ErrorMessage.FailedSendSuccessEmail,
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-    } else if (role === UserRole.Seeker) {
-      const link = this.seekerRedirectLink;
-
-      try {
-        await this.emailService.sendEmail({
-          to: email,
-          templateId: this.seekerVerifiedTemplateId,
-          dynamicTemplateData: { link },
-        });
-      } catch (error) {
-        throw new HttpException(
-          ErrorMessage.FailedSendSuccessEmail,
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+    const link =
+      role === UserRole.Caregiver
+        ? this.caregiverRedirectLink
+        : this.seekerRedirectLink;
+    try {
+      await this.emailService.sendEmail({
+        to: email,
+        templateId:
+          role === UserRole.Caregiver
+            ? this.caregiverVerifiedTemplateId
+            : this.seekerVerifiedTemplateId,
+        dynamicTemplateData: { link },
+      });
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedSendSuccessEmail,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
