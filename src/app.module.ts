@@ -6,10 +6,11 @@ import 'dotenv/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Certificate } from './common/entities/certificate.entity';
-import { WorkExperience } from './common/entities/experience.entity';
 import { User } from './common/entities/user.entity';
 import { UserAdditionalInfo } from './common/entities/user.profile.entity';
+import { WorkExperience } from './common/entities/work-experience.entity';
 import { AuthModule } from './modules/auth/auth.module';
+import { ProfileModule } from './modules/profile/profile.module';
 import { UserModule } from './modules/users/user.module';
 
 @Module({
@@ -33,6 +34,7 @@ import { UserModule } from './modules/users/user.module';
     }),
     AuthModule,
     UserModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

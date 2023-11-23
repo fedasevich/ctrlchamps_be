@@ -13,7 +13,7 @@ import { PreferredDay, PreferredTime } from '../enums/preferred-time.enum';
 import { Qualification } from '../enums/qualification.enum';
 
 import { Certificate } from './certificate.entity';
-import { WorkExperience } from './experience.entity';
+import { WorkExperience } from './work-experience.entity';
 import { User } from './user.entity';
 
 export interface TimeSlot {
