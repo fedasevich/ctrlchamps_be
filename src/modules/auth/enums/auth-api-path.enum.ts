@@ -5,4 +5,6 @@ export enum AuthApiPath {
   VerifyAccount = '/verify-account/:userId',
   RequestNewVerificationCode = '/request-new-verification-code/:userId',
   ResetPassword = '/reset-password',
+  RequestResetOtp = '/request-reset-otp',
+  VerifyResetOtp = '/verify-reset-otp',
 }
