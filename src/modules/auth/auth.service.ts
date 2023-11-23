@@ -5,8 +5,8 @@ import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcrypt';
 import { ErrorMessage } from 'common/enums/error-message.enum';
 import { EmailService } from 'modules/email/services/email.service';
-import { UserService } from 'modules/users/user.service';
 import { UserRole } from 'modules/users/enums/user-role.enum';
+import { UserService } from 'modules/users/user.service';
 
 import { AccountCheckDto } from './dto/account-check.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
