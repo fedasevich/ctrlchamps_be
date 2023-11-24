@@ -8,7 +8,6 @@ import { EmailService } from 'modules/email/services/email.service';
 import { UserService } from 'modules/users/user.service';
 
 import { AccountCheckDto } from './dto/account-check.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { generateOtpCode } from './helpers/generate-otp-code.helper';
@@ -245,13 +244,63 @@ export class AuthService {
     }
   }
 
-  async resetPassword({ email, password }: ResetPasswordDto): Promise<void> {
+  async resetPassword(email: string, password: string): Promise<void> {
     try {
       await this.accountCheck({ email });
 
       const passwordHash = await this.hashPassword(password);
 
       await this.userService.update(email, { password: passwordHash });
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async requestResetOtp(email: string): Promise<void> {
+    try {
+      const user = await this.userService.findByEmailOrPhoneNumber(email);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserNotExist,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.sendOtpCodeEmail(email);
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async verifyResetOtp(email: string, otpCode: string): Promise<void> {
+    try {
+      const user = await this.userService.findByEmailOrPhoneNumber(email);
+
+      if (user.otpCode !== otpCode) {
+        throw new HttpException(
+          ErrorMessage.OtpCodeIncorrect,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.userService.update(email, {
+        otpCode: null,
+      });
     } catch (error) {
       if (
         error instanceof HttpException &&
