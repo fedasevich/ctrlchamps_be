@@ -1,45 +1,9 @@
-// create-certificate.dto.ts
-import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, IsNotEmpty } from 'class-validator';
 
-import { IsNotEmpty, IsString } from 'class-validator';
+import { CertificateItem } from './certificate.dto';
 
-export class CreateCertificateDto {
-  @ApiProperty({
-    description: 'Name of the certificate',
-    example: 'First Aid Training',
-  })
+export class CreateCertificatesDto {
+  @IsArray()
   @IsNotEmpty()
-  @IsString()
-  name: string;
-
-  @ApiProperty({
-    description: 'Certificate ID',
-    example: 'CER12345',
-  })
-  @IsNotEmpty()
-  @IsString()
-  certificateId: string;
-
-  @ApiProperty({
-    description: 'Link to the certificate document',
-    example: 'https://certificateprovider.com/certificate/123',
-  })
-  @IsNotEmpty()
-  @IsString()
-  link: string;
-
-  @ApiProperty({
-    description: 'Date the certificate was issued',
-    example: '11/11/2020',
-  })
-  @IsNotEmpty()
-  @IsString()
-  dateIssued: string;
-
-  @ApiProperty({
-    description: 'Expiration date of the certificate',
-    example: '11/11/2020',
-  })
-  @IsString()
-  expirationDate: string;
+  certificates: CertificateItem[];
 }

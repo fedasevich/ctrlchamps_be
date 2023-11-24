@@ -16,9 +16,9 @@ import { Certificate } from './certificate.entity';
 import { User } from './user.entity';
 import { WorkExperience } from './work-experience.entity';
 
-export interface TimeSlot {
-  day: PreferredDay[];
-  part_of_day: PreferredTime[];
+interface TimeSlot {
+  day: PreferredDay;
+  partOfDay: PreferredTime;
   startTime: string;
   endTime: string;
 }
@@ -61,25 +61,34 @@ export class UserAdditionalInfo {
     example:
       '[Qualification.PersonalCareAssistance, Qualification.MedicationManagement]',
   })
-  @Column({
-    type: 'enum',
-    enum: Qualification,
-  })
-  qualifications: Qualification[];
+  @Column('json', { nullable: true })
+  services: Qualification[];
 
   @ApiProperty({
-    description: 'Preferred time slots for the user',
-    example:
-      '[{ day: ["Monday", "Friday"], part_of_day: ["Morning"], startTime: "09:00", endTime: "12:00" }]',
+    description: 'Available time slots for the user',
+    example: [
+      {
+        day: 'Monday',
+        partOfDay: 'Morning',
+        startTime: '09:00',
+        endTime: '12:00',
+      },
+      {
+        day: 'Tuesday',
+        partOfDay: 'Afternoon',
+        startTime: '14:00',
+        endTime: '18:00',
+      },
+    ],
   })
-  @Column('json', {})
-  preferredTimeSlots: TimeSlot[];
+  @Column('json', { nullable: true })
+  availability: TimeSlot[];
 
   @ApiProperty({
     description: 'Hourly rate for the user',
     example: 25,
   })
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   hourlyRate: number;
 
   @ApiProperty({
@@ -87,7 +96,7 @@ export class UserAdditionalInfo {
     example:
       'I am an experienced nurse with 8 years of work in Central Hospital...',
   })
-  @Column({ length: 100 })
+  @Column({ length: 100, nullable: true })
   description: string;
 
   @ApiProperty({

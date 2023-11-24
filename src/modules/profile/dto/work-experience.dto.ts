@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, IsDateString, IsEnum } from 'class-validator';
 import { TypeOfWork } from 'src/common/enums/work-type.enum';
 
-export class CreateWorkExperienceDto {
+export class WorkExperienceDto {
   @ApiProperty({
     description: 'Name of the workplace',
     example: 'ABC Hospital',
