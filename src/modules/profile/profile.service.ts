@@ -44,33 +44,21 @@ export class ProfileService {
   }
 
   async getWorkExperiences(userId: string): Promise<WorkExperience[]> {
-    const userAdditionalInfo = await this.profileRepository.findOne({
-      where: { user: { id: userId } },
-      relations: ['workExperiences'], // Ensure the relation is loaded
+    const workExperiences = await this.workExperienceRepository.find({
+      where: { userAdditionalInfo: { user: { id: userId } } },
     });
 
-    if (!userAdditionalInfo) {
+    if (!workExperiences || workExperiences.length === 0) {
       throw new HttpException(
-        ErrorMessage.UserProfileNotFound,
+        ErrorMessage.WorkExpNotFound,
         HttpStatus.NOT_FOUND,
       );
     }
 
-    return userAdditionalInfo.workExperiences;
+    return workExperiences;
   }
 
   async getUserCertificates(userId: string): Promise<Certificate[]> {
-    const userAdditionalInfo = await this.profileRepository.findOne({
-      where: { user: { id: userId } },
-    });
-
-    if (!userAdditionalInfo) {
-      throw new HttpException(
-        ErrorMessage.UserProfileNotFound,
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
     const certificates = await this.certificateRepository.find({
       where: { userAdditionalInfo: { user: { id: userId } } },
     });

@@ -14,4 +14,5 @@ export enum ErrorMessage {
   UserProfileNotFound = 'User profile not found',
   UserProfileAlreadyExists = 'Profile already exists for this caregiver',
   CertificatesNotFound = 'There is no certificates found',
+  WorkExpNotFound = 'Work experiences not found',
 }

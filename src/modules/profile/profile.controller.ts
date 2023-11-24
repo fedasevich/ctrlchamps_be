@@ -47,7 +47,7 @@ export class ProfileController {
   }
 
   @Get(':userId/work-experiences')
-  @ApiOperation({ summary: 'Get work experiences of a user' })
+  @ApiOperation({ summary: 'Get work experience(s) of a caregiver' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Work experiences fetched successfully',
@@ -69,7 +69,7 @@ export class ProfileController {
   }
 
   @Get('/:userId/certificates')
-  @ApiOperation({ summary: 'Get user certificates' })
+  @ApiOperation({ summary: `Get caregiver's certificate(s)` })
   @ApiResponse({
     status: HttpStatus.OK,
     schema: {
@@ -155,17 +155,33 @@ export class ProfileController {
     await this.profileService.updateProfile(userId, updateProfileDto);
   }
 
-  @Post('/certificate/:userId')
-  @ApiOperation({ summary: 'Add certificate' })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: 'Certificate added successfully',
-  })
+  @Post('/certificates/:userId')
+  @ApiOperation({ summary: 'Add certificate(s)' })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Certificate(s) added successfully',
-    type: Certificate,
-    isArray: true,
+    // type: Certificate,
+    // isArray: true,
+    schema: {
+      example: {
+        certificates: [
+          {
+            name: 'First Aid Training',
+            certificateId: 'CER12345',
+            link: 'https://certificateprovider.com/certificate/123',
+            dateIssued: '11/11/2020',
+            expirationDate: '11/11/2020',
+          },
+          {
+            name: 'Certificate for work with special kids',
+            certificateId: 'CER12345',
+            link: 'https://certificateprovider.com/certificate/123',
+            dateIssued: '11/11/2020',
+            expirationDate: '11/11/2020',
+          },
+        ],
+      },
+    },
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -183,17 +199,45 @@ export class ProfileController {
   }
 
   @Post('/work-experience/:userId')
-  @ApiOperation({ summary: 'Add work experience' })
+  @ApiOperation({ summary: 'Add work experience(s)' })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Work experience added successfully',
-    schema: {
-      example: {
-        token:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0MDg5Yjg2LTYzZTctNGZhOC1iZjAwLWRhNmRkMDBkZjFmYSIsImlhdCI6MTcwMDA4MDIxOSwiZXhw',
-      },
-    },
     isArray: true,
+    schema: {
+      example: [
+        {
+          workplace: 'ABC Hospital',
+          qualifications: 'Clinic',
+          startDate: '2020-11-11',
+          endDate: '2021-11-11',
+          userAdditionalInfo: {
+            id: '07584ade-1bd4-4a6a-8413-e523cc176196',
+            services: null,
+            availability: null,
+            hourlyRate: null,
+            description: null,
+            videoLink: null,
+          },
+          id: '34248ace-627e-400c-9541-d31916b98433',
+        },
+        {
+          workplace: 'XYZ Clinic',
+          qualifications: 'Agency',
+          startDate: '2018-06-15',
+          endDate: '2020-01-20',
+          userAdditionalInfo: {
+            id: '07584ade-1bd4-4a6a-8413-e523cc176196',
+            services: null,
+            availability: null,
+            hourlyRate: null,
+            description: null,
+            videoLink: null,
+          },
+          id: '820f1d8e-4cb1-4ca2-aab1-f9681b7b7688',
+        },
+      ],
+    },
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
