@@ -1,4 +1,11 @@
-import { Controller, Post, Body, HttpStatus, HttpCode } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { ApiPath } from 'common/enums/api-path.enum';
@@ -6,9 +13,12 @@ import { ErrorMessage } from 'common/enums/error-message.enum';
 
 import { AuthService } from './auth.service';
 import { AccountCheckDto } from './dto/account-check.dto';
+import { ResetOtpDto } from './dto/reset-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserLoginDto } from './dto/user-login.dto';
+import { UserOtpCodeDto } from './dto/user-otp-code.dto';
+import { VerifyResetOtpDto } from './dto/verify-reset-otp-dto';
 import { AuthApiPath } from './enums/auth-api-path.enum';
 import { Token } from './types/token.type';
 
@@ -101,6 +111,96 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post(AuthApiPath.ResetPassword)
   async resetPassword(@Body() userDto: ResetPasswordDto): Promise<void> {
-    await this.authService.resetPassword(userDto);
+    await this.authService.resetPassword(userDto.email, userDto.password);
+  }
+
+  @ApiOperation({ summary: 'Verify user account' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserNotExist,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.OtpCodeIncorrect,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserAlreadyVerified,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(AuthApiPath.VerifyAccount)
+  async verifyAccount(
+    @Param('userId') userId: string,
+    @Body() otpCodeDto: UserOtpCodeDto,
+  ): Promise<void> {
+    await this.authService.verifyAccount(userId, otpCodeDto.otpCode);
+  }
+
+  @ApiOperation({ summary: 'Request new verification code' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserNotExist,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserAlreadyVerified,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(AuthApiPath.RequestNewVerificationCode)
+  async requestNewVerificationCode(
+    @Param('userId') userId: string,
+  ): Promise<void> {
+    await this.authService.requestNewVerificationCode(userId);
+  }
+
+  @ApiOperation({ summary: 'Request reset OTP' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'OTP sent successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserNotExist,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(AuthApiPath.RequestResetOtp)
+  async requestResetOtp(@Body() resetOtpDto: ResetOtpDto): Promise<void> {
+    await this.authService.requestResetOtp(resetOtpDto.email);
+  }
+
+  @ApiOperation({ summary: 'Verify reset otp' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'OTP verified successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.OtpCodeIncorrect,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(AuthApiPath.VerifyResetOtp)
+  async verifyResetOtp(
+    @Body() verifyResetOtpDto: VerifyResetOtpDto,
+  ): Promise<void> {
+    await this.authService.verifyResetOtp(
+      verifyResetOtpDto.email,
+      verifyResetOtpDto.code,
+    );
   }
 }

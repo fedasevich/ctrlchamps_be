@@ -7,7 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { User } from './common/entities/user.entity';
 import { AuthModule } from './modules/auth/auth.module';
-import { UserModule } from './modules/users/user.module';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -29,7 +29,7 @@ import { UserModule } from './modules/users/user.module';
       inject: [ConfigService],
     }),
     AuthModule,
-    UserModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
