@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import { compare, hash } from 'bcrypt';
 import { ErrorMessage } from 'common/enums/error-message.enum';
+import { EmailErrorMessage } from 'modules/email/enums/email-error-message.enum';
 import { EmailService } from 'modules/email/services/email.service';
 import { UserRole } from 'modules/users/enums/user-role.enum';
 import { UserService } from 'modules/users/user.service';
@@ -223,7 +224,7 @@ export class AuthService {
       });
     } catch (error) {
       throw new HttpException(
-        ErrorMessage.FailedSendSuccessEmail,
+        EmailErrorMessage.FailedSendEmail,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
