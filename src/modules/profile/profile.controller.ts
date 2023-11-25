@@ -6,7 +6,13 @@ import {
   Patch,
   Param,
   Get,
+  FileTypeValidator,
+  MaxFileSizeValidator,
+  ParseFilePipe,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Certificate } from 'src/common/entities/certificate.entity';
@@ -24,6 +30,23 @@ import { WorkExperienceDto } from './dto/work-experience.dto';
 @Controller('profile')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
+
+  @Post('/uploadFile/:userId')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10000000 }),
+          new FileTypeValidator({ fileType: 'mp4' }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @Param('userId') userId: string,
+  ): Promise<void> {
+    await this.profileService.upload(file.originalname, file.buffer, userId);
+  }
 
   @Get('/:userId')
   @ApiOperation({ summary: 'Get caregiver profile information' })

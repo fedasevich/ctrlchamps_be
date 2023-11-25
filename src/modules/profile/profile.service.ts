@@ -1,6 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Certificate } from 'src/common/entities/certificate.entity';
 import { User } from 'src/common/entities/user.entity';
 import { UserAdditionalInfo } from 'src/common/entities/user.profile.entity';
@@ -16,6 +18,7 @@ import { CreateWorkExperienceDto } from './dto/create-work-experience.dto';
 @Injectable()
 export class ProfileService {
   constructor(
+    private readonly configService: ConfigService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Certificate)
@@ -25,6 +28,14 @@ export class ProfileService {
     @InjectRepository(UserAdditionalInfo)
     private readonly profileRepository: Repository<UserAdditionalInfo>,
   ) {}
+
+  private readonly s3Client = new S3Client({
+    region: this.configService.get<string>('AWS_S3_REGION'),
+    credentials: {
+      accessKeyId: this.configService.get<string>('ACCESS_ID'),
+      secretAccessKey: this.configService.get<string>('AWS_SECRET_KEY'),
+    },
+  });
 
   async getProfileInformation(
     userId: string,
@@ -125,7 +136,7 @@ export class ProfileService {
       where: { user: { id: userId } },
     });
 
-    const { services, availability, hourlyRate, description, videoLink } =
+    const { services, availability, hourlyRate, description } =
       updateProfileDto;
 
     if (services) {
@@ -142,10 +153,6 @@ export class ProfileService {
 
     if (description) {
       userAdditionalInfo.description = description;
-    }
-
-    if (videoLink) {
-      userAdditionalInfo.videoLink = videoLink;
     }
 
     await this.profileRepository.save(userAdditionalInfo);
@@ -205,5 +212,30 @@ export class ProfileService {
     );
 
     return workExperiences;
+  }
+
+  async upload(fileName: string, file: Buffer, userId: string): Promise<void> {
+    try {
+      const uploadResponse = await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: this.configService.get<string>('AWS_BUCKET_NAME'),
+          Key: fileName,
+          Body: file,
+        }),
+      );
+      if (uploadResponse.$metadata.httpStatusCode === HttpStatus.OK) {
+        const userAdditionalInfo = await this.profileRepository.findOne({
+          where: { user: { id: userId } },
+        });
+        const s3ObjectUrl =
+          this.configService.get('AWS_FILES_STORAGE_URL') + fileName;
+
+        userAdditionalInfo.videoLink = s3ObjectUrl;
+
+        await this.profileRepository.save(userAdditionalInfo);
+      }
+    } catch (error) {
+      throw new Error("Couldn't find bucket to save");
+    }
   }
 }
