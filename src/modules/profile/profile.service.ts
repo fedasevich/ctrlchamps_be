@@ -3,9 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { Certificate } from 'src/common/entities/certificate.entity';
 import { User } from 'src/common/entities/user.entity';
-import { UserAdditionalInfo } from 'src/common/entities/user.profile.entity';
 import { WorkExperience } from 'src/common/entities/work-experience.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { UserRole } from 'src/modules/users/enums/user-role.enum';
@@ -25,8 +25,8 @@ export class ProfileService {
     private readonly certificateRepository: Repository<Certificate>,
     @InjectRepository(WorkExperience)
     private readonly workExperienceRepository: Repository<WorkExperience>,
-    @InjectRepository(UserAdditionalInfo)
-    private readonly profileRepository: Repository<UserAdditionalInfo>,
+    @InjectRepository(CaregiverInfo)
+    private readonly profileRepository: Repository<CaregiverInfo>,
   ) {}
 
   private readonly s3Client = new S3Client({
@@ -39,7 +39,7 @@ export class ProfileService {
 
   async getProfileInformation(
     userId: string,
-  ): Promise<UserAdditionalInfo | undefined> {
+  ): Promise<CaregiverInfo | undefined> {
     const userAdditionalInfo = await this.profileRepository.findOne({
       where: { user: { id: userId } },
     });
@@ -56,7 +56,7 @@ export class ProfileService {
 
   async getWorkExperiences(userId: string): Promise<WorkExperience[]> {
     const workExperiences = await this.workExperienceRepository.find({
-      where: { userAdditionalInfo: { user: { id: userId } } },
+      where: { caregiverInfo: { user: { id: userId } } },
     });
 
     if (!workExperiences || workExperiences.length === 0) {
@@ -71,7 +71,7 @@ export class ProfileService {
 
   async getUserCertificates(userId: string): Promise<Certificate[]> {
     const certificates = await this.certificateRepository.find({
-      where: { userAdditionalInfo: { user: { id: userId } } },
+      where: { caregiverInfo: { user: { id: userId } } },
     });
 
     if (!certificates || certificates.length === 0) {
@@ -113,7 +113,7 @@ export class ProfileService {
       );
     }
 
-    const userAdditionalInfo = new UserAdditionalInfo();
+    const userAdditionalInfo = new CaregiverInfo();
     userAdditionalInfo.user = user;
 
     await this.profileRepository.save(userAdditionalInfo);
@@ -177,7 +177,7 @@ export class ProfileService {
       createCertificatesDto.certificates.map(async (certificateDto) => {
         const newCertificate = new Certificate();
         Object.assign(newCertificate, certificateDto);
-        newCertificate.userAdditionalInfo = userAdditionalInfo;
+        newCertificate.caregiverInfo = userAdditionalInfo;
 
         return this.certificateRepository.save(newCertificate);
       }),
@@ -190,11 +190,11 @@ export class ProfileService {
     userId: string,
     createWorkExperienceDto: CreateWorkExperienceDto,
   ): Promise<WorkExperience[]> {
-    const userAdditionalInfo = await this.profileRepository.findOne({
+    const caregiverInfo = await this.profileRepository.findOne({
       where: { user: { id: userId } },
     });
 
-    if (!userAdditionalInfo) {
+    if (!caregiverInfo) {
       throw new HttpException(
         ErrorMessage.UserProfileNotFound,
         HttpStatus.NOT_FOUND,
@@ -205,7 +205,7 @@ export class ProfileService {
       createWorkExperienceDto.workExperiences.map(async (workExperienceDto) => {
         const newWorkExperience = new WorkExperience();
         Object.assign(newWorkExperience, workExperienceDto);
-        newWorkExperience.userAdditionalInfo = userAdditionalInfo;
+        newWorkExperience.caregiverInfo = caregiverInfo;
 
         return this.workExperienceRepository.save(newWorkExperience);
       }),

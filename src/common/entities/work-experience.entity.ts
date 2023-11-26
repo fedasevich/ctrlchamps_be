@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { UserAdditionalInfo } from 'src/common/entities/user.profile.entity';
+import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { TypeOfWork } from 'src/common/enums/work-type.enum';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 
@@ -46,11 +46,11 @@ export class WorkExperience {
   endDate: string;
 
   @ApiProperty({
-    description: 'Link to the user additional information',
+    description: "Link to the user caregiver's information",
   })
   @ManyToOne(
-    () => UserAdditionalInfo,
-    (userAdditionalInfo) => userAdditionalInfo.workExperiences,
+    () => CaregiverInfo,
+    (caregiverInfo) => caregiverInfo.workExperiences,
   )
-  userAdditionalInfo: UserAdditionalInfo;
+  caregiverInfo: CaregiverInfo;
 }

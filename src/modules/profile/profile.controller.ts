@@ -21,8 +21,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { Certificate } from 'src/common/entities/certificate.entity';
-import { UserAdditionalInfo } from 'src/common/entities/user.profile.entity';
 import { WorkExperience } from 'src/common/entities/work-experience.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { ProfileService } from 'src/modules/profile/profile.service';
@@ -98,7 +98,7 @@ export class ProfileController {
   })
   async getProfileInformation(
     @Param('userId') userId: string,
-  ): Promise<UserAdditionalInfo | undefined> {
+  ): Promise<CaregiverInfo | undefined> {
     return this.profileService.getProfileInformation(userId);
   }
 

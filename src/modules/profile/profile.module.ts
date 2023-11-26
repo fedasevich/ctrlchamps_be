@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { Certificate } from 'src/common/entities/certificate.entity';
 import { User } from 'src/common/entities/user.entity';
-import { UserAdditionalInfo } from 'src/common/entities/user.profile.entity';
 import { WorkExperience } from 'src/common/entities/work-experience.entity';
 import { ProfileController } from 'src/modules/profile/profile.controller';
 import { ProfileService } from 'src/modules/profile/profile.service';
@@ -13,7 +13,7 @@ import { ProfileService } from 'src/modules/profile/profile.service';
     TypeOrmModule.forFeature([
       Certificate,
       WorkExperience,
-      UserAdditionalInfo,
+      CaregiverInfo,
       User,
     ]),
   ],

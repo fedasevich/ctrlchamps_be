@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { UserAdditionalInfo } from 'src/common/entities/user.profile.entity';
+import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 
 @Entity()
@@ -48,11 +48,11 @@ export class Certificate {
   expirationDate: string;
 
   @ApiProperty({
-    description: 'Link to the user additional information',
+    description: "Link to the caregiver's information",
   })
   @ManyToOne(
-    () => UserAdditionalInfo,
-    (userAdditionalInfo) => userAdditionalInfo.workExperiences,
+    () => CaregiverInfo,
+    (caregiverInfo) => caregiverInfo.workExperiences,
   )
-  userAdditionalInfo: UserAdditionalInfo;
+  caregiverInfo: CaregiverInfo;
 }

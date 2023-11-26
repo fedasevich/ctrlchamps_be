@@ -24,7 +24,7 @@ interface TimeSlot {
 }
 
 @Entity()
-export class UserAdditionalInfo {
+export class CaregiverInfo {
   @ApiProperty({
     description: "User's Additional Info ID",
     example: '1e3a4c60-94aa-45de-aad0-7b4a49017b1f',
@@ -37,11 +37,9 @@ export class UserAdditionalInfo {
     example:
       '[{ id: "1e3a4c60", name: "Certificate 1" }, { id: "2a2b4c60", name: "Certificate 2" }]',
   })
-  @OneToMany(
-    () => Certificate,
-    (certificate) => certificate.userAdditionalInfo,
-    { cascade: true },
-  )
+  @OneToMany(() => Certificate, (certificate) => certificate.caregiverInfo, {
+    cascade: true,
+  })
   certificates: Certificate[];
 
   @ApiProperty({
@@ -51,7 +49,7 @@ export class UserAdditionalInfo {
   })
   @OneToMany(
     () => WorkExperience,
-    (workExperience) => workExperience.userAdditionalInfo,
+    (workExperience) => workExperience.caregiverInfo,
     { cascade: true },
   )
   workExperiences: WorkExperience[];
@@ -109,7 +107,7 @@ export class UserAdditionalInfo {
   @ApiProperty({
     description: 'Link to the user',
   })
-  @OneToOne(() => User, (user) => user.additionalInfo, { nullable: false })
-  @JoinColumn({ name: 'userId' })
+  @OneToOne(() => User, (user) => user.caregiverInfo)
+  @JoinColumn()
   user: User;
 }
