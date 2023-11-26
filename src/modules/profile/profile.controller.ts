@@ -13,7 +13,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { Certificate } from 'src/common/entities/certificate.entity';
 import { UserAdditionalInfo } from 'src/common/entities/user.profile.entity';
@@ -32,13 +38,40 @@ export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
   @Post('/uploadFile/:userId')
+  @ApiOperation({ summary: 'Upload a video for caregiver profile' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'File uploaded successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.BacketNotFound,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'File to upload',
+    type: 'multipart/form-data',
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @UploadedFile(
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10000000 }),
-          new FileTypeValidator({ fileType: 'mp4' }),
+          new FileTypeValidator({ fileType: /(mp4|mov|avi)$/ }),
         ],
       }),
     )
@@ -69,7 +102,7 @@ export class ProfileController {
     return this.profileService.getProfileInformation(userId);
   }
 
-  @Get(':userId/work-experiences')
+  @Get('/work-experience/:userId')
   @ApiOperation({ summary: 'Get work experience(s) of a caregiver' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -91,7 +124,7 @@ export class ProfileController {
     return this.profileService.getWorkExperiences(userId);
   }
 
-  @Get('/:userId/certificates')
+  @Get('/certificates/:userId')
   @ApiOperation({ summary: `Get caregiver's certificate(s)` })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -183,8 +216,6 @@ export class ProfileController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Certificate(s) added successfully',
-    // type: Certificate,
-    // isArray: true,
     schema: {
       example: {
         certificates: [

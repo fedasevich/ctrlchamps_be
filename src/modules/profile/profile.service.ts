@@ -221,6 +221,8 @@ export class ProfileService {
           Bucket: this.configService.get<string>('AWS_BUCKET_NAME'),
           Key: fileName,
           Body: file,
+          ContentType: `video/${fileName.split('.').pop()}`,
+          ContentDisposition: 'inline',
         }),
       );
       if (uploadResponse.$metadata.httpStatusCode === HttpStatus.OK) {
@@ -235,7 +237,10 @@ export class ProfileService {
         await this.profileRepository.save(userAdditionalInfo);
       }
     } catch (error) {
-      throw new Error("Couldn't find bucket to save");
+      throw new HttpException(
+        ErrorMessage.BacketNotFound,
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 }
