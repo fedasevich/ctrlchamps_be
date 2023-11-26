@@ -131,45 +131,24 @@ export class ProfileService {
 
   async updateProfile(
     userId: string,
-    updateProfileDto: UpdateProfileDto,
+    updateProfileDto: Partial<UpdateProfileDto>,
   ): Promise<void> {
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .where('user.id = :userId', { userId })
+    const caregiverInfo = await this.profileRepository
+      .createQueryBuilder('profile')
+      .where('profile.user = :userId', { userId })
       .getOne();
 
-    if (!user) {
+    if (!caregiverInfo) {
       throw new HttpException(
         ErrorMessage.UserProfileNotFound,
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    const caregiverInfo = await this.profileRepository
-      .createQueryBuilder('profile')
-      .where('profile.user = :userId', { userId })
-      .getOne();
-
-    const { services, availability, hourlyRate, description } =
-      updateProfileDto;
-
-    if (services) {
-      caregiverInfo.services = services;
-    }
-
-    if (availability) {
-      caregiverInfo.availability = availability;
-    }
-
-    if (hourlyRate) {
-      caregiverInfo.hourlyRate = hourlyRate;
-    }
-
-    if (description) {
-      caregiverInfo.description = description;
-    }
-
-    await this.profileRepository.save(caregiverInfo);
+    await this.profileRepository.update(
+      { user: { id: userId } },
+      updateProfileDto,
+    );
   }
 
   async createCertificate(

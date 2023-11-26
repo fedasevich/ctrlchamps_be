@@ -20,13 +20,11 @@ export class UpdateProfileDto {
     example: [
       {
         day: 'Monday',
-        partOfDay: 'Morning',
         startTime: '09:00',
         endTime: '12:00',
       },
       {
         day: 'Tuesday',
-        partOfDay: 'Afternoon',
         startTime: '14:00',
         endTime: '18:00',
       },

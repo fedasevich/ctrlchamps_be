@@ -7,9 +7,3 @@ export enum PreferredDay {
   Saturday = 'Saturday',
   Sunday = 'Sunday',
 }
-
-export enum PreferredTime {
-  Morning = 'Morning',
-  Afternoon = 'Afternoon',
-  Evening = 'Evening',
-}

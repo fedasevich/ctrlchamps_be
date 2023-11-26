@@ -24,20 +24,22 @@ import {
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { Certificate } from 'src/common/entities/certificate.entity';
 import { WorkExperience } from 'src/common/entities/work-experience.entity';
+import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { ProfileService } from 'src/modules/profile/profile.service';
 
+import { MAX_FILE_SIZE } from './constants/complete-profile.constants';
 import { UpdateProfileDto } from './dto/additional-info.dto';
 import { CreateCertificatesDto } from './dto/create-certificate.dto';
 import { CreateWorkExperienceDto } from './dto/create-work-experience.dto';
 import { WorkExperienceDto } from './dto/work-experience.dto';
 
 @ApiTags('Complete profile')
-@Controller('profile')
+@Controller(ApiPath.CompleteProfile)
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
-  @Post('/uploadFile/:userId')
+  @Post(ApiPath.UploadFile)
   @ApiOperation({ summary: 'Upload a video for caregiver profile' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -70,7 +72,7 @@ export class ProfileController {
     @UploadedFile(
       new ParseFilePipe({
         validators: [
-          new MaxFileSizeValidator({ maxSize: 10000000 }),
+          new MaxFileSizeValidator({ maxSize: MAX_FILE_SIZE }),
           new FileTypeValidator({ fileType: /(mp4|mov|avi)$/ }),
         ],
       }),
@@ -81,7 +83,7 @@ export class ProfileController {
     await this.profileService.upload(file.originalname, file.buffer, userId);
   }
 
-  @Get('/:userId')
+  @Get(ApiPath.CaregiverProfile)
   @ApiOperation({ summary: 'Get caregiver profile information' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -102,7 +104,7 @@ export class ProfileController {
     return this.profileService.getProfileInformation(userId);
   }
 
-  @Get('/work-experience/:userId')
+  @Get(ApiPath.WorkExperience)
   @ApiOperation({ summary: 'Get work experience(s) of a caregiver' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -124,7 +126,7 @@ export class ProfileController {
     return this.profileService.getWorkExperiences(userId);
   }
 
-  @Get('/certificates/:userId')
+  @Get(ApiPath.Certificates)
   @ApiOperation({ summary: `Get caregiver's certificate(s)` })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -164,7 +166,7 @@ export class ProfileController {
     return this.profileService.getUserCertificates(userId);
   }
 
-  @Post(':userId')
+  @Post(ApiPath.CaregiverProfile)
   @ApiOperation({ summary: 'Create caregiver profile' })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
@@ -186,7 +188,7 @@ export class ProfileController {
     await this.profileService.createProfile(userId);
   }
 
-  @Patch('/:userId')
+  @Patch(ApiPath.CaregiverProfile)
   @ApiOperation({ summary: 'Update caregiver profile' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -211,7 +213,7 @@ export class ProfileController {
     await this.profileService.updateProfile(userId, updateProfileDto);
   }
 
-  @Post('/certificates/:userId')
+  @Post(ApiPath.Certificates)
   @ApiOperation({ summary: 'Add certificate(s)' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -252,7 +254,7 @@ export class ProfileController {
     return this.profileService.createCertificate(userId, createCertificateDto);
   }
 
-  @Post('/work-experience/:userId')
+  @Post(ApiPath.WorkExperience)
   @ApiOperation({ summary: 'Add work experience(s)' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -265,7 +267,7 @@ export class ProfileController {
           qualifications: 'Clinic',
           startDate: '2020-11-11',
           endDate: '2021-11-11',
-          userAdditionalInfo: {
+          caregiverInfo: {
             id: '07584ade-1bd4-4a6a-8413-e523cc176196',
             services: null,
             availability: null,
@@ -280,7 +282,7 @@ export class ProfileController {
           qualifications: 'Agency',
           startDate: '2018-06-15',
           endDate: '2020-01-20',
-          userAdditionalInfo: {
+          caregiverInfo: {
             id: '07584ade-1bd4-4a6a-8413-e523cc176196',
             services: null,
             availability: null,

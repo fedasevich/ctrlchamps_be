@@ -9,7 +9,7 @@ import {
   OneToMany,
 } from 'typeorm';
 
-import { PreferredDay, PreferredTime } from '../enums/preferred-time.enum';
+import { PreferredDay } from '../enums/preferred-time.enum';
 import { Qualification } from '../enums/qualification.enum';
 
 import { Certificate } from './certificate.entity';
@@ -18,7 +18,6 @@ import { WorkExperience } from './work-experience.entity';
 
 interface TimeSlot {
   day: PreferredDay;
-  partOfDay: PreferredTime;
   startTime: string;
   endTime: string;
 }
@@ -67,13 +66,11 @@ export class CaregiverInfo {
     example: [
       {
         day: 'Monday',
-        partOfDay: 'Morning',
         startTime: '09:00',
         endTime: '12:00',
       },
       {
         day: 'Tuesday',
-        partOfDay: 'Afternoon',
         startTime: '14:00',
         endTime: '18:00',
       },

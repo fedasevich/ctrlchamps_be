@@ -5,9 +5,9 @@ import 'dotenv/config';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CaregiverInfo } from './common/entities/caregiver.profile.entity';
 import { Certificate } from './common/entities/certificate.entity';
 import { User } from './common/entities/user.entity';
-import { CaregiverInfo } from './common/entities/caregiver.profile.entity';
 import { WorkExperience } from './common/entities/work-experience.entity';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
