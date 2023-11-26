@@ -40,24 +40,28 @@ export class ProfileService {
   async getProfileInformation(
     userId: string,
   ): Promise<CaregiverInfo | undefined> {
-    const userAdditionalInfo = await this.profileRepository.findOne({
-      where: { user: { id: userId } },
-    });
+    const caregiverInfo = await this.profileRepository
+      .createQueryBuilder('profile')
+      .where('profile.user = :userId', { userId })
+      .getOne();
 
-    if (!userAdditionalInfo) {
+    if (!caregiverInfo) {
       throw new HttpException(
         ErrorMessage.UserProfileNotFound,
         HttpStatus.NOT_FOUND,
       );
     }
 
-    return userAdditionalInfo;
+    return caregiverInfo;
   }
 
   async getWorkExperiences(userId: string): Promise<WorkExperience[]> {
-    const workExperiences = await this.workExperienceRepository.find({
-      where: { caregiverInfo: { user: { id: userId } } },
-    });
+    const workExperiences = await this.workExperienceRepository
+      .createQueryBuilder('workExperience')
+      .innerJoin('workExperience.caregiverInfo', 'caregiverInfo')
+      .innerJoin('caregiverInfo.user', 'user')
+      .where('user.id = :userId', { userId })
+      .getMany();
 
     if (!workExperiences || workExperiences.length === 0) {
       throw new HttpException(
@@ -70,9 +74,12 @@ export class ProfileService {
   }
 
   async getUserCertificates(userId: string): Promise<Certificate[]> {
-    const certificates = await this.certificateRepository.find({
-      where: { caregiverInfo: { user: { id: userId } } },
-    });
+    const certificates = await this.certificateRepository
+      .createQueryBuilder('certificate')
+      .innerJoin('certificate.caregiverInfo', 'caregiverInfo')
+      .innerJoin('caregiverInfo.user', 'user')
+      .where('user.id = :userId', { userId })
+      .getMany();
 
     if (!certificates || certificates.length === 0) {
       throw new HttpException(
@@ -85,7 +92,10 @@ export class ProfileService {
   }
 
   async createProfile(userId: string): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.id = :userId', { userId })
+      .getOne();
 
     if (!user) {
       throw new HttpException(
@@ -94,12 +104,12 @@ export class ProfileService {
       );
     }
 
-    const existingProfile = await this.profileRepository.findOne({
-      where: { user: { id: userId } },
-    });
+    const existingProfile = await this.profileRepository
+      .createQueryBuilder('profile')
+      .where('profile.user.id = :userId', { userId })
+      .getOne();
 
     if (existingProfile) {
-      console.log(existingProfile);
       throw new HttpException(
         ErrorMessage.UserProfileAlreadyExists,
         HttpStatus.BAD_REQUEST,
@@ -113,17 +123,20 @@ export class ProfileService {
       );
     }
 
-    const userAdditionalInfo = new CaregiverInfo();
-    userAdditionalInfo.user = user;
+    const caregiverInfo = new CaregiverInfo();
+    caregiverInfo.user = user;
 
-    await this.profileRepository.save(userAdditionalInfo);
+    await this.profileRepository.save(caregiverInfo);
   }
 
   async updateProfile(
     userId: string,
     updateProfileDto: UpdateProfileDto,
   ): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.id = :userId', { userId })
+      .getOne();
 
     if (!user) {
       throw new HttpException(
@@ -132,41 +145,43 @@ export class ProfileService {
       );
     }
 
-    const userAdditionalInfo = await this.profileRepository.findOne({
-      where: { user: { id: userId } },
-    });
+    const caregiverInfo = await this.profileRepository
+      .createQueryBuilder('profile')
+      .where('profile.user = :userId', { userId })
+      .getOne();
 
     const { services, availability, hourlyRate, description } =
       updateProfileDto;
 
     if (services) {
-      userAdditionalInfo.services = services;
+      caregiverInfo.services = services;
     }
 
     if (availability) {
-      userAdditionalInfo.availability = availability;
+      caregiverInfo.availability = availability;
     }
 
     if (hourlyRate) {
-      userAdditionalInfo.hourlyRate = hourlyRate;
+      caregiverInfo.hourlyRate = hourlyRate;
     }
 
     if (description) {
-      userAdditionalInfo.description = description;
+      caregiverInfo.description = description;
     }
 
-    await this.profileRepository.save(userAdditionalInfo);
+    await this.profileRepository.save(caregiverInfo);
   }
 
   async createCertificate(
     userId: string,
     createCertificatesDto: CreateCertificatesDto,
   ): Promise<Certificate[]> {
-    const userAdditionalInfo = await this.profileRepository.findOne({
-      where: { user: { id: userId } },
-    });
+    const caregiverInfo = await this.profileRepository
+      .createQueryBuilder('profile')
+      .where('profile.user = :userId', { userId })
+      .getOne();
 
-    if (!userAdditionalInfo) {
+    if (!caregiverInfo) {
       throw new HttpException(
         ErrorMessage.UserProfileNotFound,
         HttpStatus.NOT_FOUND,
@@ -177,7 +192,7 @@ export class ProfileService {
       createCertificatesDto.certificates.map(async (certificateDto) => {
         const newCertificate = new Certificate();
         Object.assign(newCertificate, certificateDto);
-        newCertificate.caregiverInfo = userAdditionalInfo;
+        newCertificate.caregiverInfo = caregiverInfo;
 
         return this.certificateRepository.save(newCertificate);
       }),
@@ -190,9 +205,10 @@ export class ProfileService {
     userId: string,
     createWorkExperienceDto: CreateWorkExperienceDto,
   ): Promise<WorkExperience[]> {
-    const caregiverInfo = await this.profileRepository.findOne({
-      where: { user: { id: userId } },
-    });
+    const caregiverInfo = await this.profileRepository
+      .createQueryBuilder('profile')
+      .where('profile.user = :userId', { userId })
+      .getOne();
 
     if (!caregiverInfo) {
       throw new HttpException(
@@ -226,15 +242,16 @@ export class ProfileService {
         }),
       );
       if (uploadResponse.$metadata.httpStatusCode === HttpStatus.OK) {
-        const userAdditionalInfo = await this.profileRepository.findOne({
-          where: { user: { id: userId } },
-        });
+        const caregiverInfo = await this.profileRepository
+          .createQueryBuilder('profile')
+          .where('profile.user = :userId', { userId })
+          .getOne();
         const s3ObjectUrl =
           this.configService.get('AWS_FILES_STORAGE_URL') + fileName;
 
-        userAdditionalInfo.videoLink = s3ObjectUrl;
+        caregiverInfo.videoLink = s3ObjectUrl;
 
-        await this.profileRepository.save(userAdditionalInfo);
+        await this.profileRepository.save(caregiverInfo);
       }
     } catch (error) {
       throw new HttpException(
