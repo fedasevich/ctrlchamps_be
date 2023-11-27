@@ -11,6 +11,7 @@ import {
   ParseFilePipe,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -26,17 +27,24 @@ import { Certificate } from 'src/common/entities/certificate.entity';
 import { WorkExperience } from 'src/common/entities/work-experience.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
+import { ProfileApiPath } from 'src/modules/profile/enum/profile.enum';
 import { ProfileService } from 'src/modules/profile/profile.service';
 
-import { MAX_FILE_SIZE } from './constants/complete-profile.constants';
+import {
+  CERTIFICATES_EXAMPLE,
+  MAX_FILE_SIZE,
+  WORK_EXPERIENCE_EXAMPLE,
+} from './constants/complete-profile.constants';
 import { UpdateProfileDto } from './dto/additional-info.dto';
+import { CertificateItem } from './dto/certificate.dto';
 import { CreateCertificatesDto } from './dto/create-certificate.dto';
 import { CreateWorkExperienceDto } from './dto/create-work-experience.dto';
 import { WorkExperienceDto } from './dto/work-experience.dto';
-import { ProfileApiPath } from './enum/profile.enum';
 
 @ApiTags('Complete profile')
 @Controller(ApiPath.CompleteProfile)
+@UseGuards(TokenGuard)
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
@@ -131,26 +139,8 @@ export class ProfileController {
   @ApiOperation({ summary: `Get caregiver's certificate(s)` })
   @ApiResponse({
     status: HttpStatus.OK,
-    schema: {
-      example: {
-        certificates: [
-          {
-            name: 'First Aid Training',
-            certificateId: 'CER12345',
-            link: 'https://certificateprovider.com/certificate/123',
-            dateIssued: '11/11/2020',
-            expirationDate: '11/11/2020',
-          },
-          {
-            name: 'Certificate for work with special kids',
-            certificateId: 'CER12345',
-            link: 'https://certificateprovider.com/certificate/123',
-            dateIssued: '11/11/2020',
-            expirationDate: '11/11/2020',
-          },
-        ],
-      },
-    },
+    isArray: true,
+    type: CertificateItem,
     description: 'User certificates retrieved successfully',
   })
   @ApiResponse({
@@ -220,24 +210,7 @@ export class ProfileController {
     status: HttpStatus.CREATED,
     description: 'Certificate(s) added successfully',
     schema: {
-      example: {
-        certificates: [
-          {
-            name: 'First Aid Training',
-            certificateId: 'CER12345',
-            link: 'https://certificateprovider.com/certificate/123',
-            dateIssued: '11/11/2020',
-            expirationDate: '11/11/2020',
-          },
-          {
-            name: 'Certificate for work with special kids',
-            certificateId: 'CER12345',
-            link: 'https://certificateprovider.com/certificate/123',
-            dateIssued: '11/11/2020',
-            expirationDate: '11/11/2020',
-          },
-        ],
-      },
+      example: CERTIFICATES_EXAMPLE,
     },
   })
   @ApiResponse({
@@ -260,40 +233,8 @@ export class ProfileController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Work experience added successfully',
-    isArray: true,
     schema: {
-      example: [
-        {
-          workplace: 'ABC Hospital',
-          qualifications: 'Clinic',
-          startDate: '2020-11-11',
-          endDate: '2021-11-11',
-          caregiverInfo: {
-            id: '07584ade-1bd4-4a6a-8413-e523cc176196',
-            services: null,
-            availability: null,
-            hourlyRate: null,
-            description: null,
-            videoLink: null,
-          },
-          id: '34248ace-627e-400c-9541-d31916b98433',
-        },
-        {
-          workplace: 'XYZ Clinic',
-          qualifications: 'Agency',
-          startDate: '2018-06-15',
-          endDate: '2020-01-20',
-          caregiverInfo: {
-            id: '07584ade-1bd4-4a6a-8413-e523cc176196',
-            services: null,
-            availability: null,
-            hourlyRate: null,
-            description: null,
-            videoLink: null,
-          },
-          id: '820f1d8e-4cb1-4ca2-aab1-f9681b7b7688',
-        },
-      ],
+      example: WORK_EXPERIENCE_EXAMPLE,
     },
   })
   @ApiResponse({

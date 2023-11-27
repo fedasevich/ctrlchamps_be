@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
@@ -16,6 +18,13 @@ import { ProfileService } from 'src/modules/profile/profile.service';
       CaregiverInfo,
       User,
     ]),
+    JwtModule.registerAsync({
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get('JWT_SECRET'),
+        signOptions: { expiresIn: configService.get('JWT_TOKEN_EXPIRE') },
+      }),
+      inject: [ConfigService],
+    }),
   ],
   providers: [ProfileService],
   controllers: [ProfileController],
