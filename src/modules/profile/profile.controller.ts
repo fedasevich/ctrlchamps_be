@@ -33,13 +33,14 @@ import { UpdateProfileDto } from './dto/additional-info.dto';
 import { CreateCertificatesDto } from './dto/create-certificate.dto';
 import { CreateWorkExperienceDto } from './dto/create-work-experience.dto';
 import { WorkExperienceDto } from './dto/work-experience.dto';
+import { ProfileApiPath } from './enum/profile.enum';
 
 @ApiTags('Complete profile')
 @Controller(ApiPath.CompleteProfile)
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
-  @Post(ApiPath.UploadFile)
+  @Post(ProfileApiPath.UploadFile)
   @ApiOperation({ summary: 'Upload a video for caregiver profile' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -83,7 +84,7 @@ export class ProfileController {
     await this.profileService.upload(file.originalname, file.buffer, userId);
   }
 
-  @Get(ApiPath.CaregiverProfile)
+  @Get(ProfileApiPath.CaregiverProfile)
   @ApiOperation({ summary: 'Get caregiver profile information' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -104,7 +105,7 @@ export class ProfileController {
     return this.profileService.getProfileInformation(userId);
   }
 
-  @Get(ApiPath.WorkExperience)
+  @Get(ProfileApiPath.WorkExperience)
   @ApiOperation({ summary: 'Get work experience(s) of a caregiver' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -126,7 +127,7 @@ export class ProfileController {
     return this.profileService.getWorkExperiences(userId);
   }
 
-  @Get(ApiPath.Certificates)
+  @Get(ProfileApiPath.Certificates)
   @ApiOperation({ summary: `Get caregiver's certificate(s)` })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -166,7 +167,7 @@ export class ProfileController {
     return this.profileService.getUserCertificates(userId);
   }
 
-  @Post(ApiPath.CaregiverProfile)
+  @Post(ProfileApiPath.CaregiverProfile)
   @ApiOperation({ summary: 'Create caregiver profile' })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
@@ -188,7 +189,7 @@ export class ProfileController {
     await this.profileService.createProfile(userId);
   }
 
-  @Patch(ApiPath.CaregiverProfile)
+  @Patch(ProfileApiPath.CaregiverProfile)
   @ApiOperation({ summary: 'Update caregiver profile' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -213,7 +214,7 @@ export class ProfileController {
     await this.profileService.updateProfile(userId, updateProfileDto);
   }
 
-  @Post(ApiPath.Certificates)
+  @Post(ProfileApiPath.Certificates)
   @ApiOperation({ summary: 'Add certificate(s)' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -254,7 +255,7 @@ export class ProfileController {
     return this.profileService.createCertificate(userId, createCertificateDto);
   }
 
-  @Post(ApiPath.WorkExperience)
+  @Post(ProfileApiPath.WorkExperience)
   @ApiOperation({ summary: 'Add work experience(s)' })
   @ApiResponse({
     status: HttpStatus.CREATED,

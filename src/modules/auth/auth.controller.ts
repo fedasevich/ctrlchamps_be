@@ -19,6 +19,7 @@ import { UserCreateDto } from './dto/user-create.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { UserOtpCodeDto } from './dto/user-otp-code.dto';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp-dto';
+import { AuthApiPath } from './enums/auth.api-path.enum';
 import { Token } from './types/token.type';
 
 @ApiTags('Authorization')
@@ -26,7 +27,7 @@ import { Token } from './types/token.type';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post(ApiPath.SignUp)
+  @Post(AuthApiPath.SignUp)
   @ApiOperation({ summary: 'User Sign up' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -50,7 +51,7 @@ export class AuthController {
     return this.authService.signUp(userDto);
   }
 
-  @Post(ApiPath.SignIn)
+  @Post(AuthApiPath.SignIn)
   @ApiOperation({ summary: 'Sign in user' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -89,7 +90,7 @@ export class AuthController {
     description: 'Internal server error',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Post(ApiPath.AccountCheck)
+  @Post(AuthApiPath.AccountCheck)
   async accountCheck(@Body() userDto: AccountCheckDto): Promise<void> {
     await this.authService.accountCheck(userDto);
   }
@@ -108,7 +109,7 @@ export class AuthController {
     description: 'Internal server error',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Post(ApiPath.ResetPassword)
+  @Post(AuthApiPath.ResetPassword)
   async resetPassword(@Body() userDto: ResetPasswordDto): Promise<void> {
     await this.authService.resetPassword(userDto.email, userDto.password);
   }
@@ -131,7 +132,7 @@ export class AuthController {
     description: 'Internal server error',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Post(ApiPath.VerifyAccount)
+  @Post(AuthApiPath.VerifyAccount)
   async verifyAccount(
     @Param('userId') userId: string,
     @Body() otpCodeDto: UserOtpCodeDto,
@@ -153,7 +154,7 @@ export class AuthController {
     description: 'Internal server error',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Post(ApiPath.RequestNewVerificationCode)
+  @Post(AuthApiPath.RequestNewVerificationCode)
   async requestNewVerificationCode(
     @Param('userId') userId: string,
   ): Promise<void> {
@@ -174,7 +175,7 @@ export class AuthController {
     description: 'Internal server error',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Post(ApiPath.RequestResetOtp)
+  @Post(AuthApiPath.RequestResetOtp)
   async requestResetOtp(@Body() resetOtpDto: ResetOtpDto): Promise<void> {
     await this.authService.requestResetOtp(resetOtpDto.email);
   }
@@ -193,7 +194,7 @@ export class AuthController {
     description: 'Internal server error',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Post(ApiPath.VerifyResetOtp)
+  @Post(AuthApiPath.VerifyResetOtp)
   async verifyResetOtp(
     @Body() verifyResetOtpDto: VerifyResetOtpDto,
   ): Promise<void> {
