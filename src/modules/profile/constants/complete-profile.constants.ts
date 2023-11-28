@@ -21,8 +21,8 @@ export const CERTIFICATES_EXAMPLE = [
     name: 'Help for children with AIDS',
     certificateId: 'CER12345',
     link: 'https://certificateprovider.com/certificate/123',
-    dateIssued: '11/11/2020',
-    expirationDate: '11/11/2024',
+    dateIssued: '2020-11-01',
+    expirationDate: '2024-11-11',
     caregiverInfo: {
       id: '134e7fac-3cdc-4a24-85c9-5980bacbb497',
       services: null,

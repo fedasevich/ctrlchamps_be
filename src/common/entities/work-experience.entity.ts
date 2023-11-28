@@ -42,7 +42,7 @@ export class WorkExperience {
     description: 'End date of work experience',
     example: '2021-11-20',
   })
-  @Column({ type: 'date' })
+  @Column({ nullable: true, type: 'date' })
   endDate: Date;
 
   @ApiProperty({

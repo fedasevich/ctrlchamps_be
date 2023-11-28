@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsNotEmpty, IsString, IsDateString, IsEnum } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsNotEmpty, IsString, IsEnum } from 'class-validator';
 import { TypeOfWork } from 'src/common/enums/work-type.enum';
 
 export class WorkExperienceDto {
@@ -18,7 +19,7 @@ export class WorkExperienceDto {
   })
   @IsString()
   @IsNotEmpty()
-  @IsEnum(TypeOfWork)
+  @IsEnum(TypeOfWork, { each: true })
   qualifications: TypeOfWork[];
 
   @ApiProperty({
@@ -26,13 +27,13 @@ export class WorkExperienceDto {
     example: '2020-11-11',
   })
   @IsNotEmpty()
-  @IsDateString()
-  startDate: string;
+  @Transform(({ value }) => new Date(value))
+  startDate: Date;
 
   @ApiProperty({
     description: 'End date of work experience',
     example: '2021-11-11',
   })
-  @IsDateString()
-  endDate: string;
+  @Transform(({ value }) => (value ? new Date(value) : null))
+  endDate: Date | null;
 }

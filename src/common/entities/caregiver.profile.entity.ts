@@ -18,6 +18,7 @@ import { WorkExperience } from './work-experience.entity';
 
 interface TimeSlot {
   day: PreferredDay;
+  timeZone: string;
   startTime: string;
   endTime: string;
 }
@@ -66,11 +67,13 @@ export class CaregiverInfo {
     example: [
       {
         day: 'Monday',
+        timeZone: 'UTC-5',
         startTime: '09:00',
         endTime: '12:00',
       },
       {
         day: 'Tuesday',
+        timeZone: 'UTC-6',
         startTime: '14:00',
         endTime: '18:00',
       },

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CertificateItem {
@@ -29,16 +30,16 @@ export class CertificateItem {
 
   @ApiProperty({
     description: 'Date the certificate was issued',
-    example: '11/11/2020',
+    example: '2020-11-11',
   })
   @IsNotEmpty()
-  @IsString()
-  dateIssued: string;
+  @Transform(({ value }) => new Date(value))
+  dateIssued: Date;
 
   @ApiProperty({
     description: 'Expiration date of the certificate',
-    example: '11/11/2020',
+    example: '2021-11-11',
   })
-  @IsString()
-  expirationDate: string;
+  @Transform(({ value }) => (value ? new Date(value) : null))
+  expirationDate: Date | null;
 }
