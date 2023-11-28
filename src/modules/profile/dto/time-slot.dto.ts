@@ -9,11 +9,6 @@ export class TimeSlotDto {
   @IsString()
   day: PreferredDay;
 
-  @IsNotEmpty()
-  @IsString()
-  @ApiProperty({ description: `Caregiver's time zone`, example: 'UTC-3' })
-  timeZone: string;
-
   @ApiProperty({ description: 'Start time', example: '09:00' })
   @IsNotEmpty()
   @IsString()

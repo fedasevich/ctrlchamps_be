@@ -18,7 +18,6 @@ import { WorkExperience } from './work-experience.entity';
 
 interface TimeSlot {
   day: PreferredDay;
-  timeZone: string;
   startTime: string;
   endTime: string;
 }
@@ -67,13 +66,11 @@ export class CaregiverInfo {
     example: [
       {
         day: 'Monday',
-        timeZone: 'UTC-5',
         startTime: '09:00',
         endTime: '12:00',
       },
       {
         day: 'Tuesday',
-        timeZone: 'UTC-6',
         startTime: '14:00',
         endTime: '18:00',
       },
@@ -81,6 +78,13 @@ export class CaregiverInfo {
   })
   @Column('json', { nullable: true })
   availability: TimeSlot[];
+
+  @ApiProperty({
+    description: `Caregiver's timezone`,
+    example: 'UTC-3',
+  })
+  @Column({ nullable: true })
+  timeZone: string;
 
   @ApiProperty({
     description: 'Hourly rate for the user',
