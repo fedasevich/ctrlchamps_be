@@ -33,17 +33,17 @@ export class WorkExperience {
 
   @ApiProperty({
     description: 'Start date of work experience',
-    example: '11/11/2020',
+    example: '2020-11-20',
   })
-  @Column()
-  startDate: string;
+  @Column({ type: 'date' })
+  startDate: Date;
 
   @ApiProperty({
     description: 'End date of work experience',
-    example: '11/11/2020',
+    example: '2021-11-20',
   })
-  @Column()
-  endDate: string;
+  @Column({ type: 'date' })
+  endDate: Date;
 
   @ApiProperty({
     description: "Link to the user caregiver's information",

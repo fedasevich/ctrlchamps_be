@@ -35,17 +35,17 @@ export class Certificate {
 
   @ApiProperty({
     description: 'Date the certificate was issued',
-    example: '11/11/2020',
+    example: '2020-11-20',
   })
-  @Column()
-  dateIssued: string;
+  @Column({ type: 'date' })
+  dateIssued: Date;
 
   @ApiProperty({
     description: 'Expiration date of the certificate',
-    example: '11/11/2020',
+    example: '2021-11-20',
   })
-  @Column({ nullable: true })
-  expirationDate: string;
+  @Column({ nullable: true, type: 'date' })
+  expirationDate: Date;
 
   @ApiProperty({
     description: "Link to the caregiver's information",

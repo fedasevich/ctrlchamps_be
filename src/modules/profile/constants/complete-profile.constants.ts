@@ -5,8 +5,8 @@ export const CERTIFICATES_EXAMPLE = [
     name: 'Suicide prevention line masterclass',
     certificateId: 'CER12345',
     link: 'https://certificateprovider.com/certificate/123',
-    dateIssued: '11/11/2020',
-    expirationDate: '11/11/2024',
+    dateIssued: '2020-11-01',
+    expirationDate: '2021-11-20',
     caregiverInfo: {
       id: '134e7fac-3cdc-4a24-85c9-5980bacbb497',
       services: null,
@@ -39,8 +39,8 @@ export const WORK_EXPERIENCE_EXAMPLE = [
   {
     workplace: 'ABC Hospital',
     qualifications: 'Clinic',
-    startDate: '2020-11-11',
-    endDate: '2021-11-11',
+    startDate: '2020-11-01',
+    endDate: '2021-11-20',
     caregiverInfo: {
       id: '134e7fac-3cdc-4a24-85c9-5980bacbb497',
       services: null,
