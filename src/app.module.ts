@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import 'dotenv/config';
 
 import { Activity } from 'src/common/entities/activity.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
@@ -21,11 +22,14 @@ import { SeekerTaskModule } from 'src/modules/seeker-task/seeker-task.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CaregiverInfo } from './common/entities/caregiver.profile.entity';
+import { Certificate } from './common/entities/certificate.entity';
 import { User } from './common/entities/user.entity';
+import { WorkExperience } from './common/entities/work-experience.entity';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
-
-import 'dotenv/config';
+import { ProfileModule } from './modules/profile/profile.module';
+import { UserModule } from './modules/users/user.module';
 
 @Module({
   imports: [
@@ -43,6 +47,9 @@ import 'dotenv/config';
         database: configService.get<string>('DATABASE_NAME'),
         entities: [
           User,
+          CaregiverInfo,
+          Certificate,
+          WorkExperience,
           Activity,
           Appointment,
           Capability,
@@ -57,6 +64,7 @@ import 'dotenv/config';
       inject: [ConfigService],
     }),
     AuthModule,
+    UserModule,
     EmailModule,
     AppointmentModule,
     SeekerTaskModule,
@@ -66,6 +74,7 @@ import 'dotenv/config';
     SeekerCapabilityModule,
     DiagnosisModule,
     SeekerDiagnosisModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],
