@@ -4,7 +4,9 @@ import { JwtService } from '@nestjs/jwt';
 
 import { compare, hash } from 'bcrypt';
 import { ErrorMessage } from 'common/enums/error-message.enum';
+import { EmailErrorMessage } from 'modules/email/enums/email-error-message.enum';
 import { EmailService } from 'modules/email/services/email.service';
+import { UserRole } from 'modules/users/enums/user-role.enum';
 import { UserService } from 'modules/users/user.service';
 
 import { AccountCheckDto } from './dto/account-check.dto';
@@ -21,6 +23,22 @@ export class AuthService {
 
   private readonly otpCodeTemplateId = this.configService.get<string>(
     'SENDGRID_OTP_TEMPLATE_ID',
+  );
+
+  private readonly caregiverVerifiedTemplateId = this.configService.get<string>(
+    'SENDGRID_CAREGIVER_TEMPLATE_ID',
+  );
+
+  private readonly seekerVerifiedTemplateId = this.configService.get<string>(
+    'SENDGRID_SEEKER_TEMPLATE_ID',
+  );
+
+  private readonly caregiverRedirectLink = this.configService.get<string>(
+    'CAREGIVER_REDIRECT_LINK',
+  );
+
+  private readonly seekerRedirectLink = this.configService.get<string>(
+    'SEEKER_REDIRECT_LINK',
   );
 
   constructor(
@@ -158,6 +176,7 @@ export class AuthService {
         isVerified: true,
         otpCode: null,
       });
+      await this.sendVerifiedEmail(user.email, user.role);
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -184,6 +203,28 @@ export class AuthService {
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedSendVerificationCode,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  private async sendVerifiedEmail(email: string, role: string): Promise<void> {
+    const link =
+      role === UserRole.Caregiver
+        ? this.caregiverRedirectLink
+        : this.seekerRedirectLink;
+    try {
+      await this.emailService.sendEmail({
+        to: email,
+        templateId:
+          role === UserRole.Caregiver
+            ? this.caregiverVerifiedTemplateId
+            : this.seekerVerifiedTemplateId,
+        dynamicTemplateData: { link },
+      });
+    } catch (error) {
+      throw new HttpException(
+        EmailErrorMessage.FailedSendEmail,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
