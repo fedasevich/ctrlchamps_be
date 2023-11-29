@@ -126,4 +126,11 @@ export class User {
   })
   @Column({ default: null, nullable: true })
   otpCode?: string | null;
+
+  @ApiProperty({
+    description: 'User balance',
+    example: '100',
+  })
+  @Column({ default: 100, type: 'decimal' })
+  balance: number;
 }
