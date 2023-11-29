@@ -10,10 +10,10 @@
     "baseUrl": "./",
     "outDir": "./dist",
     "paths": {
-      "src/*": ["src/*"], 
+      "src/*": ["src/*"],
       "common/*": ["src/common/*"],
       "modules/*": ["src/modules/*"],
-      "migrations/*": ["src/migrations/*"],
+      "migrations/*": ["src/migrations/*"]
     },
     "removeComments": true,
     "resolveJsonModule": true,

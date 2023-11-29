@@ -2,7 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { Country } from 'modules/users/enums/country.enum';
 import { UserRole } from 'modules/users/enums/user-role.enum';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
 
 @Entity()
 export class User {
@@ -126,4 +127,7 @@ export class User {
   })
   @Column({ default: null, nullable: true })
   otpCode?: string | null;
+
+  @OneToOne(() => CaregiverInfo, (caregiverInfo) => caregiverInfo.user)
+  caregiverInfo: CaregiverInfo;
 }

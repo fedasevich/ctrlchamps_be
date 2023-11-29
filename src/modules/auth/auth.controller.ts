@@ -19,7 +19,7 @@ import { UserCreateDto } from './dto/user-create.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { UserOtpCodeDto } from './dto/user-otp-code.dto';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp-dto';
-import { AuthApiPath } from './enums/auth-api-path.enum';
+import { AuthApiPath } from './enums/auth.api-path.enum';
 import { Token } from './types/token.type';
 
 @ApiTags('Authorization')
