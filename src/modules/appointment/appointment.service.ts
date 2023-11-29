@@ -3,11 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
+import { Appointment as AppointmentType } from 'src/modules/appointment/types/appointment.type';
 import { SeekerActivityService } from 'src/modules/seeker-activity/seeker-activity.service';
 import { SeekerCapabilityService } from 'src/modules/seeker-capability/seeker-capability.service';
 import { SeekerDiagnosisService } from 'src/modules/seeker-diagnosis/seeker-diagnosis.service';
 import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 @Injectable()
 export class AppointmentService {
@@ -20,56 +21,84 @@ export class AppointmentService {
     private readonly seekerDiagnosisService: SeekerDiagnosisService,
   ) {}
 
-  async create(createAppointment: CreateAppointmentDto): Promise<void> {
-    const {
-      seekerTasks,
-      seekerActivities,
-      seekerCapabilities,
-      seekerDiagnoses,
-      ...appointment
-    } = createAppointment;
+  async create(
+    createAppointment: CreateAppointmentDto,
+    userId: string,
+  ): Promise<void> {
+    await this.appointmentRepository.manager.transaction(
+      async (transactionalEntityManager) => {
+        const {
+          seekerTasks,
+          seekerActivities,
+          seekerCapabilities,
+          seekerDiagnoses,
+          ...appointment
+        } = createAppointment;
 
-    const appointmentId = await this.registerNewAppointment(appointment);
+        const appointmentId = await this.registerNewAppointment(
+          transactionalEntityManager,
+          appointment,
+          userId,
+        );
 
-    if (seekerTasks) {
-      await Promise.all(
-        seekerTasks.map(async (seekerTask) =>
-          this.seekerTaskService.create(appointmentId, seekerTask),
-        ),
-      );
-    }
+        if (seekerTasks) {
+          await Promise.all(
+            seekerTasks.map((taskName) =>
+              this.seekerTaskService.createWithTransaction(
+                transactionalEntityManager,
+                appointmentId,
+                taskName,
+              ),
+            ),
+          );
+        }
 
-    await Promise.all(
-      seekerActivities.map(async (seekerActivity) =>
-        this.seekerActivityService.create(
-          appointmentId,
-          seekerActivity.id,
-          seekerActivity.answer,
-        ),
-      ),
-    );
+        await Promise.all(
+          seekerActivities.map((activity) =>
+            this.seekerActivityService.createWithTransaction(
+              transactionalEntityManager,
+              appointmentId,
+              activity.id,
+              activity.answer,
+            ),
+          ),
+        );
 
-    await Promise.all(
-      seekerCapabilities.map(async (seekerCapability) =>
-        this.seekerCapabilityService.create(appointmentId, seekerCapability),
-      ),
-    );
+        await Promise.all(
+          seekerCapabilities.map((capabilityId) =>
+            this.seekerCapabilityService.createWithTransaction(
+              transactionalEntityManager,
+              appointmentId,
+              capabilityId,
+            ),
+          ),
+        );
 
-    await Promise.all(
-      seekerDiagnoses.map(async (seekerDiagnosis) =>
-        this.seekerDiagnosisService.create(appointmentId, seekerDiagnosis),
-      ),
+        await Promise.all(
+          seekerDiagnoses.map((diagnosisId) =>
+            this.seekerDiagnosisService.createWithTransaction(
+              transactionalEntityManager,
+              appointmentId,
+              diagnosisId,
+            ),
+          ),
+        );
+      },
     );
   }
 
   async registerNewAppointment(
-    appointment: Partial<Appointment>,
+    transactionalEntityManager: EntityManager,
+    appointment: AppointmentType,
+    userId: string,
   ): Promise<string> {
-    const createdAppointment = await this.appointmentRepository
+    const { weekdays, ...rest } = appointment;
+
+    const createdAppointment = await transactionalEntityManager
       .createQueryBuilder()
       .insert()
       .into(Appointment)
-      .values(appointment)
+      .values({ ...rest, weekday: JSON.stringify(weekdays), userId })
       .execute();
 
     return createdAppointment.generatedMaps[0].id as string;

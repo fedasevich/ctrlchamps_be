@@ -62,7 +62,7 @@ export class Appointment {
     example: 'Details about the appointment',
     description: 'Additional details of the appointment',
   })
-  @Column()
+  @Column({ nullable: true })
   details: string;
 
   @ApiProperty({
@@ -97,21 +97,21 @@ export class Appointment {
   capabilityNote: string;
 
   @ApiProperty({
-    example: '2023-01-01',
+    example: '2023-11-28T15:30:00.000Z',
     description: 'Start date of the appointment',
   })
   @Column('timestamp')
   startDate: Date;
 
   @ApiProperty({
-    example: '2023-01-07',
+    example: '2023-11-28T15:30:00.000Z',
     description: 'End date of the appointment',
   })
   @Column('timestamp')
   endDate: Date;
 
   @ApiProperty({
-    example: 'Timezone',
+    example: 'Europe/Kiev',
     description: 'Timezone of the seeker',
   })
   @Column()

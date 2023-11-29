@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import 'dotenv/config';
@@ -15,6 +15,7 @@ import { ActivityModule } from 'src/modules/activity/activity.module';
 import { AppointmentModule } from 'src/modules/appointment/appointment.module';
 import { CapabilityModule } from 'src/modules/capability/capability.module';
 import { DiagnosisModule } from 'src/modules/diagnosis/diagnosis.module';
+import { SeedingService } from 'src/modules/seed/seed.service';
 import { SeekerActivityModule } from 'src/modules/seeker-activity/seeker-activity.module';
 import { SeekerCapabilityModule } from 'src/modules/seeker-capability/seeker-capability.module';
 import { SeekerDiagnosisModule } from 'src/modules/seeker-diagnosis/seeker-diagnosis.module';
@@ -77,6 +78,12 @@ import { UserModule } from './modules/users/user.module';
     ProfileModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, SeedingService],
 })
-export class AppModule {}
+export class AppModule implements OnApplicationBootstrap {
+  constructor(private readonly seedingService: SeedingService) {}
+
+  async onApplicationBootstrap(): Promise<void> {
+    await this.seedingService.seed();
+  }
+}

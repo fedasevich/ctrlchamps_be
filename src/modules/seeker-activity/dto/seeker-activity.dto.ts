@@ -1,7 +1,7 @@
 import { IsEnum, IsUUID } from 'class-validator';
 import { ActivityAnswer } from 'src/modules/appointment/enums/activity-answer.enum';
 
-export class SeekerActivity {
+export class SeekerActivityDto {
   @IsUUID()
   id: string;
 

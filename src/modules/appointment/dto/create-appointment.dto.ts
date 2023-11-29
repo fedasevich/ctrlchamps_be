@@ -15,17 +15,9 @@ import { ActivityAnswer } from 'src/modules/appointment/enums/activity-answer.en
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
 import { Weekday } from 'src/modules/appointment/enums/weekday.enum';
-import { SeekerActivity } from 'src/modules/seeker-activity/dto/seeker-activity.dto';
+import { SeekerActivityDto } from 'src/modules/seeker-activity/dto/seeker-activity.dto';
 
 export class CreateAppointmentDto {
-  @ApiProperty({
-    example: '1e3a4c60-94aa-45de-aad0-7b4a49017b1f',
-    description: 'User ID associated with the appointment',
-  })
-  @IsNotEmpty()
-  @IsUUID()
-  userId: string;
-
   @ApiProperty({
     example: '1e3a4c60-94aa-45de-aad0-7b4a49017b1f',
     description: 'Caregiver Info ID associated with the appointment',
@@ -120,7 +112,7 @@ export class CreateAppointmentDto {
   endDate: Date;
 
   @ApiProperty({
-    example: 'Timezone',
+    example: 'Europe/Kiev',
     description: 'Timezone of the seeker',
   })
   @IsString()
@@ -134,7 +126,7 @@ export class CreateAppointmentDto {
   @IsOptional()
   @IsArray()
   @IsEnum(Weekday, { each: true })
-  weekDays: string[];
+  weekdays: string[];
 
   @ApiProperty({
     example: ['Sort mails', 'Clean the house'],
@@ -169,10 +161,10 @@ export class CreateAppointmentDto {
       },
     ],
     description: 'Seeker activities',
-    type: [SeekerActivity],
+    type: [SeekerActivityDto],
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SeekerActivity)
-  seekerActivities: SeekerActivity[];
+  @Type(() => SeekerActivityDto)
+  seekerActivities: SeekerActivityDto[];
 }

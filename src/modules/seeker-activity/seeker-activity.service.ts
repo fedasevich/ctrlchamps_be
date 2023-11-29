@@ -1,24 +1,19 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 
 import { SeekerActivity } from 'src/common/entities/seeker-activity.entity';
 import { ActivityAnswer } from 'src/modules/seeker-activity/enums/activity-answer.enum';
-import { Repository } from 'typeorm';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class SeekerActivityService {
-  constructor(
-    @InjectRepository(SeekerActivity)
-    private readonly seekerActivityRepository: Repository<SeekerActivity>,
-  ) {}
-
-  async create(
+  async createWithTransaction(
+    transactionalEntityManager: EntityManager,
     appointmentId: string,
     activityId: string,
     answer: ActivityAnswer,
   ): Promise<void> {
     try {
-      await this.seekerActivityRepository
+      await transactionalEntityManager
         .createQueryBuilder()
         .insert()
         .into(SeekerActivity)

@@ -1,19 +1,17 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 
 import { SeekerDiagnosis } from 'src/common/entities/seeker-diagnosis.entity';
-import { Repository } from 'typeorm';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class SeekerDiagnosisService {
-  constructor(
-    @InjectRepository(SeekerDiagnosis)
-    private readonly seekerDiagnosisRepository: Repository<SeekerDiagnosis>,
-  ) {}
-
-  async create(appointmentId: string, diagnosisId: string): Promise<void> {
+  async createWithTransaction(
+    transactionalEntityManager: EntityManager,
+    appointmentId: string,
+    diagnosisId: string,
+  ): Promise<void> {
     try {
-      await this.seekerDiagnosisRepository
+      await transactionalEntityManager
         .createQueryBuilder()
         .insert()
         .into(SeekerDiagnosis)
