@@ -11,13 +11,21 @@ import {
   IsNotEmpty,
   ValidateNested,
 } from 'class-validator';
-import { SeekerActivity } from 'src/modules/appointment/dto/seeker-activity.dto';
 import { ActivityAnswer } from 'src/modules/appointment/enums/activity-answer.enum';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
 import { Weekday } from 'src/modules/appointment/enums/weekday.enum';
+import { SeekerActivity } from 'src/modules/seeker-activity/dto/seeker-activity.dto';
 
 export class CreateAppointmentDto {
+  @ApiProperty({
+    example: '1e3a4c60-94aa-45de-aad0-7b4a49017b1f',
+    description: 'User ID associated with the appointment',
+  })
+  @IsNotEmpty()
+  @IsUUID()
+  userId: string;
+
   @ApiProperty({
     example: '1e3a4c60-94aa-45de-aad0-7b4a49017b1f',
     description: 'Caregiver Info ID associated with the appointment',
@@ -94,7 +102,7 @@ export class CreateAppointmentDto {
   capabilityNote: string;
 
   @ApiProperty({
-    example: '2023-01-01',
+    example: '2023-11-28T15:30:00.000Z',
     description: 'Start date of the appointment',
   })
   @IsNotEmpty()
@@ -103,7 +111,7 @@ export class CreateAppointmentDto {
   startDate: Date;
 
   @ApiProperty({
-    example: '2023-01-07',
+    example: '2023-11-28T15:30:00.000Z',
     description: 'End date of the appointment',
   })
   @IsNotEmpty()
@@ -120,8 +128,8 @@ export class CreateAppointmentDto {
   timezone: string;
 
   @ApiProperty({
-    example: 'Monday, Wednesday',
-    description: 'Week days of the appointment',
+    example: ['Monday', 'Wednesday'],
+    description: 'Weekdays of the appointment',
   })
   @IsOptional()
   @IsArray()
@@ -129,15 +137,16 @@ export class CreateAppointmentDto {
   weekDays: string[];
 
   @ApiProperty({
-    example: 'Monday, Wednesday',
+    example: ['Sort mails', 'Clean the house'],
     description: 'Week days of the appointment',
   })
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  seekerTasks: string[];
+  seekerTasks?: string[];
 
   @ApiProperty({
-    example: 'Сlimbing stairs',
+    example: ['1e3a4c60-94aa-45de-aad0-7b4a49017b1f'],
     description: 'Capabilities of seeker',
   })
   @IsArray()
@@ -145,7 +154,7 @@ export class CreateAppointmentDto {
   seekerCapabilities: string[];
 
   @ApiProperty({
-    example: 'Cancer',
+    example: ['1e3a4c60-94aa-45de-aad0-7b4a49017b1f'],
     description: 'Seeker diagnoses',
   })
   @IsArray()
@@ -153,7 +162,12 @@ export class CreateAppointmentDto {
   seekerDiagnoses: string[];
 
   @ApiProperty({
-    example: [{ id: 'some-uuid', answer: ActivityAnswer.AccomplishesAlone }],
+    example: [
+      {
+        id: '1e3a4c60-94aa-45de-aad0-7b4a49017b1f',
+        answer: ActivityAnswer.AccomplishesAlone,
+      },
+    ],
     description: 'Seeker activities',
     type: [SeekerActivity],
   })

@@ -8,5 +8,6 @@ import { SeekerTaskService } from './seeker-task.service';
 @Module({
   imports: [TypeOrmModule.forFeature([SeekerTask])],
   providers: [SeekerTaskService],
+  exports: [SeekerTaskService],
 })
 export class SeekerTaskModule {}

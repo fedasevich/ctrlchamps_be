@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { CreateCapabilityDto } from './dto/create-capability.dto';
 import { UpdateCapabilityDto } from './dto/update-capability.dto';
 

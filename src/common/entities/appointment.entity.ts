@@ -122,7 +122,7 @@ export class Appointment {
     description: 'Weekdays of the appointment',
   })
   @Column({ nullable: true })
-  weekdays: string;
+  weekday: string;
 
   @OneToMany(
     () => SeekerDiagnosis,
