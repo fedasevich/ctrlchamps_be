@@ -1,14 +1,18 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import 'dotenv/config';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CaregiverInfo } from './common/entities/caregiver.profile.entity';
+import { Certificate } from './common/entities/certificate.entity';
 import { User } from './common/entities/user.entity';
+import { WorkExperience } from './common/entities/work-experience.entity';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
-
-import 'dotenv/config';
+import { ProfileModule } from './modules/profile/profile.module';
+import { UserModule } from './modules/users/user.module';
 
 @Module({
   imports: [
@@ -24,13 +28,15 @@ import 'dotenv/config';
         username: configService.get<string>('DATABASE_USERNAME'),
         password: configService.get<string>('DATABASE_PASSWORD'),
         database: configService.get<string>('DATABASE_NAME'),
-        entities: [User],
+        entities: [User, CaregiverInfo, Certificate, WorkExperience],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
     AuthModule,
+    UserModule,
     EmailModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

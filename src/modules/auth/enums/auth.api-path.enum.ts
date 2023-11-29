@@ -1,4 +1,5 @@
 export enum AuthApiPath {
+  Auth = 'auth',
   SignUp = '/sign-up',
   SignIn = '/sign-in',
   AccountCheck = '/account-check',
