@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
+import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import { Appointment as AppointmentType } from 'src/modules/appointment/types/appointment.type';
 import { SeekerActivityService } from 'src/modules/seeker-activity/seeker-activity.service';
@@ -25,66 +26,73 @@ export class AppointmentService {
     createAppointment: CreateAppointmentDto,
     userId: string,
   ): Promise<void> {
-    await this.appointmentRepository.manager.transaction(
-      async (transactionalEntityManager) => {
-        const {
-          seekerTasks,
-          seekerActivities,
-          seekerCapabilities,
-          seekerDiagnoses,
-          ...appointment
-        } = createAppointment;
+    try {
+      await this.appointmentRepository.manager.transaction(
+        async (transactionalEntityManager) => {
+          const {
+            seekerTasks,
+            seekerActivities,
+            seekerCapabilities,
+            seekerDiagnoses,
+            ...appointment
+          } = createAppointment;
 
-        const appointmentId = await this.registerNewAppointment(
-          transactionalEntityManager,
-          appointment,
-          userId,
-        );
+          const appointmentId = await this.registerNewAppointment(
+            transactionalEntityManager,
+            appointment,
+            userId,
+          );
 
-        if (seekerTasks) {
+          if (seekerTasks) {
+            await Promise.all(
+              seekerTasks.map((taskName) =>
+                this.seekerTaskService.createWithTransaction(
+                  transactionalEntityManager,
+                  appointmentId,
+                  taskName,
+                ),
+              ),
+            );
+          }
+
           await Promise.all(
-            seekerTasks.map((taskName) =>
-              this.seekerTaskService.createWithTransaction(
+            seekerActivities.map((activity) =>
+              this.seekerActivityService.createWithTransaction(
                 transactionalEntityManager,
                 appointmentId,
-                taskName,
+                activity.id,
+                activity.answer,
               ),
             ),
           );
-        }
 
-        await Promise.all(
-          seekerActivities.map((activity) =>
-            this.seekerActivityService.createWithTransaction(
-              transactionalEntityManager,
-              appointmentId,
-              activity.id,
-              activity.answer,
+          await Promise.all(
+            seekerCapabilities.map((capabilityId) =>
+              this.seekerCapabilityService.createWithTransaction(
+                transactionalEntityManager,
+                appointmentId,
+                capabilityId,
+              ),
             ),
-          ),
-        );
+          );
 
-        await Promise.all(
-          seekerCapabilities.map((capabilityId) =>
-            this.seekerCapabilityService.createWithTransaction(
-              transactionalEntityManager,
-              appointmentId,
-              capabilityId,
+          await Promise.all(
+            seekerDiagnoses.map((diagnosisId) =>
+              this.seekerDiagnosisService.createWithTransaction(
+                transactionalEntityManager,
+                appointmentId,
+                diagnosisId,
+              ),
             ),
-          ),
-        );
-
-        await Promise.all(
-          seekerDiagnoses.map((diagnosisId) =>
-            this.seekerDiagnosisService.createWithTransaction(
-              transactionalEntityManager,
-              appointmentId,
-              diagnosisId,
-            ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedCreateAppointment,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async registerNewAppointment(

@@ -1,26 +1,25 @@
-import { Injectable } from '@nestjs/common';
-import { CreateDiagnosisDto } from './dto/create-diagnosis.dto';
-import { UpdateDiagnosisDto } from './dto/update-diagnosis.dto';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+
+import { Diagnosis } from 'src/common/entities/diagnosis.entity';
+import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class DiagnosisService {
-  create(createDiagnosisDto: CreateDiagnosisDto) {
-    return 'This action adds a new diagnosis';
-  }
+  constructor(
+    @InjectRepository(Diagnosis)
+    private readonly diagnosisRepository: Repository<Diagnosis>,
+  ) {}
 
-  findAll() {
-    return `This action returns all diagnosis`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} diagnosis`;
-  }
-
-  update(id: number, updateDiagnosisDto: UpdateDiagnosisDto) {
-    return `This action updates a #${id} diagnosis`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} diagnosis`;
+  findAll(): Promise<Diagnosis[]> {
+    try {
+      return this.diagnosisRepository.createQueryBuilder().getMany();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedSendDiagnoses,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

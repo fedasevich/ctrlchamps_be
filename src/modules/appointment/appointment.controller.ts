@@ -7,14 +7,17 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import { ApiPath } from 'src/common/enums/api-path.enum';
 import { RequestWithUser } from 'src/common/types/request-with-user.type';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
+import { AppointmentApiPath } from 'src/modules/appointment/enums/appointment.api-path.enum';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 
-@Controller('appointment')
+@ApiTags('Appointment')
+@Controller(ApiPath.Appointment)
 @UseGuards(TokenGuard)
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
@@ -24,20 +27,12 @@ export class AppointmentController {
     status: HttpStatus.NO_CONTENT,
     description: 'Appointment was created successfully',
   })
-  // @ApiResponse({
-  //   status: HttpStatus.BAD_REQUEST,
-  //   description: ErrorMessage.OtpCodeIncorrect,
-  // })
-  // @ApiResponse({
-  //   status: HttpStatus.BAD_REQUEST,
-  //   description: ErrorMessage.UserAlreadyVerified,
-  // })
   @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: 'Internal server error',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Post('')
+  @Post(AppointmentApiPath.Root)
   async create(
     @Req() req: RequestWithUser,
     @Body() createAppointmentDto: CreateAppointmentDto,

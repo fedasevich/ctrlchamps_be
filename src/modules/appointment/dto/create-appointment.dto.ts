@@ -53,10 +53,11 @@ export class CreateAppointmentDto {
   @ApiProperty({
     example: 'Details about the appointment',
     description: 'Additional details of the appointment',
+    required: false,
   })
   @IsString()
   @IsOptional()
-  details: string;
+  details?: string;
 
   @ApiProperty({
     example: 'Location Address',
@@ -73,7 +74,7 @@ export class CreateAppointmentDto {
   })
   @IsOptional()
   @IsString()
-  activityNote: string;
+  activityNote?: string;
 
   @ApiProperty({
     example: 'Diagnosis notes',
@@ -82,7 +83,7 @@ export class CreateAppointmentDto {
   })
   @IsOptional()
   @IsString()
-  diagnosisNote: string;
+  diagnosisNote?: string;
 
   @ApiProperty({
     example: 'Capability notes',
@@ -91,7 +92,7 @@ export class CreateAppointmentDto {
   })
   @IsOptional()
   @IsString()
-  capabilityNote: string;
+  capabilityNote?: string;
 
   @ApiProperty({
     example: '2023-11-28T15:30:00.000Z',
@@ -122,11 +123,12 @@ export class CreateAppointmentDto {
   @ApiProperty({
     example: ['Monday', 'Wednesday'],
     description: 'Weekdays of the appointment',
+    required: false,
   })
   @IsOptional()
   @IsArray()
   @IsEnum(Weekday, { each: true })
-  weekdays: string[];
+  weekdays?: string[];
 
   @ApiProperty({
     example: ['Sort mails', 'Clean the house'],

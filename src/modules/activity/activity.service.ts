@@ -1,26 +1,25 @@
-import { Injectable } from '@nestjs/common';
-import { CreateActivityDto } from './dto/create-activity.dto';
-import { UpdateActivityDto } from './dto/update-activity.dto';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+
+import { Activity } from 'src/common/entities/activity.entity';
+import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class ActivityService {
-  create(createActivityDto: CreateActivityDto) {
-    return 'This action adds a new activity';
-  }
+  constructor(
+    @InjectRepository(Activity)
+    private readonly activityRepository: Repository<Activity>,
+  ) {}
 
-  findAll() {
-    return `This action returns all activity`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} activity`;
-  }
-
-  update(id: number, updateActivityDto: UpdateActivityDto) {
-    return `This action updates a #${id} activity`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} activity`;
+  findAll(): Promise<Activity[]> {
+    try {
+      return this.activityRepository.createQueryBuilder().getMany();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedSendActivities,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

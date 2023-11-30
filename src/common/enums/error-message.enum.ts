@@ -16,4 +16,8 @@ export enum ErrorMessage {
   CertificatesNotFound = 'There is no certificates found',
   WorkExpNotFound = 'Work experiences not found',
   BacketNotFound = "Couldn't access AWS S3 bucket, check your credentials",
+  FailedSendActivities = 'Failed to send activities',
+  FailedSendCapabilities = 'Failed to send capabilities',
+  FailedSendDiagnoses = 'Failed to send diagnoses',
+  FailedCreateAppointment = 'Failed to create appointment',
 }
