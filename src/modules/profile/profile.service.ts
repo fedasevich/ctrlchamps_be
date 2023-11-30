@@ -157,6 +157,7 @@ export class ProfileService {
   ): Promise<Certificate[]> {
     const caregiverInfo = await this.profileRepository
       .createQueryBuilder('profile')
+      .leftJoinAndSelect('profile.certificates', 'certificate')
       .where('profile.user = :userId', { userId })
       .getOne();
 
@@ -166,6 +167,8 @@ export class ProfileService {
         HttpStatus.NOT_FOUND,
       );
     }
+
+    await this.certificateRepository.remove(caregiverInfo.certificates);
 
     const certificates = await Promise.all(
       createCertificatesDto.certificates.map(async (certificateDto) => {
@@ -186,6 +189,7 @@ export class ProfileService {
   ): Promise<WorkExperience[]> {
     const caregiverInfo = await this.profileRepository
       .createQueryBuilder('profile')
+      .leftJoinAndSelect('profile.workExperiences', 'workExperience')
       .where('profile.user = :userId', { userId })
       .getOne();
 
@@ -195,6 +199,8 @@ export class ProfileService {
         HttpStatus.NOT_FOUND,
       );
     }
+
+    await this.workExperienceRepository.remove(caregiverInfo.workExperiences);
 
     const workExperiences = await Promise.all(
       createWorkExperienceDto.workExperiences.map(async (workExperienceDto) => {
