@@ -14,6 +14,7 @@ import { SeekerTask } from 'src/common/entities/seeker-task.entity';
 import { ActivityModule } from 'src/modules/activity/activity.module';
 import { AppointmentModule } from 'src/modules/appointment/appointment.module';
 import { CapabilityModule } from 'src/modules/capability/capability.module';
+import { CaregiverInfoModule } from 'src/modules/caregiver-info/caregiver-info.module';
 import { DiagnosisModule } from 'src/modules/diagnosis/diagnosis.module';
 import { SeedingService } from 'src/modules/seed/seed.service';
 import { SeekerActivityModule } from 'src/modules/seeker-activity/seeker-activity.module';
@@ -76,6 +77,7 @@ import { UserModule } from './modules/users/user.module';
     DiagnosisModule,
     SeekerDiagnosisModule,
     ProfileModule,
+    CaregiverInfoModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService],

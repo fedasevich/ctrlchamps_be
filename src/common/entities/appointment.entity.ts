@@ -1,12 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { SeekerActivity } from 'src/common/entities/seeker-activity.entity';
 import { SeekerCapability } from 'src/common/entities/seeker-capability.entity';
 import { SeekerDiagnosis } from 'src/common/entities/seeker-diagnosis.entity';
 import { SeekerTask } from 'src/common/entities/seeker-task.entity';
+import { User } from 'src/common/entities/user.entity';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 
 @Entity()
 export class Appointment {
@@ -64,6 +73,13 @@ export class Appointment {
   })
   @Column({ nullable: true })
   details: string;
+
+  @ApiProperty({
+    description: 'Payment for one hour',
+    example: '10',
+  })
+  @Column({ default: 0, type: 'decimal' })
+  payment: number;
 
   @ApiProperty({
     example: 'Location Address',
@@ -144,4 +160,12 @@ export class Appointment {
 
   @OneToMany(() => SeekerTask, (seekerTask) => seekerTask.appointment)
   seekerTasks: SeekerTask[];
+
+  @ManyToOne(() => CaregiverInfo, (caregiverInfo) => caregiverInfo.appointment)
+  @JoinColumn({ name: 'caregiverInfoId' })
+  caregiverInfo: CaregiverInfo;
+
+  @ManyToOne(() => User, (user) => user.appointment)
+  @JoinColumn({ name: 'userId' })
+  user: User;
 }

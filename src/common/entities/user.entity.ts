@@ -2,8 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { Country } from 'modules/users/enums/country.enum';
 import { UserRole } from 'modules/users/enums/user-role.enum';
+import { Appointment } from 'src/common/entities/appointment.entity';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  OneToMany,
+} from 'typeorm';
 
 @Entity()
 export class User {
@@ -137,4 +144,7 @@ export class User {
 
   @OneToOne(() => CaregiverInfo, (caregiverInfo) => caregiverInfo.user)
   caregiverInfo: CaregiverInfo;
+
+  @OneToMany(() => Appointment, (appointment) => appointment.user)
+  appointment: Appointment[];
 }

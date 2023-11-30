@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { Appointment } from 'src/common/entities/appointment.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -114,4 +115,7 @@ export class CaregiverInfo {
   @OneToOne(() => User, (user) => user.caregiverInfo)
   @JoinColumn()
   user: User;
+
+  @OneToMany(() => Appointment, (appointment) => appointment.caregiverInfo)
+  appointment: Appointment[];
 }

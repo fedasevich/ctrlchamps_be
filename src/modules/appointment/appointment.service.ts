@@ -3,12 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { MINIMUM_BALANCE } from 'src/modules/appointment/constants';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import { Appointment as AppointmentType } from 'src/modules/appointment/types/appointment.type';
+import { CaregiverInfoService } from 'src/modules/caregiver-info/caregiver-info.service';
 import { SeekerActivityService } from 'src/modules/seeker-activity/seeker-activity.service';
 import { SeekerCapabilityService } from 'src/modules/seeker-capability/seeker-capability.service';
 import { SeekerDiagnosisService } from 'src/modules/seeker-diagnosis/seeker-diagnosis.service';
 import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
+import { UserService } from 'src/modules/users/user.service';
 import { EntityManager, Repository } from 'typeorm';
 
 @Injectable()
@@ -20,6 +23,8 @@ export class AppointmentService {
     private readonly seekerTaskService: SeekerTaskService,
     private readonly seekerCapabilityService: SeekerCapabilityService,
     private readonly seekerDiagnosisService: SeekerDiagnosisService,
+    private readonly userService: UserService,
+    private readonly caregiverInfoService: CaregiverInfoService,
   ) {}
 
   async create(
@@ -37,9 +42,14 @@ export class AppointmentService {
             ...appointment
           } = createAppointment;
 
+          const payment = await this.payForHourOfWork(
+            userId,
+            createAppointment.caregiverInfoId,
+          );
+
           const appointmentId = await this.registerNewAppointment(
             transactionalEntityManager,
-            appointment,
+            { ...appointment, payment },
             userId,
           );
 
@@ -110,5 +120,39 @@ export class AppointmentService {
       .execute();
 
     return createdAppointment.generatedMaps[0].id as string;
+  }
+
+  async payForHourOfWork(
+    userId: string,
+    caregiverInfoId: string,
+  ): Promise<number> {
+    try {
+      const { balance, email } = await this.userService.findById(userId);
+
+      const { hourlyRate } =
+        await this.caregiverInfoService.findById(caregiverInfoId);
+
+      const updatedSeekerBalance = balance - hourlyRate;
+
+      if (updatedSeekerBalance < MINIMUM_BALANCE) {
+        throw new HttpException(
+          ErrorMessage.NotEnoughMoney,
+          HttpStatus.BAD_REQUEST,
+        );
+      } else {
+        await this.userService.update(email, { balance: updatedSeekerBalance });
+
+        return hourlyRate;
+      }
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }

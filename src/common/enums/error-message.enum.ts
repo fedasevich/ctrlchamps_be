@@ -20,4 +20,6 @@ export enum ErrorMessage {
   FailedSendCapabilities = 'Failed to send capabilities',
   FailedSendDiagnoses = 'Failed to send diagnoses',
   FailedCreateAppointment = 'Failed to create appointment',
+  CaregiverInfoNotFound = 'Caregiver Info not found',
+  NotEnoughMoney = 'Not enough money to pay for one hour of work',
 }

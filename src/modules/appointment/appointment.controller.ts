@@ -10,6 +10,7 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { ApiPath } from 'src/common/enums/api-path.enum';
+import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { RequestWithUser } from 'src/common/types/request-with-user.type';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
@@ -28,8 +29,12 @@ export class AppointmentController {
     description: 'Appointment was created successfully',
   })
   @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.NotEnoughMoney,
+  })
+  @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: 'Internal server error',
+    description: ErrorMessage.InternalServerError,
   })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post(AppointmentApiPath.Root)

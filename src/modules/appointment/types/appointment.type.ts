@@ -15,4 +15,5 @@ export type Appointment = {
   endDate: Date;
   timezone: string;
   weekdays?: string[];
+  payment?: number;
 };
