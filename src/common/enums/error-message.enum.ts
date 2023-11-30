@@ -16,4 +16,5 @@ export enum ErrorMessage {
   CertificatesNotFound = 'There is no certificates found',
   WorkExpNotFound = 'Work experiences not found',
   BacketNotFound = "Couldn't access AWS S3 bucket, check your credentials",
+  UserIsNotAuthorized = 'User not authorized or userId not found',
 }
