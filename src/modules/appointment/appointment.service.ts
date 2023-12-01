@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
@@ -7,6 +8,7 @@ import { MINIMUM_BALANCE } from 'src/modules/appointment/constants';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import { Appointment as AppointmentType } from 'src/modules/appointment/types/appointment.type';
 import { CaregiverInfoService } from 'src/modules/caregiver-info/caregiver-info.service';
+import { EmailService } from 'src/modules/email/services/email.service';
 import { SeekerActivityService } from 'src/modules/seeker-activity/seeker-activity.service';
 import { SeekerCapabilityService } from 'src/modules/seeker-capability/seeker-capability.service';
 import { SeekerDiagnosisService } from 'src/modules/seeker-diagnosis/seeker-diagnosis.service';
@@ -16,6 +18,13 @@ import { EntityManager, Repository } from 'typeorm';
 
 @Injectable()
 export class AppointmentService {
+  private readonly seekerAppointmentTemplateId = this.configService.get<string>(
+    'SENDGRID_SEEKER_APPOINTMENT_TEMPLATE_ID',
+  );
+
+  private readonly seekerAppointmentRedirectLink =
+    this.configService.get<string>('SEEKER_APPOINTMENT_REDIRECT_LINK');
+
   constructor(
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
@@ -25,6 +34,8 @@ export class AppointmentService {
     private readonly seekerDiagnosisService: SeekerDiagnosisService,
     private readonly userService: UserService,
     private readonly caregiverInfoService: CaregiverInfoService,
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(
@@ -98,6 +109,8 @@ export class AppointmentService {
           );
         },
       );
+
+      await this.sendAppointmentConfirmationEmail(userId);
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -113,7 +126,7 @@ export class AppointmentService {
     }
   }
 
-  async registerNewAppointment(
+  private async registerNewAppointment(
     transactionalEntityManager: EntityManager,
     appointment: AppointmentType,
     userId: string,
@@ -134,7 +147,7 @@ export class AppointmentService {
     }
   }
 
-  async payForHourOfWork(
+  private async payForHourOfWork(
     userId: string,
     caregiverInfoId: string,
     transactionalEntityManager: EntityManager,
@@ -170,6 +183,28 @@ export class AppointmentService {
       }
 
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private async sendAppointmentConfirmationEmail(
+    userId: string,
+  ): Promise<void> {
+    try {
+      const { email, firstName } = await this.userService.findById(userId);
+
+      await this.emailService.sendEmail({
+        to: email,
+        templateId: this.seekerAppointmentTemplateId,
+        dynamicTemplateData: {
+          name: firstName,
+          link: this.seekerAppointmentRedirectLink,
+        },
+      });
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedSendAppointmentConfirmation,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

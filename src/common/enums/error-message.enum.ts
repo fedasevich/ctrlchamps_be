@@ -23,4 +23,5 @@ export enum ErrorMessage {
   CaregiverInfoNotFound = 'Caregiver Info not found',
   NotEnoughMoney = 'Not enough money to pay for one hour of work',
   UserIsNotAuthorized = 'User not authorized or userId not found',
+  FailedSendAppointmentConfirmation = 'Failed to send the appointment confirmation email',
 }
