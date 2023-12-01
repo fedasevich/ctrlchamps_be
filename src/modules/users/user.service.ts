@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { User } from 'common/entities/user.entity';
 import { UserCreateDto } from 'modules/auth/dto/user-create.dto';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 @Injectable()
 export class UserService {
@@ -68,6 +68,25 @@ export class UserService {
   async update(email: string, userDto: Partial<User>): Promise<void> {
     try {
       await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set(userDto)
+        .where('user.email = :email', {
+          email,
+        })
+        .execute();
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async updateWithTransaction(
+    email: string,
+    userDto: Partial<User>,
+    transactionalEntityManager: EntityManager,
+  ): Promise<void> {
+    try {
+      await transactionalEntityManager
         .createQueryBuilder()
         .update(User)
         .set(userDto)

@@ -45,6 +45,7 @@ export class AppointmentService {
           const payment = await this.payForHourOfWork(
             userId,
             createAppointment.caregiverInfoId,
+            transactionalEntityManager,
           );
 
           const appointmentId = await this.registerNewAppointment(
@@ -136,6 +137,7 @@ export class AppointmentService {
   async payForHourOfWork(
     userId: string,
     caregiverInfoId: string,
+    transactionalEntityManager: EntityManager,
   ): Promise<number> {
     try {
       const { balance, email } = await this.userService.findById(userId);
@@ -151,7 +153,11 @@ export class AppointmentService {
           HttpStatus.BAD_REQUEST,
         );
       } else {
-        await this.userService.update(email, { balance: updatedSeekerBalance });
+        await this.userService.updateWithTransaction(
+          email,
+          { balance: updatedSeekerBalance },
+          transactionalEntityManager,
+        );
 
         return hourlyRate;
       }
