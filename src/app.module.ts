@@ -32,7 +32,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { UserModule } from './modules/users/user.module';
-import { CaregiverModule } from './modules/caregiver/caregiver.module';
 
 @Module({
   imports: [
@@ -78,7 +77,6 @@ import { CaregiverModule } from './modules/caregiver/caregiver.module';
     DiagnosisModule,
     SeekerDiagnosisModule,
     ProfileModule,
-    CaregiverModule,
     CaregiverInfoModule,
   ],
   controllers: [AppController],

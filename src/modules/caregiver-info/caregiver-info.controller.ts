@@ -4,15 +4,15 @@ import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 
-import { CaregiverService } from './caregiver.service';
+import { CaregiverInfoService } from './caregiver-info.service';
 import { CaregiverApiPath } from './enums/caregiver.enum';
 import { DetailedCaregiverInfo } from './types/detailed-caregiver-info.type';
 import { FiltredCaregiver } from './types/filtred-caregiver.type';
 
 @ApiTags('Caregiver Info')
 @Controller(ApiPath.CaregiverInfo)
-export class CaregiverController {
-  constructor(private readonly caregiverService: CaregiverService) {}
+export class CaregiverInfoController {
+  constructor(private readonly caregiverInfoService: CaregiverInfoService) {}
 
   @Get(CaregiverApiPath.FiltredCaregivers)
   @ApiOperation({ summary: 'Get filtred caregivers list' })
@@ -45,7 +45,7 @@ export class CaregiverController {
     description: ErrorMessage.InternalServerError,
   })
   async filterAll(@Query('query') query: string): Promise<FiltredCaregiver[]> {
-    return this.caregiverService.filterAll(query);
+    return this.caregiverInfoService.filterAll(query);
   }
 
   @Get(':userId')
@@ -95,6 +95,6 @@ export class CaregiverController {
   getDetailedInfo(
     @Param('userId') userId: string,
   ): Promise<DetailedCaregiverInfo> {
-    return this.caregiverService.getDetailedInfo(userId);
+    return this.caregiverInfoService.getDetailedInfo(userId);
   }
 }
