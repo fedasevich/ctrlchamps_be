@@ -6,16 +6,17 @@ import {
   Post,
   UseGuards,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
-import { RequestWithUser } from 'src/common/types/request-with-user.type';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import { AppointmentApiPath } from 'src/modules/appointment/enums/appointment.api-path.enum';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
+import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
 
 @ApiTags('Appointment')
 @Controller(ApiPath.Appointment)
@@ -39,9 +40,15 @@ export class AppointmentController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post(AppointmentApiPath.Root)
   async create(
-    @Req() req: RequestWithUser,
+    @Req() req: AuthenticatedRequest,
     @Body() createAppointmentDto: CreateAppointmentDto,
   ): Promise<void> {
-    await this.appointmentService.create(createAppointmentDto, req.user.id);
+    const userId = req.user.id;
+
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
+
+    await this.appointmentService.create(createAppointmentDto, userId);
   }
 }

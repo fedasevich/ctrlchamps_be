@@ -10,8 +10,10 @@ import {
   IsUUID,
   IsNotEmpty,
   ValidateNested,
+  MaxLength,
 } from 'class-validator';
 import { ActivityAnswer } from 'src/modules/appointment/enums/activity-answer.enum';
+import { AppointmentCreateValidationRule } from 'src/modules/appointment/enums/appointment-create.validation-rule.enum';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
 import { Weekday } from 'src/modules/appointment/enums/weekday.enum';
@@ -32,6 +34,7 @@ export class CreateAppointmentDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(AppointmentCreateValidationRule.NameMaxLength)
   name: string;
 
   @ApiProperty({
@@ -57,6 +60,7 @@ export class CreateAppointmentDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(AppointmentCreateValidationRule.DetailsMaxLength)
   details?: string;
 
   @ApiProperty({
@@ -132,11 +136,12 @@ export class CreateAppointmentDto {
 
   @ApiProperty({
     example: ['Sort mails', 'Clean the house'],
-    description: 'Week days of the appointment',
+    description: 'Seeker tasks for caregiver',
   })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @MaxLength(AppointmentCreateValidationRule.TaskNameMaxLength, { each: true })
   seekerTasks?: string[];
 
   @ApiProperty({

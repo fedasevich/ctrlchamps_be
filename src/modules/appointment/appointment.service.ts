@@ -98,6 +98,13 @@ export class AppointmentService {
         },
       );
     } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
       throw new HttpException(
         ErrorMessage.FailedCreateAppointment,
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -110,16 +117,20 @@ export class AppointmentService {
     appointment: AppointmentType,
     userId: string,
   ): Promise<string> {
-    const { weekdays, ...rest } = appointment;
+    try {
+      const { weekdays, ...rest } = appointment;
 
-    const createdAppointment = await transactionalEntityManager
-      .createQueryBuilder()
-      .insert()
-      .into(Appointment)
-      .values({ ...rest, weekday: JSON.stringify(weekdays), userId })
-      .execute();
+      const createdAppointment = await transactionalEntityManager
+        .createQueryBuilder()
+        .insert()
+        .into(Appointment)
+        .values({ ...rest, weekday: JSON.stringify(weekdays), userId })
+        .execute();
 
-    return createdAppointment.generatedMaps[0].id as string;
+      return createdAppointment.generatedMaps[0].id as string;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async payForHourOfWork(
