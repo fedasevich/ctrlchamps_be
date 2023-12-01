@@ -172,4 +172,22 @@ export class AppointmentService {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async findAppointmentsCountById(caregiverInfoId: string): Promise<number> {
+    try {
+      const appointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .innerJoin('caregiverInfo.user', 'user')
+        .where('caregiverInfo.id = :caregiverInfoId', { caregiverInfoId })
+        .getCount();
+
+      return appointments;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

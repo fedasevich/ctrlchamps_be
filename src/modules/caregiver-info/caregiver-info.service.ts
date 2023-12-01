@@ -1,6 +1,13 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { AppointmentService } from 'modules/appointment/appointment.service';
 import { ProfileService } from 'modules/profile/profile.service';
 import { UserRole } from 'modules/users/enums/user-role.enum';
 import { UserService } from 'modules/users/user.service';
@@ -22,6 +29,8 @@ export class CaregiverInfoService {
     private readonly userRepository: Repository<User>,
     private readonly userService: UserService,
     private readonly profileService: ProfileService,
+    @Inject(forwardRef(() => AppointmentService))
+    private appointmentService: AppointmentService,
   ) {}
 
   async findById(caregiverInfoId: string): Promise<CaregiverInfo> {
@@ -111,13 +120,16 @@ export class CaregiverInfoService {
       const profileInfo =
         await this.profileService.getProfileInformation(userId);
       const userInfo = await this.userService.findById(userId);
+      const count = await this.appointmentService.findAppointmentsCountById(
+        profileInfo.id,
+      );
 
       const detailedCaregiverInfo = {
         id: userInfo.id,
         firstName: userInfo.firstName,
         lastName: userInfo.lastName,
         isOpenToSeekerHomeLiving: userInfo.isOpenToSeekerHomeLiving,
-        numberOfAppointments: 2,
+        numberOfAppointments: count,
         hourlyRate: profileInfo.hourlyRate,
         description: profileInfo.description,
         videoLink: profileInfo.videoLink,
