@@ -202,7 +202,7 @@ export class AppointmentService {
       });
     } catch (error) {
       throw new HttpException(
-        ErrorMessage.FailedSendVerificationCode,
+        ErrorMessage.FailedSendAppointmentConfirmation,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
