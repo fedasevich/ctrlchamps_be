@@ -78,7 +78,7 @@ export class Appointment {
     description: 'Payment for one hour',
     example: '10',
   })
-  @Column({ default: 0, type: 'decimal' })
+  @Column({ default: 0, type: 'int' })
   payment: number;
 
   @ApiProperty({

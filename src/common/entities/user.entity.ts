@@ -139,7 +139,7 @@ export class User {
     description: 'User balance',
     example: '100',
   })
-  @Column({ default: 100, type: 'decimal' })
+  @Column({ default: 100, type: 'int' })
   balance: number;
 
   @OneToOne(() => CaregiverInfo, (caregiverInfo) => caregiverInfo.user)
