@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { UserModule } from './modules/users/user.module';
+import { CaregiverModule } from './modules/caregiver/caregiver.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { UserModule } from './modules/users/user.module';
     UserModule,
     EmailModule,
     ProfileModule,
+    CaregiverModule,
   ],
   controllers: [AppController],
   providers: [AppService],
