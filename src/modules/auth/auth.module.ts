@@ -19,6 +19,7 @@ import { AuthService } from './auth.service';
         signOptions: { expiresIn: configService.get('JWT_TOKEN_EXPIRE') },
       }),
       inject: [ConfigService],
+      global: true,
     }),
     EmailModule,
   ],

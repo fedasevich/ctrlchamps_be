@@ -4,7 +4,6 @@ import {
   Body,
   HttpStatus,
   Patch,
-  Param,
   Get,
   FileTypeValidator,
   MaxFileSizeValidator,
@@ -12,6 +11,8 @@ import {
   UploadedFile,
   UseInterceptors,
   UseGuards,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -28,6 +29,7 @@ import { WorkExperience } from 'src/common/entities/work-experience.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
+import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
 import { ProfileApiPath } from 'src/modules/profile/enum/profile.enum';
 import { ProfileService } from 'src/modules/profile/profile.service';
 
@@ -87,8 +89,12 @@ export class ProfileController {
       }),
     )
     file: Express.Multer.File,
-    @Param('userId') userId: string,
+    @Req() request: AuthenticatedRequest,
   ): Promise<void> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
     await this.profileService.upload(file.originalname, file.buffer, userId);
   }
 
@@ -108,8 +114,13 @@ export class ProfileController {
     description: ErrorMessage.InternalServerError,
   })
   async getProfileInformation(
-    @Param('userId') userId: string,
+    @Req() request: AuthenticatedRequest,
   ): Promise<CaregiverInfo | undefined> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
+
     return this.profileService.getProfileInformation(userId);
   }
 
@@ -130,8 +141,13 @@ export class ProfileController {
     description: ErrorMessage.InternalServerError,
   })
   async getWorkExperiences(
-    @Param('userId') userId: string,
+    @Req() request: AuthenticatedRequest,
   ): Promise<WorkExperience[]> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
+
     return this.profileService.getWorkExperiences(userId);
   }
 
@@ -152,8 +168,13 @@ export class ProfileController {
     description: ErrorMessage.InternalServerError,
   })
   async getUserCertificates(
-    @Param('userId') userId: string,
+    @Req() request: AuthenticatedRequest,
   ): Promise<Certificate[]> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
+
     return this.profileService.getUserCertificates(userId);
   }
 
@@ -175,7 +196,11 @@ export class ProfileController {
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: ErrorMessage.InternalServerError,
   })
-  async createProfile(@Param('userId') userId: string): Promise<void> {
+  async createProfile(@Req() request: AuthenticatedRequest): Promise<void> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
     await this.profileService.createProfile(userId);
   }
 
@@ -198,9 +223,14 @@ export class ProfileController {
     description: ErrorMessage.InternalServerError,
   })
   async updateProfile(
-    @Param('userId') userId: string,
+    @Req() request: AuthenticatedRequest,
     @Body() updateProfileDto: UpdateProfileDto,
   ): Promise<void> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
+
     await this.profileService.updateProfile(userId, updateProfileDto);
   }
 
@@ -222,9 +252,14 @@ export class ProfileController {
     description: ErrorMessage.InternalServerError,
   })
   addCertificate(
-    @Param('userId') userId: string,
+    @Req() request: AuthenticatedRequest,
     @Body() createCertificateDto: CreateCertificatesDto,
   ): Promise<Certificate[]> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
+
     return this.profileService.createCertificate(userId, createCertificateDto);
   }
 
@@ -246,9 +281,14 @@ export class ProfileController {
     description: ErrorMessage.InternalServerError,
   })
   addWorkExperience(
-    @Param('userId') userId: string,
+    @Req() request: AuthenticatedRequest,
     @Body() workExperienceDto: CreateWorkExperienceDto,
   ): Promise<WorkExperience[]> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
+
     return this.profileService.createWorkExperience(userId, workExperienceDto);
   }
 }
