@@ -48,7 +48,7 @@ export class CaregiverInfoController {
     return this.caregiverInfoService.filterAll(query);
   }
 
-  @Get(':userId')
+  @Get(CaregiverApiPath.DetailedInfo)
   @ApiOperation({ summary: 'Get filtred caregivers list' })
   @ApiResponse({
     status: HttpStatus.OK,

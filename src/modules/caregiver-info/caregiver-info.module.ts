@@ -3,14 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { User } from 'src/common/entities/user.entity';
-
-import { AppointmentService } from '../appointment/appointment.service';
-import { ProfileModule } from '../profile/profile.module';
-import { UserService } from '../users/user.service';
+import { AppointmentModule } from 'src/modules/appointment/appointment.module';
+import { ProfileModule } from 'src/modules/profile/profile.module';
+import { UserService } from 'src/modules/users/user.service';
 
 import { CaregiverInfoController } from './caregiver-info.controller';
 import { CaregiverInfoService } from './caregiver-info.service';
-import { AppointmentModule } from '../appointment/appointment.module';
 
 @Module({
   imports: [
@@ -20,6 +18,6 @@ import { AppointmentModule } from '../appointment/appointment.module';
   ],
   controllers: [CaregiverInfoController],
   providers: [CaregiverInfoService, UserService],
-  exports: [CaregiverInfoService, UserService],
+  exports: [CaregiverInfoService],
 })
 export class CaregiverInfoModule {}
