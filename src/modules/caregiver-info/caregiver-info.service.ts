@@ -16,6 +16,7 @@ import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { Repository } from 'typeorm';
 
+import { TRUE, FALSE } from './constants/caregiver-info.constants';
 import { DetailedCaregiverInfo } from './types/detailed-caregiver-info.type';
 import { FiltredCaregiver } from './types/filtred-caregiver.type';
 import { ParsedParams } from './types/parsed-params.type';
@@ -54,8 +55,8 @@ export class CaregiverInfoService {
     const parsedParams: Partial<ParsedParams> = {};
 
     params.forEach((value, key) => {
-      if (value === 'true' || value === 'false') {
-        parsedParams[key] = value === 'true';
+      if (value === TRUE || value === FALSE) {
+        parsedParams[key] = value === TRUE;
       } else if (value.startsWith('[') && value.endsWith(']')) {
         parsedParams[key] = JSON.parse(value);
       } else {
