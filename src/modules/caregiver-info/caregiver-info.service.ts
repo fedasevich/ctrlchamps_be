@@ -1,8 +1,8 @@
 import {
   HttpException,
   HttpStatus,
-  Injectable,
   Inject,
+  Injectable,
   forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,9 +16,10 @@ import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { Repository } from 'typeorm';
 
+// eslint-disable-next-line import/no-cycle
+import { dto } from './caregiver-info.controller';
 import { DetailedCaregiverInfo } from './types/detailed-caregiver-info.type';
 import { FiltredCaregiver } from './types/filtred-caregiver.type';
-import { ParsedParams } from './types/parsed-params.type';
 
 @Injectable()
 export class CaregiverInfoService {
@@ -49,23 +50,12 @@ export class CaregiverInfoService {
     }
   }
 
-  async filterAll(query: string): Promise<FiltredCaregiver[]> {
-    const params = new URLSearchParams(query);
-    const parsedParams: Partial<ParsedParams> = {};
+  async filterAll(queryParams: dto): Promise<FiltredCaregiver[]> {
+    const { isOpenToSeekerHomeLiving, services } = queryParams;
 
-    params.forEach((value, key) => {
-      if (value === 'true' || value === 'false') {
-        parsedParams[key] = value === 'true';
-      } else if (value.startsWith('[') && value.endsWith(']')) {
-        parsedParams[key] = JSON.parse(value);
-      } else {
-        parsedParams[key] = value;
-      }
-    });
-
-    const formattedServices = parsedParams.services
-      .map((service) => `%${service}%`)
-      .join(',');
+    const formattedServices = services
+      ? services.map((service) => `%${service}%`).join(',')
+      : null;
 
     try {
       const queryBuilder = this.userRepository.createQueryBuilder('user');
@@ -79,10 +69,10 @@ export class CaregiverInfoService {
       queryBuilder.andWhere(
         'user.isOpenToSeekerHomeLiving = :isOpenToSeekerHomeLiving',
         {
-          isOpenToSeekerHomeLiving: parsedParams.isOpenToSeekerHomeLiving,
+          isOpenToSeekerHomeLiving,
         },
       );
-      if (parsedParams.services.length > 0) {
+      if (formattedServices) {
         queryBuilder.andWhere('caregiverInfo.services LIKE :services', {
           services: formattedServices,
         });
@@ -117,11 +107,11 @@ export class CaregiverInfoService {
       const workExperience =
         await this.profileService.getWorkExperiences(userId);
       const certificate = await this.profileService.getUserCertificates(userId);
-      const profileInfo =
+      const caregiverInfo =
         await this.profileService.getProfileInformation(userId);
       const userInfo = await this.userService.findById(userId);
       const count = await this.appointmentService.findAppointmentsCountById(
-        profileInfo.id,
+        caregiverInfo.id,
       );
 
       const detailedCaregiverInfo = {
@@ -130,11 +120,8 @@ export class CaregiverInfoService {
         lastName: userInfo.lastName,
         isOpenToSeekerHomeLiving: userInfo.isOpenToSeekerHomeLiving,
         numberOfAppointments: count,
-        hourlyRate: profileInfo.hourlyRate,
-        description: profileInfo.description,
-        videoLink: profileInfo.videoLink,
-        services: profileInfo.services,
-        certificates: certificate,
+        caregiverInfo,
+        qualifications: certificate,
         workExperiences: workExperience,
       };
 

@@ -7,11 +7,13 @@ export type DetailedCaregiverInfo = {
   firstName: string;
   lastName: string;
   isOpenToSeekerHomeLiving: boolean;
-  hourlyRate: number;
   numberOfAppointments: number;
-  description: string;
-  videoLink: string;
-  services: Qualification[];
-  certificates: Certificate[];
+  caregiverInfo: {
+    description: string;
+    hourlyRate: number;
+    videoLink: string;
+    services: Qualification[];
+  };
+  qualifications: Certificate[];
   workExperiences: WorkExperience[];
 };
