@@ -17,6 +17,10 @@ import { ErrorMessage } from 'src/common/enums/error-message.enum';
 
 // eslint-disable-next-line import/no-cycle
 import { CaregiverInfoService } from './caregiver-info.service';
+import {
+  DETAILED_CAREGIVER_INFO_EXAMPLE,
+  FILTRED_CAREGIVERS_EXAMPLE,
+} from './constants/caregiver-info.constants';
 import { CaregiverApiPath } from './enums/caregiver.enum';
 import { DetailedCaregiverInfo } from './types/detailed-caregiver-info.type';
 import { FiltredCaregiver } from './types/filtred-caregiver.type';
@@ -74,20 +78,7 @@ export class CaregiverInfoController {
     status: HttpStatus.OK,
     description: 'Caregiver profile list retrieved successfully',
     schema: {
-      example: [
-        {
-          id: '2f09b807-72ee-49ea-83d2-17b7746957a2',
-          hourlyRate: 20,
-          firstName: 'Max',
-          lastName: 'Volovo',
-        },
-        {
-          id: '2f09b807-72ee-49ea-83d2-17b7746957a3',
-          hourlyRate: 25,
-          firstName: 'Alice',
-          lastName: 'James',
-        },
-      ],
+      example: FILTRED_CAREGIVERS_EXAMPLE,
     },
   })
   @ApiResponse({
@@ -110,34 +101,7 @@ export class CaregiverInfoController {
     status: HttpStatus.OK,
     description: 'Caregiver detailed info retrieved successfully',
     schema: {
-      example: {
-        id: '2f09b807-72ee-49ea-83d2-17b7746957a3',
-        hourlyRate: 25,
-        firstName: 'Alice',
-        lastName: 'James',
-        isOpenToSeekerHomeLiving: true,
-        numberOfAppointments: 2,
-        description: 'I am an experienced nurse..',
-        videoLink: 'https://youtube.com/user/video',
-        services: ['Personal Care Assistance', 'Medication Management'],
-        certificates: [
-          {
-            workplace: 'ABC Hospital',
-            qualifications: 'Clinic',
-            startDate: '2020-11-11',
-            endDate: '2021-11-11',
-          },
-        ],
-        workExperiences: [
-          {
-            name: 'First Aid Training',
-            certificateId: 'CER12345',
-            link: 'https://certificateprovider.com/certificate/123',
-            dateIssued: '2020-11-11',
-            expirationDate: '2021-11-11',
-          },
-        ],
-      },
+      example: DETAILED_CAREGIVER_INFO_EXAMPLE,
     },
   })
   @ApiResponse({
