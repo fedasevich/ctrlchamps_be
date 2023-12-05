@@ -16,8 +16,7 @@ import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { Repository } from 'typeorm';
 
-// eslint-disable-next-line import/no-cycle
-import { dto } from './caregiver-info.controller';
+import { FilterQueryDto } from './dto/filter-query.dto';
 import { DetailedCaregiverInfo } from './types/detailed-caregiver-info.type';
 import { FiltredCaregiver } from './types/filtred-caregiver.type';
 
@@ -50,7 +49,7 @@ export class CaregiverInfoService {
     }
   }
 
-  async filterAll(queryParams: dto): Promise<FiltredCaregiver[]> {
+  async filterAll(queryParams: FilterQueryDto): Promise<FiltredCaregiver[]> {
     const { isOpenToSeekerHomeLiving, services } = queryParams;
 
     const formattedServices = services
@@ -116,13 +115,13 @@ export class CaregiverInfoService {
 
       const detailedCaregiverInfo = {
         id: userInfo.id,
+        isOpenToSeekerHomeLiving: userInfo.isOpenToSeekerHomeLiving,
         firstName: userInfo.firstName,
         lastName: userInfo.lastName,
-        isOpenToSeekerHomeLiving: userInfo.isOpenToSeekerHomeLiving,
         numberOfAppointments: count,
         caregiverInfo,
-        qualifications: certificate,
         workExperiences: workExperience,
+        qualifications: certificate,
       };
 
       return detailedCaregiverInfo;
