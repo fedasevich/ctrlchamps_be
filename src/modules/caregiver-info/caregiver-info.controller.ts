@@ -55,7 +55,10 @@ export class CaregiverInfoController {
   async filterAll(
     @Query() queryParams: FilterQueryDto,
   ): Promise<FiltredCaregiver[]> {
-    return this.caregiverInfoService.filterAll(queryParams);
+    return this.caregiverInfoService.filterAll(
+      queryParams.isOpenToSeekerHomeLiving,
+      queryParams.services,
+    );
   }
 
   @Get(CaregiverApiPath.DetailedInfo)

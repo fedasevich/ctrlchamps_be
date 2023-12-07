@@ -51,7 +51,8 @@ describe('CaregiverInfoController', () => {
       const result = await controller.filterAll(queryParams);
       expect(result).toEqual(FILTRED_CAREGIVERS_EXAMPLE);
       expect(mockCaregiverInfoService.filterAll).toHaveBeenCalledWith(
-        queryParams,
+        queryParams.isOpenToSeekerHomeLiving,
+        queryParams.services,
       );
     });
   });

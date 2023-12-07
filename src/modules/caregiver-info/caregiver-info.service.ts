@@ -16,7 +16,6 @@ import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { Repository } from 'typeorm';
 
-import { FilterQueryDto } from './dto/filter-query.dto';
 import { DetailedCaregiverInfo } from './types/detailed-caregiver-info.type';
 import { FiltredCaregiver } from './types/filtred-caregiver.type';
 
@@ -49,9 +48,10 @@ export class CaregiverInfoService {
     }
   }
 
-  async filterAll(queryParams: FilterQueryDto): Promise<FiltredCaregiver[]> {
-    const { isOpenToSeekerHomeLiving, services } = queryParams;
-
+  async filterAll(
+    isOpenToSeekerHomeLiving: boolean,
+    services?: string[],
+  ): Promise<FiltredCaregiver[]> {
     const formattedServices = services
       ? services.map((service) => `%${service}%`).join(',')
       : null;
