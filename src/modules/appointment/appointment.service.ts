@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
-import { MINIMUM_BALANCE } from 'src/modules/appointment/constants';
+import { MINIMUM_BALANCE } from 'src/modules/appointment/appointment.constants';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import { Appointment as AppointmentType } from 'src/modules/appointment/types/appointment.type';
 import { CaregiverInfoService } from 'src/modules/caregiver-info/caregiver-info.service';
@@ -279,6 +279,20 @@ export class AppointmentService {
 
       throw new HttpException(
         ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findAllByUserId(userId: string): Promise<Appointment[]> {
+    try {
+      return await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where('appointment.userId = :userId', { userId })
+        .getMany();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.AppointmentNotFound,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
