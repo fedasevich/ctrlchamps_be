@@ -15,7 +15,10 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  OneToOne,
 } from 'typeorm';
+
+import { VirtualAssessment } from './virtual-assessment.entity';
 
 @Entity()
 export class Appointment {
@@ -168,4 +171,7 @@ export class Appointment {
   @ManyToOne(() => User, (user) => user.appointment)
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @OneToOne(() => VirtualAssessment)
+  virtualAssessment: VirtualAssessment;
 }
