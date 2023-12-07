@@ -49,8 +49,14 @@ export class VirtualAssessmentController {
     description: 'Internal server error',
   })
   async findOne(
+    @Req() request: AuthenticatedRequest,
     @Param('appointmentId') appointmentId: string,
   ): Promise<VirtualAssessment> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
+
     return this.virtualAssessmentService.findVirtualAssessmentById(
       appointmentId,
     );
@@ -91,7 +97,15 @@ export class VirtualAssessmentController {
     status: HttpStatus.NOT_FOUND,
     description: "The virtual assessment for this appontment wasn't found",
   })
-  async remove(@Param('appointmentId') appointmentId: string): Promise<void> {
+  async remove(
+    @Req() request: AuthenticatedRequest,
+    @Param('appointmentId') appointmentId: string,
+  ): Promise<void> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
+
     return this.virtualAssessmentService.deleteVirtualAssessment(appointmentId);
   }
 }

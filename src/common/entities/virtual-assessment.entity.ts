@@ -11,23 +11,40 @@ import {
 
 @Entity()
 export class VirtualAssessment {
+  @ApiProperty({
+    description: 'Unique identifier of the virtual assessment',
+  })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ApiProperty({
+    description: 'Start time of the virtual assessment',
+  })
   @Column({ type: 'time' })
   startTime: string;
 
+  @ApiProperty({
+    description: 'End time of the virtual assessment',
+  })
   @Column({ type: 'time' })
   endTime: string;
 
+  @ApiProperty({
+    description: 'Date of the virtual assessment',
+  })
   @Column({ type: 'date' })
   assessmentDate: Date;
 
+  @ApiProperty({
+    description: 'Meeting link for the virtual assessment',
+    nullable: true,
+  })
   @Column({ nullable: true })
   meetingLink: string;
 
   @ApiProperty({
-    description: 'Link to the user',
+    description:
+      'Link to the appointment associated with the virtual assessment',
   })
   @OneToOne(() => Appointment, (appointment) => appointment.virtualAssessment)
   @JoinColumn()
