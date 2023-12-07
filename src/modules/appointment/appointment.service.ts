@@ -22,8 +22,16 @@ export class AppointmentService {
     'SENDGRID_SEEKER_APPOINTMENT_TEMPLATE_ID',
   );
 
+  private readonly caregiverAppointmentTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_CAREGIVER_APPOINTMENT_TEMPLATE_ID',
+    );
+
   private readonly seekerAppointmentRedirectLink =
     this.configService.get<string>('SEEKER_APPOINTMENT_REDIRECT_LINK');
+
+  private readonly caregiverAppointmentRedirectLink =
+    this.configService.get<string>('CAREGIVER_APPOINTMENT_REDIRECT_LINK');
 
   constructor(
     @InjectRepository(Appointment)
@@ -110,7 +118,10 @@ export class AppointmentService {
         },
       );
 
-      await this.sendAppointmentConfirmationEmail(userId);
+      await this.sendAppointmentConfirmationEmails(
+        userId,
+        createAppointment.caregiverInfoId,
+      );
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -155,25 +166,32 @@ export class AppointmentService {
     try {
       const { balance, email } = await this.userService.findById(userId);
 
-      const { hourlyRate } =
+      const caregiverInfo =
         await this.caregiverInfoService.findById(caregiverInfoId);
 
-      const updatedSeekerBalance = balance - hourlyRate;
+      if (!caregiverInfo) {
+        throw new HttpException(
+          ErrorMessage.CaregiverInfoNotFound,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const updatedSeekerBalance = balance - caregiverInfo.hourlyRate;
 
       if (updatedSeekerBalance < MINIMUM_BALANCE) {
         throw new HttpException(
           ErrorMessage.NotEnoughMoney,
           HttpStatus.BAD_REQUEST,
         );
-      } else {
-        await this.userService.updateWithTransaction(
-          email,
-          { balance: updatedSeekerBalance },
-          transactionalEntityManager,
-        );
-
-        return hourlyRate;
       }
+
+      await this.userService.updateWithTransaction(
+        email,
+        { balance: updatedSeekerBalance },
+        transactionalEntityManager,
+      );
+
+      return caregiverInfo.hourlyRate;
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -186,11 +204,23 @@ export class AppointmentService {
     }
   }
 
-  private async sendAppointmentConfirmationEmail(
+  private async sendAppointmentConfirmationEmails(
     userId: string,
+    caregiverInfoId: string,
   ): Promise<void> {
     try {
       const { email, firstName } = await this.userService.findById(userId);
+      const caregiverInfo =
+        await this.caregiverInfoService.findUserByCaregiverInfoId(
+          caregiverInfoId,
+        );
+
+      if (!caregiverInfo) {
+        throw new HttpException(
+          ErrorMessage.CaregiverNotExist,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
       await this.emailService.sendEmail({
         to: email,
@@ -200,7 +230,22 @@ export class AppointmentService {
           link: this.seekerAppointmentRedirectLink,
         },
       });
+
+      await this.emailService.sendEmail({
+        to: caregiverInfo.user.email,
+        templateId: this.caregiverAppointmentTemplateId,
+        dynamicTemplateData: {
+          link: this.caregiverAppointmentRedirectLink,
+        },
+      });
     } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
       throw new HttpException(
         ErrorMessage.FailedSendAppointmentConfirmation,
         HttpStatus.INTERNAL_SERVER_ERROR,
