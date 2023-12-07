@@ -33,7 +33,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { UserModule } from './modules/users/user.module';
-import { VirtualAssessmentModule } from './modules/virtual_assessment/virtual_assessment.module';
+import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-assessment.module';
 
 @Module({
   imports: [

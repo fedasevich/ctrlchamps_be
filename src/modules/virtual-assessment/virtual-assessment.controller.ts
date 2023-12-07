@@ -18,10 +18,10 @@ import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
 
-import { VIRTUAL_ASSESSMENT_GET_EXAMPLE } from './constants/virtual_assessment.constant';
-import { CreateVirtualAssessmentDto } from './dto/virtual_assessment.dto';
-import { VirtualAssessmentApiPath } from './enums/virtual_assessment-path.enum';
-import { VirtualAssessmentService } from './virtual_assessment.service';
+import { VIRTUAL_ASSESSMENT_GET_EXAMPLE } from './constants/virtual-assessment.constant';
+import { CreateVirtualAssessmentDto } from './dto/virtual-assessment.dto';
+import { VirtualAssessmentApiPath } from './enums/virtual-assessment-path.enum';
+import { VirtualAssessmentService } from './virtual-assessment.service';
 
 @ApiTags('Appointment')
 @Controller(ApiPath.Appointment)

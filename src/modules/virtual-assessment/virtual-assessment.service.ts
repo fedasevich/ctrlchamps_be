@@ -6,7 +6,7 @@ import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { Repository } from 'typeorm';
 
-import { CreateVirtualAssessmentDto } from './dto/virtual_assessment.dto';
+import { CreateVirtualAssessmentDto } from './dto/virtual-assessment.dto';
 
 @Injectable()
 export class VirtualAssessmentService {
