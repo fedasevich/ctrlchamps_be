@@ -7,11 +7,15 @@ import {
   UseGuards,
   Req,
   UnauthorizedException,
+  Get,
+  Param,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import { Appointment } from 'src/common/entities/appointment.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { APPOINTMENT_EXAMPLE } from 'src/modules/appointment/appointment.constants';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import { AppointmentApiPath } from 'src/modules/appointment/enums/appointment.api-path.enum';
@@ -50,5 +54,28 @@ export class AppointmentController {
     }
 
     await this.appointmentService.create(createAppointmentDto, userId);
+  }
+
+  @ApiOperation({ summary: 'Appointment getting' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Appointment was sent successfully',
+    schema: {
+      example: APPOINTMENT_EXAMPLE,
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.AppointmentNotFound,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  @Get(AppointmentApiPath.AppointmentId)
+  async getOne(
+    @Param('appointmentId') appointmentId: string,
+  ): Promise<Appointment> {
+    return this.appointmentService.findOneById(appointmentId);
   }
 }

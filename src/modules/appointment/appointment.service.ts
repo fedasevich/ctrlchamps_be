@@ -252,4 +252,35 @@ export class AppointmentService {
       );
     }
   }
+
+  async findOneById(appointmentId: string): Promise<Appointment> {
+    try {
+      const appointment = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .innerJoinAndSelect('appointment.seekerTasks', 'seekerTasks')
+        .where('appointment.id = :appointmentId', { appointmentId })
+        .getOne();
+
+      if (!appointment) {
+        throw new HttpException(
+          ErrorMessage.AppointmentNotFound,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return appointment;
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

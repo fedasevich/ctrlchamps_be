@@ -25,4 +25,5 @@ export enum ErrorMessage {
   UserIsNotAuthorized = 'User not authorized or userId not found',
   FailedSendAppointmentConfirmation = 'Failed to send the appointment confirmation email',
   CaregiverNotExist = 'Caregiver does not exist',
+  AppointmentNotFound = 'Appointment not found',
 }
