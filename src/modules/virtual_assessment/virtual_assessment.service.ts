@@ -77,18 +77,8 @@ export class VirtualAssessmentService {
 
   async deleteVirtualAssessment(appointmentId: string): Promise<void> {
     try {
-      const virtualAssessment = await this.virtualAssessmentRepository
-        .createQueryBuilder('virtualAssessment')
-        .leftJoinAndSelect('virtualAssessment.appointment', 'appointment')
-        .where('appointment.id = :id', { id: appointmentId })
-        .getOne();
-
-      if (!virtualAssessment) {
-        throw new HttpException(
-          ErrorMessage.VirtualAssessmentNotFound,
-          HttpStatus.NOT_FOUND,
-        );
-      }
+      const virtualAssessment =
+        await this.findVirtualAssessmentById(appointmentId);
 
       await this.virtualAssessmentRepository.remove(virtualAssessment);
     } catch (error) {
