@@ -303,14 +303,7 @@ export class AppointmentService {
     appointment: Partial<Appointment>,
   ): Promise<void> {
     try {
-      const existingAppointment = await this.findOneById(appointmentId);
-
-      if (!existingAppointment) {
-        throw new HttpException(
-          ErrorMessage.AppointmentNotFound,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
+      await this.findOneById(appointmentId);
 
       await this.appointmentRepository
         .createQueryBuilder()
