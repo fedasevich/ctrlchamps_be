@@ -258,8 +258,14 @@ export class AppointmentService {
       const appointment = await this.appointmentRepository
         .createQueryBuilder('appointment')
         .innerJoinAndSelect('appointment.seekerTasks', 'seekerTasks')
-        .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
-        .innerJoinAndSelect('caregiverInfo.user', 'caregiverUser')
+        .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .addSelect(['caregiverInfo.id'])
+        .innerJoin('caregiverInfo.user', 'caregiverUser')
+        .addSelect([
+          'caregiverUser.id',
+          'caregiverUser.firstName',
+          'caregiverUser.lastName',
+        ])
         .where('appointment.id = :appointmentId', { appointmentId })
         .getOne();
 
