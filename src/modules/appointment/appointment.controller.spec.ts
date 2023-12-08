@@ -19,8 +19,8 @@ describe('AppointmentController', () => {
 
   beforeEach(async () => {
     mockAppointmentService = {
-      findAllByUserId: jest.fn(() => Promise.resolve(APPOINTMENTS_EXAMPLE)),
-      findOneById: jest.fn(() => Promise.resolve(APPOINTMENT_EXAMPLE)),
+      findAllByUserId: jest.fn(() => APPOINTMENTS_EXAMPLE),
+      findOneById: jest.fn(() => APPOINTMENT_EXAMPLE),
       updateById: jest.fn(),
     };
 
