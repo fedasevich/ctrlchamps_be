@@ -100,7 +100,7 @@ export class AppointmentController {
   })
   @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: ErrorMessage.InternalServerError,
+    description: ErrorMessage.FailedUpdateAppointment,
   })
   @Get(AppointmentApiPath.AppointmentId)
   async getOne(
