@@ -297,4 +297,31 @@ export class AppointmentService {
       );
     }
   }
+
+  async updateById(
+    appointmentId: string,
+    appointment: Partial<Appointment>,
+  ): Promise<void> {
+    try {
+      const existingAppointment = await this.findOneById(appointmentId);
+
+      if (!existingAppointment) {
+        throw new HttpException(
+          ErrorMessage.AppointmentNotFound,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.appointmentRepository
+        .createQueryBuilder()
+        .update(Appointment)
+        .set(appointment)
+        .where('appointment.id = :appointmentId', {
+          appointmentId,
+        })
+        .execute();
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

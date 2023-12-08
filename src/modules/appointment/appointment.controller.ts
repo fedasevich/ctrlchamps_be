@@ -9,6 +9,7 @@ import {
   UnauthorizedException,
   Get,
   Param,
+  Patch,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -21,6 +22,7 @@ import {
 } from 'src/modules/appointment/appointment.constants';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
+import { UpdateAppointmentDto } from 'src/modules/appointment/dto/update-appointment.dto';
 import { AppointmentApiPath } from 'src/modules/appointment/enums/appointment.api-path.enum';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
@@ -57,6 +59,31 @@ export class AppointmentController {
     }
 
     await this.appointmentService.create(createAppointmentDto, userId);
+  }
+
+  @ApiOperation({ summary: 'Appointment updating' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Appointment was updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.AppointmentNotFound,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Patch(AppointmentApiPath.AppointmentId)
+  async update(
+    @Param('appointmentId') appointmentId: string,
+    @Body() updateAppointmentDto: UpdateAppointmentDto,
+  ): Promise<void> {
+    await this.appointmentService.updateById(
+      appointmentId,
+      updateAppointmentDto,
+    );
   }
 
   @ApiOperation({ summary: 'Appointment getting by Id' })
