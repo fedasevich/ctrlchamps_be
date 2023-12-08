@@ -258,6 +258,8 @@ export class AppointmentService {
       const appointment = await this.appointmentRepository
         .createQueryBuilder('appointment')
         .innerJoinAndSelect('appointment.seekerTasks', 'seekerTasks')
+        .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .innerJoinAndSelect('caregiverInfo.user', 'caregiverUser')
         .where('appointment.id = :appointmentId', { appointmentId })
         .getOne();
 
@@ -292,7 +294,7 @@ export class AppointmentService {
         .getMany();
     } catch (error) {
       throw new HttpException(
-        ErrorMessage.AppointmentNotFound,
+        ErrorMessage.InternalServerError,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -314,7 +316,10 @@ export class AppointmentService {
         })
         .execute();
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        ErrorMessage.FailedUpdateAppointment,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
