@@ -27,11 +27,13 @@ import { AppService } from './app.service';
 import { CaregiverInfo } from './common/entities/caregiver.profile.entity';
 import { Certificate } from './common/entities/certificate.entity';
 import { User } from './common/entities/user.entity';
+import { VirtualAssessment } from './common/entities/virtual-assessment.entity';
 import { WorkExperience } from './common/entities/work-experience.entity';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { UserModule } from './modules/users/user.module';
+import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-assessment.module';
 
 @Module({
   imports: [
@@ -60,6 +62,7 @@ import { UserModule } from './modules/users/user.module';
           SeekerCapability,
           SeekerDiagnosis,
           SeekerTask,
+          VirtualAssessment,
         ],
         synchronize: true,
       }),
@@ -78,6 +81,7 @@ import { UserModule } from './modules/users/user.module';
     SeekerDiagnosisModule,
     ProfileModule,
     CaregiverInfoModule,
+    VirtualAssessmentModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService],

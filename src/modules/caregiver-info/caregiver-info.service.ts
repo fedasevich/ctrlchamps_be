@@ -132,4 +132,23 @@ export class CaregiverInfoService {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async findUserByCaregiverInfoId(
+    caregiverInfoId: string,
+  ): Promise<CaregiverInfo> {
+    try {
+      return await this.caregiverInfoRepository
+        .createQueryBuilder('caregiverInfoId')
+        .innerJoinAndSelect('caregiverInfoId.user', 'user')
+        .where('caregiverInfoId.id = :caregiverInfoId', {
+          caregiverInfoId,
+        })
+        .getOne();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.UserNotExist,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
