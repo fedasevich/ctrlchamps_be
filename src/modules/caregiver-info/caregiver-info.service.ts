@@ -8,9 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { AppointmentService } from 'modules/appointment/appointment.service';
-import { ProfileService } from 'modules/profile/profile.service';
 import { UserRole } from 'modules/users/enums/user-role.enum';
-import { UserService } from 'modules/users/user.service';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
@@ -26,8 +24,6 @@ export class CaregiverInfoService {
     private readonly caregiverInfoRepository: Repository<CaregiverInfo>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly userService: UserService,
-    private readonly profileService: ProfileService,
     @Inject(forwardRef(() => AppointmentService))
     private appointmentService: AppointmentService,
   ) {}
@@ -103,15 +99,27 @@ export class CaregiverInfoService {
 
   async getDetailedInfo(userId: string): Promise<DetailedCaregiverInfo> {
     try {
-      const workExperience =
-        await this.profileService.getWorkExperiences(userId);
-      const certificate = await this.profileService.getUserCertificates(userId);
-      const caregiverInfo =
-        await this.profileService.getProfileInformation(userId);
-      const userInfo = await this.userService.findById(userId);
+      const userInfo = await this.userRepository
+        .createQueryBuilder('user')
+        .innerJoin('user.caregiverInfo', 'caregiverInfo')
+        .addSelect([
+          'caregiverInfo.id',
+          'caregiverInfo.description',
+          'caregiverInfo.hourlyRate',
+          'caregiverInfo.videoLink',
+          'caregiverInfo.services',
+        ])
+        .innerJoinAndSelect('caregiverInfo.workExperiences', 'workExperiences')
+        .innerJoinAndSelect('caregiverInfo.certificates', 'certificates')
+        .where('user.id = :userId', { userId })
+        .getOne();
+
       const count = await this.appointmentService.findAppointmentsCountById(
-        caregiverInfo.id,
+        userInfo.caregiverInfo.id,
       );
+
+      const { workExperiences, certificates, ...caregiverInfo } =
+        userInfo.caregiverInfo;
 
       const detailedCaregiverInfo = {
         id: userInfo.id,
@@ -120,8 +128,8 @@ export class CaregiverInfoService {
         lastName: userInfo.lastName,
         numberOfAppointments: count,
         caregiverInfo,
-        workExperiences: workExperience,
-        qualifications: certificate,
+        workExperiences,
+        qualifications: certificates,
       };
 
       return detailedCaregiverInfo;

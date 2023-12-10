@@ -9,6 +9,7 @@ export type DetailedCaregiverInfo = {
   isOpenToSeekerHomeLiving: boolean;
   numberOfAppointments: number;
   caregiverInfo: {
+    id: string;
     description: string;
     hourlyRate: number;
     videoLink: string;
