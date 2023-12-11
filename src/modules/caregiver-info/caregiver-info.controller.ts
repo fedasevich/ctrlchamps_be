@@ -5,6 +5,7 @@ import {
   Param,
   ParseBoolPipe,
   Query,
+  UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 
 import { CaregiverInfoService } from './caregiver-info.service';
 import {
@@ -25,6 +27,7 @@ import { FiltredCaregiver } from './types/filtred-caregiver.type';
 
 @ApiTags('Caregiver Info')
 @Controller(ApiPath.CaregiverInfo)
+@UseGuards(TokenGuard)
 export class CaregiverInfoController {
   constructor(private readonly caregiverInfoService: CaregiverInfoService) {}
 
