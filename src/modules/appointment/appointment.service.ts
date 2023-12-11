@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
-import { MINIMUM_BALANCE } from 'src/modules/appointment/constants';
+import { MINIMUM_BALANCE } from 'src/modules/appointment/appointment.constants';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import { Appointment as AppointmentType } from 'src/modules/appointment/types/appointment.type';
 import { CaregiverInfoService } from 'src/modules/caregiver-info/caregiver-info.service';
@@ -248,6 +248,82 @@ export class AppointmentService {
 
       throw new HttpException(
         ErrorMessage.FailedSendAppointmentConfirmation,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findOneById(appointmentId: string): Promise<Appointment> {
+    try {
+      const appointment = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .innerJoinAndSelect('appointment.seekerTasks', 'seekerTasks')
+        .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .addSelect(['caregiverInfo.id'])
+        .innerJoin('caregiverInfo.user', 'caregiverUser')
+        .addSelect([
+          'caregiverUser.id',
+          'caregiverUser.firstName',
+          'caregiverUser.lastName',
+        ])
+        .where('appointment.id = :appointmentId', { appointmentId })
+        .getOne();
+
+      if (!appointment) {
+        throw new HttpException(
+          ErrorMessage.AppointmentNotFound,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return appointment;
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findAllByUserId(userId: string): Promise<Appointment[]> {
+    try {
+      return await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where('appointment.userId = :userId', { userId })
+        .getMany();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async updateById(
+    appointmentId: string,
+    appointment: Partial<Appointment>,
+  ): Promise<void> {
+    try {
+      await this.findOneById(appointmentId);
+
+      await this.appointmentRepository
+        .createQueryBuilder()
+        .update(Appointment)
+        .set(appointment)
+        .where('appointment.id = :appointmentId', {
+          appointmentId,
+        })
+        .execute();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedUpdateAppointment,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
