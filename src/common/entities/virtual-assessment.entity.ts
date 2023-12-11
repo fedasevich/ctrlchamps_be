@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
+import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
 import {
   Entity,
   Column,
@@ -16,6 +17,18 @@ export class VirtualAssessment {
   })
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @ApiProperty({
+    description: 'Status of the virtual assessment',
+    enum: VirtualAssessmentStatus,
+    default: VirtualAssessmentStatus.Proposed,
+  })
+  @Column({
+    type: 'enum',
+    enum: VirtualAssessmentStatus,
+    default: VirtualAssessmentStatus.Proposed,
+  })
+  status: VirtualAssessmentStatus;
 
   @ApiProperty({
     description: 'Start time of the virtual assessment',
