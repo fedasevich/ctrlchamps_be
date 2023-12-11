@@ -3,6 +3,7 @@ import {
   Get,
   HttpStatus,
   Param,
+  ParseBoolPipe,
   Query,
   UsePipes,
   ValidationPipe,
@@ -53,10 +54,12 @@ export class CaregiverInfoController {
     description: ErrorMessage.InternalServerError,
   })
   async filterAll(
+    @Query('isOpenToSeekerHomeLiving', ParseBoolPipe)
+    isOpenToSeekerHomeLiving: boolean,
     @Query() queryParams: FilterQueryDto,
   ): Promise<FiltredCaregiver[]> {
     return this.caregiverInfoService.filterAll(
-      queryParams.isOpenToSeekerHomeLiving,
+      isOpenToSeekerHomeLiving,
       queryParams.services,
     );
   }

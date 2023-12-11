@@ -48,7 +48,10 @@ describe('CaregiverInfoController', () => {
         utcOffset: -480,
         services: ['Personal Care Assistance'],
       };
-      const result = await controller.filterAll(queryParams);
+      const result = await controller.filterAll(
+        queryParams.isOpenToSeekerHomeLiving,
+        queryParams,
+      );
       expect(result).toEqual(FILTRED_CAREGIVERS_EXAMPLE);
       expect(mockCaregiverInfoService.filterAll).toHaveBeenCalledWith(
         queryParams.isOpenToSeekerHomeLiving,
