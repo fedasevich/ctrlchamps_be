@@ -22,6 +22,7 @@ describe('AppointmentController', () => {
       findAllByUserId: jest.fn(() => APPOINTMENTS_EXAMPLE),
       findOneById: jest.fn(() => APPOINTMENT_EXAMPLE),
       updateById: jest.fn(),
+      findAllByDate: jest.fn(() => APPOINTMENTS_EXAMPLE),
     };
 
     const mockAuthGuard = { canActivate: jest.fn(() => true) };
@@ -46,6 +47,25 @@ describe('AppointmentController', () => {
       } as AuthenticatedRequest);
 
       expect(mockAppointmentService.findAllByUserId).toHaveBeenCalledWith(id);
+      expect(result).toEqual(APPOINTMENTS_EXAMPLE);
+    });
+  });
+
+  describe('getAllByDate', () => {
+    it('should return an array of appointments', async () => {
+      const id = 'testId';
+      const date = '2023-12-13';
+      const result = await controller.getAllByDate(
+        {
+          user: { id },
+        } as AuthenticatedRequest,
+        date,
+      );
+
+      expect(mockAppointmentService.findAllByDate).toHaveBeenCalledWith(
+        id,
+        date,
+      );
       expect(result).toEqual(APPOINTMENTS_EXAMPLE);
     });
   });
