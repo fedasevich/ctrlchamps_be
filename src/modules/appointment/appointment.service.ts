@@ -16,6 +16,8 @@ import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
 import { UserService } from 'src/modules/users/user.service';
 import { EntityManager, Repository } from 'typeorm';
 
+import { UserRole } from '../users/enums/user-role.enum';
+
 @Injectable()
 export class AppointmentService {
   private readonly seekerAppointmentTemplateId = this.configService.get<string>(
@@ -298,6 +300,44 @@ export class AppointmentService {
         .createQueryBuilder('appointment')
         .where('appointment.userId = :userId', { userId })
         .getMany();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findAllByDate(userId: string, date: string): Promise<Appointment[]> {
+    try {
+      const user = await this.userService.findById(userId);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserNotExist,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (user.role !== UserRole.Caregiver) {
+        throw new HttpException(
+          ErrorMessage.UserIsNotCaregiver,
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      const appointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where('appointment.userId = :userId', { userId })
+        .andWhere('DATE(appointment.startDate) <= :date', {
+          date,
+        })
+        .andWhere('DATE(appointment.endDate) >= :date', {
+          date,
+        })
+        .getMany();
+
+      return appointments;
     } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,
