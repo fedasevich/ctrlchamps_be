@@ -259,16 +259,32 @@ export class AppointmentService {
     try {
       const appointment = await this.appointmentRepository
         .createQueryBuilder('appointment')
-        .innerJoinAndSelect('appointment.seekerTasks', 'seekerTasks')
+
         .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
-        .addSelect(['caregiverInfo.id'])
-        .innerJoin('caregiverInfo.user', 'caregiverUser')
+        .addSelect(['caregiverInfo.id', 'caregiverInfo.timeZone'])
+        .innerJoin('caregiverInfo.user', 'caregiver')
         .addSelect([
-          'caregiverUser.id',
-          'caregiverUser.firstName',
-          'caregiverUser.lastName',
+          'caregiver.id',
+          'caregiver.lastName',
+          'caregiver.firstName',
         ])
+
+        .innerJoin('appointment.user', 'user')
+        .addSelect(['user.id', 'user.lastName', 'user.firstName'])
+
+        .leftJoinAndSelect('appointment.seekerActivities', 'seekerActivity')
+        .leftJoinAndSelect('seekerActivity.activity', 'activity')
+
+        .leftJoinAndSelect('appointment.seekerCapabilities', 'seekerCapability')
+        .leftJoinAndSelect('seekerCapability.capability', 'capability')
+
+        .leftJoinAndSelect('appointment.seekerDiagnoses', 'seekerDiagnosis')
+        .leftJoinAndSelect('seekerDiagnosis.diagnosis', 'diagnosis')
+
+        .innerJoinAndSelect('appointment.seekerTasks', 'seekerTasks')
+
         .where('appointment.id = :appointmentId', { appointmentId })
+
         .getOne();
 
       if (!appointment) {
@@ -328,7 +344,15 @@ export class AppointmentService {
 
       const appointments = await this.appointmentRepository
         .createQueryBuilder('appointment')
-        .where('appointment.userId = :userId', { userId })
+
+        .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .addSelect(['caregiverInfo.id', 'caregiverInfo.timeZone'])
+
+        .innerJoin('appointment.user', 'user')
+        .addSelect(['user.id', 'user.lastName', 'user.firstName'])
+
+        .where('caregiverInfo.userId = :userId', { userId })
+
         .andWhere('DATE(appointment.startDate) <= :date', {
           date,
         })
