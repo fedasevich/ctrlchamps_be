@@ -28,5 +28,6 @@ import { ProfileService } from 'src/modules/profile/profile.service';
   ],
   providers: [ProfileService],
   controllers: [ProfileController],
+  exports: [ProfileService],
 })
 export class ProfileModule {}
