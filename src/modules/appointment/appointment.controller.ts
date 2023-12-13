@@ -1,17 +1,17 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
-  Post,
-  UseGuards,
-  Req,
-  UnauthorizedException,
-  Get,
   Param,
   Patch,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
@@ -128,5 +128,31 @@ export class AppointmentController {
   @Get(AppointmentApiPath.Root)
   async getAll(@Req() req: AuthenticatedRequest): Promise<Appointment[]> {
     return this.appointmentService.findAllByUserId(req.user.id);
+  }
+
+  @ApiOperation({ summary: 'Getting all appointments by date' })
+  @ApiParam({
+    name: 'date',
+    description: 'Date of appointment to search',
+    required: true,
+    type: 'Date',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Appointments were sent successfully',
+    schema: {
+      example: APPOINTMENTS_EXAMPLE,
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  @Get(AppointmentApiPath.Date)
+  async getAllByDate(
+    @Req() req: AuthenticatedRequest,
+    @Param('date') date: string,
+  ): Promise<Appointment[]> {
+    return this.appointmentService.findAllByDate(req.user.id, date);
   }
 }

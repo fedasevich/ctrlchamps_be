@@ -16,6 +16,8 @@ import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
 import { UserService } from 'src/modules/users/user.service';
 import { EntityManager, Repository } from 'typeorm';
 
+import { UserRole } from '../users/enums/user-role.enum';
+
 @Injectable()
 export class AppointmentService {
   private readonly seekerAppointmentTemplateId = this.configService.get<string>(
@@ -275,16 +277,36 @@ export class AppointmentService {
     try {
       const appointment = await this.appointmentRepository
         .createQueryBuilder('appointment')
-        .innerJoinAndSelect('appointment.seekerTasks', 'seekerTasks')
+
         .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
-        .addSelect(['caregiverInfo.id', 'caregiverInfo.hourlyRate'])
-        .innerJoin('caregiverInfo.user', 'caregiverUser')
         .addSelect([
-          'caregiverUser.id',
-          'caregiverUser.firstName',
-          'caregiverUser.lastName',
+          'caregiverInfo.id',
+          'caregiverInfo.timeZone',
+          'caregiverInfo.hourlyRate',
         ])
+        .innerJoin('caregiverInfo.user', 'caregiver')
+        .addSelect([
+          'caregiver.id',
+          'caregiver.lastName',
+          'caregiver.firstName',
+        ])
+
+        .innerJoin('appointment.user', 'user')
+        .addSelect(['user.id', 'user.lastName', 'user.firstName'])
+
+        .leftJoinAndSelect('appointment.seekerActivities', 'seekerActivity')
+        .leftJoinAndSelect('seekerActivity.activity', 'activity')
+
+        .leftJoinAndSelect('appointment.seekerCapabilities', 'seekerCapability')
+        .leftJoinAndSelect('seekerCapability.capability', 'capability')
+
+        .leftJoinAndSelect('appointment.seekerDiagnoses', 'seekerDiagnosis')
+        .leftJoinAndSelect('seekerDiagnosis.diagnosis', 'diagnosis')
+
+        .innerJoinAndSelect('appointment.seekerTasks', 'seekerTasks')
+
         .where('appointment.id = :appointmentId', { appointmentId })
+
         .getOne();
 
       if (!appointment) {
@@ -316,6 +338,52 @@ export class AppointmentService {
         .createQueryBuilder('appointment')
         .where('appointment.userId = :userId', { userId })
         .getMany();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findAllByDate(userId: string, date: string): Promise<Appointment[]> {
+    try {
+      const user = await this.userService.findById(userId);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserNotExist,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (user.role !== UserRole.Caregiver) {
+        throw new HttpException(
+          ErrorMessage.UserIsNotCaregiver,
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      const appointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+
+        .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .addSelect(['caregiverInfo.id', 'caregiverInfo.timeZone'])
+
+        .innerJoin('appointment.user', 'user')
+        .addSelect(['user.id', 'user.lastName', 'user.firstName'])
+
+        .where('caregiverInfo.userId = :userId', { userId })
+
+        .andWhere('DATE(appointment.startDate) <= :date', {
+          date,
+        })
+        .andWhere('DATE(appointment.endDate) >= :date', {
+          date,
+        })
+        .getMany();
+
+      return appointments;
     } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,

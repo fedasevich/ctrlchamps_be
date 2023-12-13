@@ -1,20 +1,33 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { EmailService } from 'src/modules/email/services/email.service';
 import { Repository } from 'typeorm';
 
+import { UpdateVirtualAssessmentStatusDto } from './dto/update-status.dto';
 import { CreateVirtualAssessmentDto } from './dto/virtual-assessment.dto';
 
 @Injectable()
 export class VirtualAssessmentService {
+  private readonly requestedVirtualAssessmentTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_REQUESTED_VIRTUAL_ASSESSMENT_TEMPLATE_ID',
+    );
+
+  private readonly caregiverAppointmentRedirectLink =
+    this.configService.get<string>('CAREGIVER_APPOINTMENT_REDIRECT_LINK');
+
   constructor(
     @InjectRepository(VirtualAssessment)
     private readonly virtualAssessmentRepository: Repository<VirtualAssessment>,
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   async createVirtualAssessment(
@@ -28,6 +41,7 @@ export class VirtualAssessmentService {
         .createQueryBuilder('appointment')
         .leftJoinAndSelect('appointment.user', 'user')
         .leftJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .leftJoinAndSelect('caregiverInfo.user', 'caregiverUser')
         .where('appointment.id = :id', { id: appointmentId })
         .getOne();
 
@@ -46,9 +60,25 @@ export class VirtualAssessmentService {
         meetingLink,
       });
 
+      await this.emailService.sendEmail({
+        to: appointment.caregiverInfo.user.email,
+        templateId: this.requestedVirtualAssessmentTemplateId,
+        dynamicTemplateData: {
+          clientName: `${appointment.user.firstName} ${appointment.user.lastName}`,
+          scheduleLink: this.caregiverAppointmentRedirectLink,
+        },
+      });
+
       await this.virtualAssessmentRepository.save(virtualAssessment);
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(
+          ErrorMessage.InternalServerError,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 
@@ -71,7 +101,14 @@ export class VirtualAssessmentService {
 
       return virtualAssessment;
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(
+          ErrorMessage.InternalServerError,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 
@@ -82,7 +119,44 @@ export class VirtualAssessmentService {
 
       await this.virtualAssessmentRepository.remove(virtualAssessment);
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(
+          ErrorMessage.InternalServerError,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
+  }
+
+  async updateStatus(
+    appointmentId: string,
+    updateStatusDto: UpdateVirtualAssessmentStatusDto,
+  ): Promise<void> {
+    try {
+      const virtualAssessment =
+        await this.findVirtualAssessmentById(appointmentId);
+
+      if (!virtualAssessment) {
+        throw new HttpException(
+          ErrorMessage.VirtualAssessmentNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      virtualAssessment.status = updateStatusDto.status;
+
+      await this.virtualAssessmentRepository.save(virtualAssessment);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(
+          ErrorMessage.InternalServerError,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 }
