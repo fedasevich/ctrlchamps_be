@@ -9,13 +9,13 @@ import { User } from 'src/common/entities/user.entity';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
-  OneToMany,
-  ManyToOne,
+  Entity,
   JoinColumn,
+  ManyToOne,
+  OneToMany,
   OneToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { VirtualAssessment } from './virtual-assessment.entity';
@@ -172,6 +172,9 @@ export class Appointment {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @OneToOne(() => VirtualAssessment)
+  @OneToOne(
+    () => VirtualAssessment,
+    (virtualAssessment) => virtualAssessment.appointment,
+  )
   virtualAssessment: VirtualAssessment;
 }
