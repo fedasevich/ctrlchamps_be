@@ -2,6 +2,7 @@ export const VIRTUAL_ASSESSMENT_GET_EXAMPLE = {
   id: '78b96c71-a7cb-4598-966d-52c4b92d13cf',
   startTime: '03:00:00',
   endTime: '06:30:00',
+  status: 'Proposed',
   assessmentDate: '2023-12-31',
   meetingLink: 'https://meet.example.com/1234',
   appointment: {

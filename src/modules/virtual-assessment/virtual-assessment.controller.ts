@@ -9,6 +9,7 @@ import {
   Req,
   UnauthorizedException,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 
@@ -19,6 +20,7 @@ import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
 
 import { VIRTUAL_ASSESSMENT_GET_EXAMPLE } from './constants/virtual-assessment.constant';
+import { UpdateVirtualAssessmentStatusDto } from './dto/update-status.dto';
 import { CreateVirtualAssessmentDto } from './dto/virtual-assessment.dto';
 import { VirtualAssessmentApiPath } from './enums/virtual-assessment-path.enum';
 import { VirtualAssessmentService } from './virtual-assessment.service';
@@ -107,5 +109,27 @@ export class VirtualAssessmentController {
     }
 
     return this.virtualAssessmentService.deleteVirtualAssessment(appointmentId);
+  }
+
+  @Patch(VirtualAssessmentApiPath.SingleVirtualAssessment)
+  @ApiOperation({
+    summary: 'Update status of a virtual assessment by appointment ID',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'The virtual assessment status has been updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: "The virtual assessment for this appontment wasn't found",
+  })
+  async updateStatus(
+    @Param('appointmentId') appointmentId: string,
+    @Body() updateStatusDto: UpdateVirtualAssessmentStatusDto,
+  ): Promise<void> {
+    return this.virtualAssessmentService.updateStatus(
+      appointmentId,
+      updateStatusDto,
+    );
   }
 }
