@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
 import { Repository } from 'typeorm';
 
@@ -20,6 +21,16 @@ export class VirtualAssessmentService {
 
   private readonly caregiverAppointmentRedirectLink =
     this.configService.get<string>('CAREGIVER_APPOINTMENT_REDIRECT_LINK');
+
+  private readonly seekerVirtualAssessmentDoneTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_SEEKER_SUBMIT_CONTRACT_PROPOSAL_TEMPLATE_ID',
+    );
+
+  private readonly caregiverVirtualAssessmentDoneTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_CAREGIVER_SUBMIT_CONTRACT_PROPOSAL_TEMPLATE_ID',
+    );
 
   constructor(
     @InjectRepository(VirtualAssessment)
@@ -148,6 +159,50 @@ export class VirtualAssessmentService {
       virtualAssessment.status = updateStatusDto.status;
 
       await this.virtualAssessmentRepository.save(virtualAssessment);
+
+      if (updateStatusDto.status === VirtualAssessmentStatus.Finished) {
+        await this.sendSubmitContractProposalEmails(appointmentId);
+      }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(
+          ErrorMessage.InternalServerError,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
+  }
+
+  private async sendSubmitContractProposalEmails(
+    appointmentId: string,
+  ): Promise<void> {
+    try {
+      const appointment = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .leftJoinAndSelect('appointment.user', 'user')
+        .leftJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .leftJoinAndSelect('caregiverInfo.user', 'caregiverUser')
+        .where('appointment.id = :id', { id: appointmentId })
+        .getOne();
+
+      if (!appointment) {
+        throw new HttpException(
+          ErrorMessage.AppointmentNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      await this.emailService.sendEmail({
+        to: appointment.caregiverInfo.user.email,
+        templateId: this.caregiverVirtualAssessmentDoneTemplateId,
+      });
+
+      await this.emailService.sendEmail({
+        to: appointment.user.email,
+        templateId: this.seekerVirtualAssessmentDoneTemplateId,
+      });
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
