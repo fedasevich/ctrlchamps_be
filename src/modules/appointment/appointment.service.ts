@@ -18,6 +18,8 @@ import { EntityManager, Repository } from 'typeorm';
 
 import { UserRole } from '../users/enums/user-role.enum';
 
+import { AppointmentStatus } from './enums/appointment-status.enum';
+
 @Injectable()
 export class AppointmentService {
   private readonly seekerAppointmentTemplateId = this.configService.get<string>(
@@ -27,6 +29,16 @@ export class AppointmentService {
   private readonly caregiverAppointmentTemplateId =
     this.configService.get<string>(
       'SENDGRID_CAREGIVER_APPOINTMENT_TEMPLATE_ID',
+    );
+
+  private readonly caregiverAppointmentRequestAcceptTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_APPOINTMENT_REQUEST_ACCEPT_TEMPLATE_ID',
+    );
+
+  private readonly caregiverAppointmentRequestRejectTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_APPOINTMENT_REQUEST_REJECT_TEMPLATE_ID',
     );
 
   private readonly seekerAppointmentRedirectLink =
@@ -393,7 +405,21 @@ export class AppointmentService {
     appointment: Partial<Appointment>,
   ): Promise<void> {
     try {
-      await this.findOneById(appointmentId);
+      const appointmentToUpdate = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .innerJoin('appointment.user', 'user')
+        .addSelect(['user.id', 'user.email'])
+
+        .where('appointment.id = :appointmentId', { appointmentId })
+
+        .getOne();
+
+      if (!appointmentToUpdate) {
+        throw new HttpException(
+          ErrorMessage.AppointmentNotFound,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
       await this.appointmentRepository
         .createQueryBuilder()
@@ -403,11 +429,37 @@ export class AppointmentService {
           appointmentId,
         })
         .execute();
+
+      if (appointment.status) {
+        const templateId = this.getTemplateIdForStatus(appointment.status);
+
+        await this.emailService.sendEmail({
+          to: appointmentToUpdate.user.email,
+          templateId,
+          dynamicTemplateData: {
+            appointmentLink: this.seekerAppointmentRedirectLink,
+          },
+        });
+      }
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedUpdateAppointment,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  private getTemplateIdForStatus(status: AppointmentStatus): string {
+    switch (status) {
+      case AppointmentStatus.Accepted:
+        return this.caregiverAppointmentRequestAcceptTemplateId;
+      case AppointmentStatus.Rejected:
+        return this.caregiverAppointmentRequestRejectTemplateId;
+      default:
+        throw new HttpException(
+          ErrorMessage.UnsupportedAppointmentStatus,
+          HttpStatus.BAD_REQUEST,
+        );
     }
   }
 }
