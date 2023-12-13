@@ -48,20 +48,7 @@ export class VirtualAssessmentService {
       const { startTime, endTime, assessmentDate, meetingLink, appointmentId } =
         createVirtualAssessmentDto;
 
-      const appointment = await this.appointmentRepository
-        .createQueryBuilder('appointment')
-        .leftJoinAndSelect('appointment.user', 'user')
-        .leftJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
-        .leftJoinAndSelect('caregiverInfo.user', 'caregiverUser')
-        .where('appointment.id = :id', { id: appointmentId })
-        .getOne();
-
-      if (!appointment) {
-        throw new HttpException(
-          ErrorMessage.AppointmentNotFound,
-          HttpStatus.NOT_FOUND,
-        );
-      }
+      const appointment = await this.getDetailedAppointmentInfo(appointmentId);
 
       const virtualAssessment = this.virtualAssessmentRepository.create({
         appointment,
@@ -175,15 +162,15 @@ export class VirtualAssessmentService {
     }
   }
 
-  private async sendSubmitContractProposalEmails(
+  private async getDetailedAppointmentInfo(
     appointmentId: string,
-  ): Promise<void> {
+  ): Promise<Appointment> {
     try {
       const appointment = await this.appointmentRepository
         .createQueryBuilder('appointment')
-        .leftJoinAndSelect('appointment.user', 'user')
-        .leftJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
-        .leftJoinAndSelect('caregiverInfo.user', 'caregiverUser')
+        .innerJoinAndSelect('appointment.user', 'user')
+        .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .innerJoinAndSelect('caregiverInfo.user', 'caregiverUser')
         .where('appointment.id = :id', { id: appointmentId })
         .getOne();
 
@@ -193,6 +180,25 @@ export class VirtualAssessmentService {
           HttpStatus.NOT_FOUND,
         );
       }
+
+      return appointment;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(
+          ErrorMessage.InternalServerError,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
+  }
+
+  private async sendSubmitContractProposalEmails(
+    appointmentId: string,
+  ): Promise<void> {
+    try {
+      const appointment = await this.getDetailedAppointmentInfo(appointmentId);
 
       await this.emailService.sendEmail({
         to: appointment.caregiverInfo.user.email,
