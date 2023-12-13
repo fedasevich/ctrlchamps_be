@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
-import { MINIMUM_BALANCE } from 'src/modules/appointment/constants';
+import { MINIMUM_BALANCE } from 'src/modules/appointment/appointment.constants';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import { Appointment as AppointmentType } from 'src/modules/appointment/types/appointment.type';
 import { CaregiverInfoService } from 'src/modules/caregiver-info/caregiver-info.service';
@@ -16,14 +16,24 @@ import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
 import { UserService } from 'src/modules/users/user.service';
 import { EntityManager, Repository } from 'typeorm';
 
+import { UserRole } from '../users/enums/user-role.enum';
+
 @Injectable()
 export class AppointmentService {
   private readonly seekerAppointmentTemplateId = this.configService.get<string>(
     'SENDGRID_SEEKER_APPOINTMENT_TEMPLATE_ID',
   );
 
+  private readonly caregiverAppointmentTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_CAREGIVER_APPOINTMENT_TEMPLATE_ID',
+    );
+
   private readonly seekerAppointmentRedirectLink =
     this.configService.get<string>('SEEKER_APPOINTMENT_REDIRECT_LINK');
+
+  private readonly caregiverAppointmentRedirectLink =
+    this.configService.get<string>('CAREGIVER_APPOINTMENT_REDIRECT_LINK');
 
   constructor(
     @InjectRepository(Appointment)
@@ -110,7 +120,10 @@ export class AppointmentService {
         },
       );
 
-      await this.sendAppointmentConfirmationEmail(userId);
+      await this.sendAppointmentConfirmationEmails(
+        userId,
+        createAppointment.caregiverInfoId,
+      );
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -155,25 +168,32 @@ export class AppointmentService {
     try {
       const { balance, email } = await this.userService.findById(userId);
 
-      const { hourlyRate } =
+      const caregiverInfo =
         await this.caregiverInfoService.findById(caregiverInfoId);
 
-      const updatedSeekerBalance = balance - hourlyRate;
+      if (!caregiverInfo) {
+        throw new HttpException(
+          ErrorMessage.CaregiverInfoNotFound,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const updatedSeekerBalance = balance - caregiverInfo.hourlyRate;
 
       if (updatedSeekerBalance < MINIMUM_BALANCE) {
         throw new HttpException(
           ErrorMessage.NotEnoughMoney,
           HttpStatus.BAD_REQUEST,
         );
-      } else {
-        await this.userService.updateWithTransaction(
-          email,
-          { balance: updatedSeekerBalance },
-          transactionalEntityManager,
-        );
-
-        return hourlyRate;
       }
+
+      await this.userService.updateWithTransaction(
+        email,
+        { balance: updatedSeekerBalance },
+        transactionalEntityManager,
+      );
+
+      return caregiverInfo.hourlyRate;
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -186,11 +206,41 @@ export class AppointmentService {
     }
   }
 
-  private async sendAppointmentConfirmationEmail(
+  async findAppointmentsCountById(caregiverInfoId: string): Promise<number> {
+    try {
+      const appointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .innerJoin('caregiverInfo.user', 'user')
+        .where('caregiverInfo.id = :caregiverInfoId', { caregiverInfoId })
+        .getCount();
+
+      return appointments;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private async sendAppointmentConfirmationEmails(
     userId: string,
+    caregiverInfoId: string,
   ): Promise<void> {
     try {
       const { email, firstName } = await this.userService.findById(userId);
+      const caregiverInfo =
+        await this.caregiverInfoService.findUserByCaregiverInfoId(
+          caregiverInfoId,
+        );
+
+      if (!caregiverInfo) {
+        throw new HttpException(
+          ErrorMessage.CaregiverNotExist,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
       await this.emailService.sendEmail({
         to: email,
@@ -200,9 +250,162 @@ export class AppointmentService {
           link: this.seekerAppointmentRedirectLink,
         },
       });
+
+      await this.emailService.sendEmail({
+        to: caregiverInfo.user.email,
+        templateId: this.caregiverAppointmentTemplateId,
+        dynamicTemplateData: {
+          link: this.caregiverAppointmentRedirectLink,
+        },
+      });
     } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
       throw new HttpException(
         ErrorMessage.FailedSendAppointmentConfirmation,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findOneById(appointmentId: string): Promise<Appointment> {
+    try {
+      const appointment = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+
+        .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .addSelect(['caregiverInfo.id', 'caregiverInfo.timeZone'])
+        .innerJoin('caregiverInfo.user', 'caregiver')
+        .addSelect([
+          'caregiver.id',
+          'caregiver.lastName',
+          'caregiver.firstName',
+        ])
+
+        .innerJoin('appointment.user', 'user')
+        .addSelect(['user.id', 'user.lastName', 'user.firstName'])
+
+        .leftJoinAndSelect('appointment.seekerActivities', 'seekerActivity')
+        .leftJoinAndSelect('seekerActivity.activity', 'activity')
+
+        .leftJoinAndSelect('appointment.seekerCapabilities', 'seekerCapability')
+        .leftJoinAndSelect('seekerCapability.capability', 'capability')
+
+        .leftJoinAndSelect('appointment.seekerDiagnoses', 'seekerDiagnosis')
+        .leftJoinAndSelect('seekerDiagnosis.diagnosis', 'diagnosis')
+
+        .innerJoinAndSelect('appointment.seekerTasks', 'seekerTasks')
+
+        .where('appointment.id = :appointmentId', { appointmentId })
+
+        .getOne();
+
+      if (!appointment) {
+        throw new HttpException(
+          ErrorMessage.AppointmentNotFound,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return appointment;
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findAllByUserId(userId: string): Promise<Appointment[]> {
+    try {
+      return await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where('appointment.userId = :userId', { userId })
+        .getMany();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findAllByDate(userId: string, date: string): Promise<Appointment[]> {
+    try {
+      const user = await this.userService.findById(userId);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserNotExist,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (user.role !== UserRole.Caregiver) {
+        throw new HttpException(
+          ErrorMessage.UserIsNotCaregiver,
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      const appointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+
+        .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .addSelect(['caregiverInfo.id', 'caregiverInfo.timeZone'])
+
+        .innerJoin('appointment.user', 'user')
+        .addSelect(['user.id', 'user.lastName', 'user.firstName'])
+
+        .where('caregiverInfo.userId = :userId', { userId })
+
+        .andWhere('DATE(appointment.startDate) <= :date', {
+          date,
+        })
+        .andWhere('DATE(appointment.endDate) >= :date', {
+          date,
+        })
+        .getMany();
+
+      return appointments;
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async updateById(
+    appointmentId: string,
+    appointment: Partial<Appointment>,
+  ): Promise<void> {
+    try {
+      await this.findOneById(appointmentId);
+
+      await this.appointmentRepository
+        .createQueryBuilder()
+        .update(Appointment)
+        .set(appointment)
+        .where('appointment.id = :appointmentId', {
+          appointmentId,
+        })
+        .execute();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedUpdateAppointment,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
