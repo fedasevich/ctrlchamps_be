@@ -301,6 +301,8 @@ export class AppointmentService {
 
         .innerJoinAndSelect('appointment.seekerTasks', 'seekerTasks')
 
+        .leftJoinAndSelect('appointment.virtualAssessment', 'virtualAssessment')
+
         .where('appointment.id = :appointmentId', { appointmentId })
 
         .getOne();
