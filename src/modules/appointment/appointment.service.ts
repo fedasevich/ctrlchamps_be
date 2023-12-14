@@ -291,7 +291,11 @@ export class AppointmentService {
         .createQueryBuilder('appointment')
 
         .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
-        .addSelect(['caregiverInfo.id', 'caregiverInfo.timeZone'])
+        .addSelect([
+          'caregiverInfo.id',
+          'caregiverInfo.timeZone',
+          'caregiverInfo.hourlyRate',
+        ])
         .innerJoin('caregiverInfo.user', 'caregiver')
         .addSelect([
           'caregiver.id',
