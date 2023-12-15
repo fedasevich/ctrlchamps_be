@@ -3,6 +3,8 @@ export enum AppointmentStatus {
   Rejected = 'Rejected',
   Accepted = 'Accepted',
   Virtual = 'Virtual assessment',
+  SignedCaregiver = 'Signed by caregiver',
+  SignedSeeker = 'Signed by seeker',
   Active = 'Active',
   Ongoing = 'Ongoing',
   Completed = 'Completed',
