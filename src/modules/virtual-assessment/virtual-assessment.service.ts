@@ -32,6 +32,11 @@ export class VirtualAssessmentService {
       'SENDGRID_CAREGIVER_SUBMIT_CONTRACT_PROPOSAL_TEMPLATE_ID',
     );
 
+  private readonly caregiverAcceptedVirtualAssessmentTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_ACCEPTED_VIRTUAL_ASSESSMENT_TEMPLATE_ID',
+    );
+
   constructor(
     @InjectRepository(VirtualAssessment)
     private readonly virtualAssessmentRepository: Repository<VirtualAssessment>,
@@ -150,6 +155,10 @@ export class VirtualAssessmentService {
       if (updateStatusDto.status === VirtualAssessmentStatus.Finished) {
         await this.sendSubmitContractProposalEmails(appointmentId);
       }
+
+      if (updateStatusDto.status === VirtualAssessmentStatus.Accepted) {
+        await this.sendCaregiverAcceptedAppointmentEmail(appointmentId);
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -218,6 +227,24 @@ export class VirtualAssessmentService {
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
+    }
+  }
+
+  private async sendCaregiverAcceptedAppointmentEmail(
+    appointmentId: string,
+  ): Promise<void> {
+    try {
+      const appointment = await this.getDetailedAppointmentInfo(appointmentId);
+
+      await this.emailService.sendEmail({
+        to: appointment.user.email,
+        templateId: this.caregiverAcceptedVirtualAssessmentTemplateId,
+      });
+    } catch (err) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
