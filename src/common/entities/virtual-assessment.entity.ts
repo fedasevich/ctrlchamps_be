@@ -3,11 +3,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
-  OneToOne,
+  Entity,
   JoinColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
 @Entity()
