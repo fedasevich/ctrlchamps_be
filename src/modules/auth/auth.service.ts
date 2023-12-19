@@ -14,6 +14,7 @@ import { UserCreateDto } from './dto/user-create.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { generateOtpCode } from './helpers/generate-otp-code.helper';
 import { Token } from './types/token.type';
+import { AuthenticatedRequest } from './types/user.request.type';
 
 @Injectable()
 export class AuthService {
@@ -57,14 +58,14 @@ export class AuthService {
 
       const passwordHash = await this.hashPassword(userDto.password);
 
-      const id = await this.userService.create({
+      const user = await this.userService.create({
         ...userDto,
         password: passwordHash,
       });
 
       await this.sendOtpCodeEmail(userDto.email);
 
-      const token = await this.createToken(id);
+      const token = await this.createToken(user);
 
       return {
         token,
@@ -94,7 +95,13 @@ export class AuthService {
       }
 
       return {
-        token: await this.createToken(user.id),
+        token: await this.createToken({
+          firstName: user.firstName,
+          id: user.id,
+          lastName: user.lastName,
+          role: user.role,
+          isVerified: user.isVerified,
+        }),
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -230,9 +237,17 @@ export class AuthService {
     }
   }
 
-  private async createToken(userId: string): Promise<string> {
+  private async createToken(
+    user: AuthenticatedRequest['user'],
+  ): Promise<string> {
     try {
-      return this.jwtService.sign({ id: userId });
+      return this.jwtService.sign({
+        firstName: user.firstName,
+        id: user.id,
+        lastName: user.lastName,
+        role: user.role,
+        isVerified: user.isVerified,
+      });
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedCreateToken,

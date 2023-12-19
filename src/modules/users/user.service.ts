@@ -42,7 +42,7 @@ export class UserService {
     }
   }
 
-  async create(userDto: UserCreateDto): Promise<string> {
+  async create(userDto: UserCreateDto): Promise<User> {
     try {
       const user = await this.userRepository
         .createQueryBuilder()
@@ -51,7 +51,7 @@ export class UserService {
         .values(userDto)
         .execute();
 
-      return user.generatedMaps[0].id as string;
+      return user.generatedMaps[0] as User;
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
