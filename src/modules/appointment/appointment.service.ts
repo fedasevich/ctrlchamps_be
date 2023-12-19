@@ -439,6 +439,8 @@ export class AppointmentService {
       if (appointment.status) {
         const templateId = this.getTemplateIdForStatus(appointment.status);
 
+        if (!templateId) return;
+
         await this.emailService.sendEmail({
           to: appointmentToUpdate.user.email,
           templateId,
@@ -462,10 +464,7 @@ export class AppointmentService {
       case AppointmentStatus.Rejected:
         return this.caregiverAppointmentRequestRejectTemplateId;
       default:
-        throw new HttpException(
-          ErrorMessage.UnsupportedAppointmentStatus,
-          HttpStatus.BAD_REQUEST,
-        );
+        return '';
     }
   }
 }
