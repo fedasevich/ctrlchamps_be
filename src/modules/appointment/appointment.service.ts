@@ -319,6 +319,8 @@ export class AppointmentService {
 
         .leftJoinAndSelect('appointment.virtualAssessment', 'virtualAssessment')
 
+        .leftJoinAndSelect('appointment.activityLog', 'activityLog')
+
         .where('appointment.id = :appointmentId', { appointmentId })
 
         .getOne();

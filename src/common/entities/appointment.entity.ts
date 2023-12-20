@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { SeekerActivity } from 'src/common/entities/seeker-activity.entity';
 import { SeekerCapability } from 'src/common/entities/seeker-capability.entity';
@@ -177,4 +178,7 @@ export class Appointment {
     (virtualAssessment) => virtualAssessment.appointment,
   )
   virtualAssessment: VirtualAssessment;
+
+  @OneToOne(() => ActivityLog, (activityLog) => activityLog.appointment)
+  activityLog: ActivityLog;
 }

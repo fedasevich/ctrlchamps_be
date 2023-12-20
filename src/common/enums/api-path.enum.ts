@@ -6,4 +6,5 @@ export enum ApiPath {
   Diagnosis = 'diagnosis',
   Activity = 'activity',
   Capability = 'capability',
+  ActivityLog = 'activity-log',
 }
