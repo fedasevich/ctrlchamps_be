@@ -50,11 +50,11 @@ export class UserController {
   @ApiOperation({ summary: 'Update user data' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Data updated successfully',
+    description: 'User data updated successfully',
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: ErrorMessage.UserProfileAlreadyExists,
+    description: ErrorMessage.FailedUpdateUser,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
