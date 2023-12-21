@@ -144,6 +144,13 @@ export class Appointment {
   @Column({ nullable: true })
   weekday: string;
 
+  @ApiProperty({
+    example: 'Monday, Wednesday',
+    description: 'Signing date',
+  })
+  @Column({ type: 'timestamp', nullable: true })
+  signingDate: Date;
+
   @OneToMany(
     () => SeekerDiagnosis,
     (seekerDiagnosis) => seekerDiagnosis.appointment,
@@ -179,6 +186,6 @@ export class Appointment {
   )
   virtualAssessment: VirtualAssessment;
 
-  @OneToOne(() => ActivityLog, (activityLog) => activityLog.appointment)
-  activityLog: ActivityLog;
+  @OneToMany(() => ActivityLog, (activityLog) => activityLog.appointment)
+  activityLog: ActivityLog[];
 }

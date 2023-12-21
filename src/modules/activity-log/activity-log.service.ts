@@ -16,8 +16,6 @@ export class ActivityLogService {
 
   async create(activityLog: CreateActivityLogDto): Promise<void> {
     try {
-      await this.delete(activityLog.appointmentId);
-
       const { tasks, ...rest } = activityLog;
 
       await this.activityLogRepository
@@ -32,22 +30,6 @@ export class ActivityLogService {
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedCreateActivityLog,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  async delete(appointmentId: string): Promise<void> {
-    try {
-      await this.activityLogRepository
-        .createQueryBuilder()
-        .delete()
-        .from(ActivityLog)
-        .where('appointmentId = :appointmentId', { appointmentId })
-        .execute();
-    } catch (error) {
-      throw new HttpException(
-        ErrorMessage.InternalServerError,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
