@@ -3,7 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { User } from 'common/entities/user.entity';
 import { UserCreateDto } from 'modules/auth/dto/user-create.dto';
+import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { EntityManager, Repository } from 'typeorm';
+
+import { UserUpdateDto } from './dto/user-update-info.dto';
 
 @Injectable()
 export class UserService {
@@ -96,6 +99,56 @@ export class UserService {
         .execute();
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getUserInfo(userId: string): Promise<User> {
+    try {
+      const user = await this.findById(userId);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserProfileNotFound,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async updateUserInfo(
+    userId: string,
+    userInfo: Partial<UserUpdateDto>,
+  ): Promise<void> {
+    try {
+      const user = await this.findById(userId);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserProfileNotFound,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set(userInfo)
+        .where('user.id = :userId', {
+          userId,
+        })
+        .execute();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedUpdateAppointment,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
