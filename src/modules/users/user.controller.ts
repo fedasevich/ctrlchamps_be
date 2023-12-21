@@ -36,7 +36,7 @@ export class UserController {
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'User not found',
+    description: ErrorMessage.UserProfileNotFound,
   })
   @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,
