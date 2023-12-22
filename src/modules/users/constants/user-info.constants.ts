@@ -1,3 +1,5 @@
+export const MAX_FILE_SIZE = 5242880;
+
 export const USER_INFO_EXAMPLE = {
   id: '2f09b807-72ee-49ea-83d2-17b7746957a2',
   email: 'user@gmail.com',

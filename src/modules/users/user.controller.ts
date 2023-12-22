@@ -6,15 +6,34 @@ import {
   Param,
   UseGuards,
   Body,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { User } from 'src/common/entities/user.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
+import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
 
-import { USER_INFO_EXAMPLE } from './constants/user-info.constants';
+import {
+  MAX_FILE_SIZE,
+  USER_INFO_EXAMPLE,
+} from './constants/user-info.constants';
 import { UserUpdateDto } from './dto/user-update-info.dto';
 import { UserApiPath } from './enums/user.api-path.enum';
 import { UserService } from './user.service';
@@ -69,5 +88,53 @@ export class UserController {
     @Body() userInfo: UserUpdateDto,
   ): Promise<void> {
     await this.userService.updateUserInfo(userId, userInfo);
+  }
+
+  @Post(UserApiPath.UploadAvatar)
+  @ApiOperation({ summary: 'Upload avatar for user profile' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Avatar uploaded successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.BacketNotFound,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'File to upload',
+    type: 'multipart/form-data',
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: MAX_FILE_SIZE }),
+          new FileTypeValidator({ fileType: '.(png|jpeg|heic)' }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    const userId = request.user.id;
+    if (!userId) {
+      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
+    }
+    await this.userService.uploadAvatar(file.originalname, file.buffer, userId);
   }
 }
