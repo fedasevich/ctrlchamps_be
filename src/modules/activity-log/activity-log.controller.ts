@@ -15,10 +15,10 @@ import { CreateActivityLogDto } from './dto/create-activity-log.dto';
 export class ActivityLogController {
   constructor(private readonly activityLogService: ActivityLogService) {}
 
-  @ApiOperation({ summary: 'Appointment creating' })
+  @ApiOperation({ summary: 'Activity log creating' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'ActivityLogs was created successfully',
+    description: 'Activity log was created successfully',
   })
   @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,
