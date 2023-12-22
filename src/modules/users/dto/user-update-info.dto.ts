@@ -110,4 +110,13 @@ export class UserUpdateDto {
   @IsString()
   @IsOptional()
   address: string;
+
+  @ApiProperty({
+    description: 'Link of user`s avatar',
+    example: 'https://images/avatar',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  avatar: string;
 }

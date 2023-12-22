@@ -16,4 +16,5 @@ export const USER_INFO_EXAMPLE = {
   zipCode: '12345',
   address: '123 Maple Street',
   balance: 100,
+  avatar: 'https://images/avatar',
 };
