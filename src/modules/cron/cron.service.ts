@@ -1,18 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 
+import { convertWeekdayToNumber } from 'src/common/helpers/convert-weekday-to-number.helper';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
-
-import { convertWeekdayToNumber } from '../../common/helpers/convert-weekday-to-number';
+import {
+  EVERY_15_MINUTES,
+  NEXT_DAY_NUMBER,
+} from 'src/modules/cron/cron.constants';
 
 @Injectable()
 export class CronService {
   constructor(private appointmentService: AppointmentService) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
-  async handleCron(): Promise<void> {
+  @Cron(EVERY_15_MINUTES)
+  async handleAppointmentStatusCron(): Promise<void> {
     await this.checkAndUpdateAppointments();
   }
 
@@ -26,6 +29,7 @@ export class CronService {
         const startDateString = appointment.startDate.toString();
 
         if (
+          appointment.type === AppointmentType.OneTime &&
           appointment.status === AppointmentStatus.Active &&
           currentDateString === startDateString
         ) {
@@ -33,6 +37,7 @@ export class CronService {
             status: AppointmentStatus.Ongoing,
           });
         } else if (
+          appointment.type === AppointmentType.OneTime &&
           appointment.status === AppointmentStatus.Ongoing &&
           currentDateString === appointment.endDate.toString()
         ) {
@@ -40,18 +45,30 @@ export class CronService {
             status: AppointmentStatus.Completed,
           });
         } else if (
-          appointment.type === AppointmentType.Recurring &&
           appointment.status === AppointmentStatus.Ongoing &&
           currentDate.getHours() === appointment.endDate.getHours() &&
           currentDate.getMinutes() === appointment.endDate.getMinutes()
         ) {
-          await this.appointmentService.updateById(appointment.id, {
-            status: AppointmentStatus.Active,
-          });
+          if (
+            this.isMoreAppointmentDays(
+              appointment.endDate,
+              appointment.weekday,
+              currentDate,
+            )
+          ) {
+            await this.appointmentService.updateById(appointment.id, {
+              status: AppointmentStatus.Active,
+            });
+          } else {
+            await this.appointmentService.updateById(appointment.id, {
+              status: AppointmentStatus.Completed,
+            });
+          }
         } else if (
-          appointment.type === AppointmentType.Recurring &&
           appointment.status === AppointmentStatus.Active &&
-          currentDateString > startDateString
+          currentDateString >= startDateString &&
+          appointment.startDate.getHours() === currentDate.getHours() &&
+          appointment.startDate.getMinutes() === currentDate.getMinutes()
         ) {
           const isAppointmentDay = this.IsAppointmentTime(
             appointment.startDate,
@@ -83,5 +100,26 @@ export class CronService {
       startDate.getHours() === currentDate.getHours() &&
       startDate.getMinutes() === currentDate.getMinutes()
     );
+  }
+
+  private isMoreAppointmentDays(
+    endDate: Date,
+    weekday: string,
+    currentDate: Date,
+  ): boolean {
+    const weekdayNumbers = JSON.parse(weekday).map((day: string): number =>
+      convertWeekdayToNumber(day),
+    );
+
+    currentDate.setDate(currentDate.getDate() + NEXT_DAY_NUMBER);
+
+    while (currentDate.getTime() <= endDate.getTime()) {
+      if (weekdayNumbers.includes(currentDate.getDay())) {
+        return true;
+      }
+      currentDate.setDate(currentDate.getDate() + NEXT_DAY_NUMBER);
+    }
+
+    return false;
   }
 }
