@@ -42,7 +42,7 @@ export class ActivityLog {
   tasks: string;
 
   @ApiProperty({
-    // example: ['Shopping grocery'],
+    example: ['Shopping grocery'],
     description: 'Activity log date',
   })
   @CreateDateColumn()

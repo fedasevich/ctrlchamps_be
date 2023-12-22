@@ -145,7 +145,7 @@ export class Appointment {
   weekday: string;
 
   @ApiProperty({
-    example: 'Monday, Wednesday',
+    example: '2023-11-28T15:30:00.000Z',
     description: 'Signing date',
   })
   @Column({ type: 'timestamp', nullable: true })
