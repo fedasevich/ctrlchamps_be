@@ -13,8 +13,6 @@ export class CronService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron(): Promise<void> {
-    console.log('Cron is working');
-
     await this.checkAndUpdateAppointments();
   }
 
