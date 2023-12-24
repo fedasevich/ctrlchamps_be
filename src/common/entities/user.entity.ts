@@ -142,6 +142,13 @@ export class User {
   @Column({ default: 100, type: 'int' })
   balance: number;
 
+  @ApiProperty({
+    description: 'Link of user`s avatar',
+    example: 'https://images/avatar',
+  })
+  @Column({ default: null, nullable: true })
+  avatar: string;
+
   @OneToOne(() => CaregiverInfo, (caregiverInfo) => caregiverInfo.user)
   caregiverInfo: CaregiverInfo;
 

@@ -7,4 +7,5 @@ export enum ApiPath {
   Activity = 'activity',
   Capability = 'capability',
   ActivityLog = 'activity-log',
+  User = 'user',
 }
