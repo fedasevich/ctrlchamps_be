@@ -19,10 +19,10 @@ async function bootstrap(): Promise<void> {
     app.useGlobalPipes(new ValidationPipe());
 
     const config = new DocumentBuilder()
-      .setTitle('Afyanex Care')
-      .setDescription('The Afyanex Care API description')
+      .setTitle('CtrlChamps')
+      .setDescription('The CtrlChamps API description')
       .setVersion('1.0')
-      .addTag('API Afyanex Care')
+      .addTag('API CtrlChamps')
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);

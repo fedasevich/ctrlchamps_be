@@ -1,10 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
-import { MINIMUM_BALANCE } from 'src/modules/appointment/appointment.constants';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import { Appointment as AppointmentType } from 'src/modules/appointment/types/appointment.type';
 import { CaregiverInfoService } from 'src/modules/caregiver-info/caregiver-info.service';
@@ -16,9 +16,11 @@ import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
 import { UserService } from 'src/modules/users/user.service';
 import { EntityManager, Repository } from 'typeorm';
 
+import { PaymentService } from '../payment/payment.service';
 import { UserRole } from '../users/enums/user-role.enum';
 
 import { AppointmentStatus } from './enums/appointment-status.enum';
+import { AppointmentType as TypeOfAppointment } from './enums/appointment-type.enum';
 
 @Injectable()
 export class AppointmentService {
@@ -58,6 +60,7 @@ export class AppointmentService {
     private readonly caregiverInfoService: CaregiverInfoService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   async create(
@@ -75,7 +78,7 @@ export class AppointmentService {
             ...appointment
           } = createAppointment;
 
-          const payment = await this.payForHourOfWork(
+          const payment = await this.paymentService.payForHourOfWork(
             userId,
             createAppointment.caregiverInfoId,
             transactionalEntityManager,
@@ -168,52 +171,6 @@ export class AppointmentService {
 
       return createdAppointment.generatedMaps[0].id as string;
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  private async payForHourOfWork(
-    userId: string,
-    caregiverInfoId: string,
-    transactionalEntityManager: EntityManager,
-  ): Promise<number> {
-    try {
-      const { balance, email } = await this.userService.findById(userId);
-
-      const caregiverInfo =
-        await this.caregiverInfoService.findById(caregiverInfoId);
-
-      if (!caregiverInfo) {
-        throw new HttpException(
-          ErrorMessage.CaregiverInfoNotFound,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
-      const updatedSeekerBalance = balance - caregiverInfo.hourlyRate;
-
-      if (updatedSeekerBalance < MINIMUM_BALANCE) {
-        throw new HttpException(
-          ErrorMessage.NotEnoughMoney,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
-      await this.userService.updateWithTransaction(
-        email,
-        { balance: updatedSeekerBalance },
-        transactionalEntityManager,
-      );
-
-      return caregiverInfo.hourlyRate;
-    } catch (error) {
-      if (
-        error instanceof HttpException &&
-        error.getStatus() === HttpStatus.BAD_REQUEST
-      ) {
-        throw error;
-      }
-
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -481,5 +438,31 @@ export class AppointmentService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async checkAppointmentStatusAndCharge(): Promise<void> {
+    const appointments = await this.appointmentRepository
+      .createQueryBuilder('appointment')
+      .where('appointment.status = :completed', {
+        completed: AppointmentStatus.Completed,
+      })
+      .orWhere(
+        '(appointment.status = :active AND appointment.type = :recurring)',
+        {
+          active: AppointmentStatus.Active,
+          recurring: TypeOfAppointment.Recurring,
+        },
+      )
+      .andWhere('appointment.startDate <= :now', { now: new Date() })
+      .getMany();
+
+    appointments.forEach(async (appointment) => {
+      if (appointment.type === TypeOfAppointment.OneTime) {
+        await this.paymentService.chargeForOneTimeAppointment(appointment.id);
+      } else if (appointment.type === TypeOfAppointment.Recurring) {
+        await this.paymentService.chargeRecurringPaymentTask(appointment.id);
+      }
+    });
   }
 }

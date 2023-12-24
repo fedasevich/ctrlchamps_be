@@ -139,7 +139,7 @@ export class User {
     description: 'User balance',
     example: '100',
   })
-  @Column({ default: 100, type: 'int' })
+  @Column({ default: 1000, type: 'float' })
   balance: number;
 
   @ApiProperty({

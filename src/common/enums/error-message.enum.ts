@@ -31,5 +31,6 @@ export enum ErrorMessage {
   CaregiverNotFound = "Caregiver with such id wasn't found",
   UnsupportedAppointmentStatus = 'Unsupported appointment status',
   FailedCreateActivityLog = 'Failed to create activity log',
+  FailedUpdateActivityLogStatus = 'Failed to update activity log status',
   FailedUpdateUser = 'Failed to update user data',
 }
