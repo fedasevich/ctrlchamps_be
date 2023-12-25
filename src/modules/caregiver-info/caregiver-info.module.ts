@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { User } from 'src/common/entities/user.entity';
 import { AppointmentModule } from 'src/modules/appointment/appointment.module';
+import { EmailModule } from 'src/modules/email/email.module';
 import { ProfileModule } from 'src/modules/profile/profile.module';
 import { UserService } from 'src/modules/users/user.service';
 
@@ -14,6 +15,7 @@ import { CaregiverInfoService } from './caregiver-info.service';
   imports: [
     TypeOrmModule.forFeature([User, CaregiverInfo]),
     ProfileModule,
+    EmailModule,
     forwardRef(() => AppointmentModule),
   ],
   controllers: [CaregiverInfoController],

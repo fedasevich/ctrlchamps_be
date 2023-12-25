@@ -7,6 +7,7 @@ import { compare, hash } from 'bcrypt';
 import { User } from 'common/entities/user.entity';
 import { UserCreateDto } from 'modules/auth/dto/user-create.dto';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { EmailService } from 'src/modules/email/services/email.service';
 import { EntityManager, Repository } from 'typeorm';
 
 import { UpdatePasswordDto } from './dto/update-password.dto';
@@ -16,6 +17,7 @@ import { UserUpdateDto } from './dto/user-update-info.dto';
 export class UserService {
   constructor(
     private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
@@ -31,6 +33,9 @@ export class UserService {
   private readonly saltRounds = this.configService.get<number>(
     'PASSWORD_SALT_ROUNDS',
   );
+
+  private readonly updateUserPasswordTemplateId =
+    this.configService.get<string>('SENDGRID_UPDATE_USER_PASSWORD_TEMPLATE_ID');
 
   async findById(userId: string): Promise<User> {
     try {
@@ -203,6 +208,11 @@ export class UserService {
       user.password = hashedPassword;
 
       await this.userRepository.save(user);
+
+      await this.emailService.sendEmail({
+        to: user.email,
+        templateId: this.updateUserPasswordTemplateId,
+      });
     } catch (err) {
       if (err instanceof HttpException) {
         throw err;
