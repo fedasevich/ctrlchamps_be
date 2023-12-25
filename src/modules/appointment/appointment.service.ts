@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
@@ -60,7 +59,7 @@ export class AppointmentService {
     private readonly caregiverInfoService: CaregiverInfoService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
-    private readonly paymentService: PaymentService,
+    private paymentService: PaymentService,
   ) {}
 
   async create(
@@ -365,6 +364,25 @@ export class AppointmentService {
     }
   }
 
+  async checkAppointmentToBePaid(): Promise<Appointment[]> {
+    const appointments = await this.appointmentRepository
+      .createQueryBuilder('appointment')
+      .where('appointment.status = :completed', {
+        completed: AppointmentStatus.Completed,
+      })
+      .orWhere(
+        '(appointment.status = :active AND appointment.type = :recurring)',
+        {
+          active: AppointmentStatus.Active,
+          recurring: TypeOfAppointment.Recurring,
+        },
+      )
+      .andWhere('appointment.startDate <= :now', { now: new Date() })
+      .getMany();
+
+    return appointments;
+  }
+
   async updateById(
     appointmentId: string,
     appointment: Partial<Appointment>,
@@ -438,31 +456,5 @@ export class AppointmentService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-  }
-
-  @Cron(CronExpression.EVERY_10_MINUTES)
-  async checkAppointmentStatusAndCharge(): Promise<void> {
-    const appointments = await this.appointmentRepository
-      .createQueryBuilder('appointment')
-      .where('appointment.status = :completed', {
-        completed: AppointmentStatus.Completed,
-      })
-      .orWhere(
-        '(appointment.status = :active AND appointment.type = :recurring)',
-        {
-          active: AppointmentStatus.Active,
-          recurring: TypeOfAppointment.Recurring,
-        },
-      )
-      .andWhere('appointment.startDate <= :now', { now: new Date() })
-      .getMany();
-
-    appointments.forEach(async (appointment) => {
-      if (appointment.type === TypeOfAppointment.OneTime) {
-        await this.paymentService.chargeForOneTimeAppointment(appointment.id);
-      } else if (appointment.type === TypeOfAppointment.Recurring) {
-        await this.paymentService.chargeRecurringPaymentTask(appointment.id);
-      }
-    });
   }
 }

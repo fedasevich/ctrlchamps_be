@@ -1,10 +1,17 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { format, getDay, differenceInWeeks } from 'date-fns';
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { EntityManager, Repository } from 'typeorm';
 
 import { ActivityLogStatus } from '../activity-log/enums/activity-log-status.enum';
@@ -13,6 +20,7 @@ import { AppointmentStatus } from '../appointment/enums/appointment-status.enum'
 import { CaregiverInfoService } from '../caregiver-info/caregiver-info.service';
 import { UserService } from '../users/user.service';
 
+import { ALREADY_PAID_HOUR, ONE_WEEK } from './constants/payment.constants';
 import { getHourDifference } from './helpers/difference-in-hours';
 
 @Injectable()
@@ -22,20 +30,11 @@ export class PaymentService {
     private readonly appointmentRepository: Repository<Appointment>,
     @InjectRepository(ActivityLog)
     private readonly activityLogRepository: Repository<ActivityLog>,
+    @Inject(forwardRef(() => AppointmentService))
+    private appointmentService: AppointmentService,
     private readonly userService: UserService,
     private readonly caregiverInfoService: CaregiverInfoService,
   ) {}
-
-  private async findAppointmentById(
-    appointmentId: string,
-  ): Promise<Appointment> {
-    const appointment = await this.appointmentRepository
-      .createQueryBuilder('appointment')
-      .where('appointment.id = :appointmentId', { appointmentId })
-      .getOne();
-
-    return appointment;
-  }
 
   public async payForHourOfWork(
     userId: string,
@@ -90,7 +89,8 @@ export class PaymentService {
     transactionalEntityManager: EntityManager,
   ): Promise<void> {
     try {
-      const appointment = await this.findAppointmentById(appointmentId);
+      const appointment =
+        await this.appointmentService.findOneById(appointmentId);
 
       if (!appointment) {
         throw new HttpException(
@@ -115,13 +115,17 @@ export class PaymentService {
         );
       }
 
-      const amountToPay = (appointmentDuration + 1) * caregiverInfo.hourlyRate;
+      const amountToPay =
+        (appointmentDuration + ALREADY_PAID_HOUR) * caregiverInfo.hourlyRate;
 
       const { userId } = appointment;
       const seeker = await this.userService.findById(userId);
 
       if (seeker.balance < amountToPay) {
-        throw new HttpException('Insufficient funds', HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          ErrorMessage.InsufficientFunds,
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
       const seekerUpdatedBalance = seeker.balance - amountToPay;
@@ -160,7 +164,8 @@ export class PaymentService {
     transactionalEntityManager: EntityManager,
   ): Promise<void> {
     try {
-      const appointment = await this.findAppointmentById(appointmentId);
+      const appointment =
+        await this.appointmentService.findOneById(appointmentId);
 
       if (!appointment) {
         throw new HttpException(
@@ -202,7 +207,7 @@ export class PaymentService {
       const appointmentDuration = getHourDifference(startDate, endDate);
       let payForCompletedRecurringAppointment: number;
 
-      if (weeksDifference >= 1) {
+      if (weeksDifference >= ONE_WEEK) {
         payForCompletedRecurringAppointment =
           acceptedActivityLogs.length *
             caregiverInfo.hourlyRate *
@@ -252,7 +257,8 @@ export class PaymentService {
     appointmentId: string,
   ): Promise<void> {
     try {
-      const appointment = await this.findAppointmentById(appointmentId);
+      const appointment =
+        await this.appointmentService.findOneById(appointmentId);
 
       const dayName = format(getDay(new Date()), 'EEEE');
       if (dayName === JSON.parse(appointment.weekday)[0]) {
