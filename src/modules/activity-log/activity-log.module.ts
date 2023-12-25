@@ -10,5 +10,6 @@ import { ActivityLogService } from './activity-log.service';
   imports: [TypeOrmModule.forFeature([ActivityLog])],
   controllers: [ActivityLogController],
   providers: [ActivityLogService],
+  exports: [ActivityLogService],
 })
 export class ActivityLogModule {}
