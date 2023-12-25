@@ -7,10 +7,9 @@ import { Appointment } from 'src/common/entities/appointment.entity';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
+import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
 import { Repository } from 'typeorm';
-
-import { AppointmentStatus } from '../appointment/enums/appointment-status.enum';
 
 import { RescheduleVirtualAssessmentDto } from './dto/reschedule-assessment.dto';
 import { UpdateVirtualAssessmentStatusDto } from './dto/update-status.dto';
@@ -256,6 +255,7 @@ export class VirtualAssessmentService {
 
       if (status === VirtualAssessmentStatus.Accepted) {
         virtualAssessment.reschedulingAccepted = true;
+        virtualAssessment.status = VirtualAssessmentStatus.Accepted;
       }
 
       if (status === VirtualAssessmentStatus.Rejected) {
