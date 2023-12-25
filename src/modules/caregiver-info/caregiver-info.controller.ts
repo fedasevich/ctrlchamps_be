@@ -68,7 +68,7 @@ export class CaregiverInfoController {
   }
 
   @Get(CaregiverApiPath.DetailedInfo)
-  @ApiOperation({ summary: 'Get filtred caregivers list' })
+  @ApiOperation({ summary: 'Get detailed caregiver information' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Caregiver detailed info retrieved successfully',

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { SeekerActivity } from 'src/common/entities/seeker-activity.entity';
 import { SeekerCapability } from 'src/common/entities/seeker-capability.entity';
@@ -143,6 +144,13 @@ export class Appointment {
   @Column({ nullable: true })
   weekday: string;
 
+  @ApiProperty({
+    example: '2023-11-28T15:30:00.000Z',
+    description: 'Signing date',
+  })
+  @Column({ type: 'timestamp', nullable: true })
+  signingDate: Date;
+
   @OneToMany(
     () => SeekerDiagnosis,
     (seekerDiagnosis) => seekerDiagnosis.appointment,
@@ -177,4 +185,7 @@ export class Appointment {
     (virtualAssessment) => virtualAssessment.appointment,
   )
   virtualAssessment: VirtualAssessment;
+
+  @OneToMany(() => ActivityLog, (activityLog) => activityLog.appointment)
+  activityLog: ActivityLog[];
 }
