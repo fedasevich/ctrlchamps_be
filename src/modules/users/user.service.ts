@@ -3,11 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { compare, hash } from 'bcrypt';
 import { User } from 'common/entities/user.entity';
 import { UserCreateDto } from 'modules/auth/dto/user-create.dto';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { EntityManager, Repository } from 'typeorm';
 
+import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserUpdateDto } from './dto/user-update-info.dto';
 
 @Injectable()
@@ -25,6 +27,10 @@ export class UserService {
       secretAccessKey: this.configService.get<string>('AWS_SECRET_KEY'),
     },
   });
+
+  private readonly saltRounds = this.configService.get<number>(
+    'PASSWORD_SALT_ROUNDS',
+  );
 
   async findById(userId: string): Promise<User> {
     try {
@@ -160,6 +166,49 @@ export class UserService {
         ErrorMessage.FailedUpdateAppointment,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  async updatePassword(
+    userId: string,
+    passwordData: UpdatePasswordDto,
+  ): Promise<void> {
+    try {
+      const user = await this.findById(userId);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserProfileNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const validPassword = await compare(
+        passwordData.oldPassword,
+        user.password,
+      );
+
+      if (!validPassword) {
+        throw new HttpException(
+          ErrorMessage.InvalidProvidedPassword,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const hashedPassword = await hash(
+        passwordData.newPassword,
+        Number(this.saltRounds),
+      );
+
+      user.password = hashedPassword;
+
+      await this.userRepository.save(user);
+    } catch (err) {
+      if (err instanceof HttpException) {
+        throw err;
+      }
+
+      throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

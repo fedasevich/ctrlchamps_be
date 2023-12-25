@@ -34,4 +34,5 @@ export enum ErrorMessage {
   AssessmentAlreadyRescheduled = 'The virtual assessment can be rescheduled only once',
   FailedCreateActivityLog = 'Failed to create activity log',
   FailedUpdateUser = 'Failed to update user data',
+  InvalidProvidedPassword = 'Provided password does not match the old one',
 }
