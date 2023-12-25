@@ -21,7 +21,6 @@ export enum ErrorMessage {
   FailedSendDiagnoses = 'Failed to send diagnoses',
   FailedCreateAppointment = 'Failed to create appointment',
   CaregiverInfoNotFound = 'Caregiver Info not found',
-  NotEnoughMoney = 'Not enough money to pay for one hour of work',
   UserIsNotAuthorized = 'User not authorized or userId not found',
   FailedSendAppointmentConfirmation = 'Failed to send the appointment confirmation email',
   CaregiverNotExist = 'Caregiver does not exist',

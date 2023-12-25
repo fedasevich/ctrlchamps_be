@@ -39,12 +39,8 @@ export class AppointmentController {
     description: 'Appointment was created successfully',
   })
   @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: ErrorMessage.NotEnoughMoney,
-  })
-  @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: ErrorMessage.InternalServerError,
+    description: ErrorMessage.FailedCreateAppointment,
   })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post(AppointmentApiPath.Root)
