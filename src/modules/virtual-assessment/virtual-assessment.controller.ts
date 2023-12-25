@@ -10,16 +10,22 @@ import {
   UnauthorizedException,
   UseGuards,
   Patch,
+  Res,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 
+import { Response } from 'express';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
+import { AccessWithoutToken } from 'src/decorators/access-granted.decorator';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
 
 import { VIRTUAL_ASSESSMENT_GET_EXAMPLE } from './constants/virtual-assessment.constant';
+import { RescheduleVirtualAssessmentDto } from './dto/reschedule-assessment.dto';
 import { UpdateVirtualAssessmentStatusDto } from './dto/update-status.dto';
 import { CreateVirtualAssessmentDto } from './dto/virtual-assessment.dto';
 import { VirtualAssessmentApiPath } from './enums/virtual-assessment-path.enum';
@@ -130,6 +136,65 @@ export class VirtualAssessmentController {
     return this.virtualAssessmentService.updateStatus(
       appointmentId,
       updateStatusDto,
+    );
+  }
+
+  @Patch(VirtualAssessmentApiPath.RescheduleVirtualAssessment)
+  @ApiOperation({
+    summary: 'Reschedule virtual assessment',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'The virtual assessment has been rescheduled successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'The virtual assessment can be rescheduled only once',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Failed to update the virtual assessment',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  async rescheduleAssessment(
+    @Param('appointmentId') appointmentId: string,
+    @Body() rescheduleAssessmentDto: RescheduleVirtualAssessmentDto,
+  ): Promise<void> {
+    return this.virtualAssessmentService.rescheduleVirtualAssessment(
+      appointmentId,
+      rescheduleAssessmentDto,
+    );
+  }
+
+  @Get(VirtualAssessmentApiPath.UpdateVirtualAssessmentReschedulingStatus)
+  @AccessWithoutToken()
+  @ApiOperation({
+    summary: 'Update virtual assessment rescheduling status',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'The virtual assessment rescheduling status has been updated',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: "Status wasn't provided",
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  async updateAssessmentReschedulingStatus(
+    @Param('appointmentId') appointmentId: string,
+    @Query('status') status: VirtualAssessmentStatus,
+    @Res() res: Response,
+  ): Promise<void> {
+    return this.virtualAssessmentService.updateReschedulingStatus(
+      appointmentId,
+      status,
+      res,
     );
   }
 }

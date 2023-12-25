@@ -30,6 +30,8 @@ export enum ErrorMessage {
   VirtualAssessmentNotFound = 'Virtual Assessment not found',
   CaregiverNotFound = "Caregiver with such id wasn't found",
   UnsupportedAppointmentStatus = 'Unsupported appointment status',
+  StatusNotProvided = "Status wasn't provided",
+  AssessmentAlreadyRescheduled = 'The virtual assessment can be rescheduled only once',
   FailedCreateActivityLog = 'Failed to create activity log',
   FailedUpdateUser = 'Failed to update user data',
 }

@@ -56,6 +56,20 @@ export class VirtualAssessment {
   meetingLink: string;
 
   @ApiProperty({
+    description: 'Indication of virtual assessment rescheduling status',
+    nullable: true,
+  })
+  @Column({ default: false })
+  wasRescheduled: boolean;
+
+  @ApiProperty({
+    description: 'Indication of client accepting/rejecting the rescheduling',
+    nullable: true,
+  })
+  @Column({ default: null })
+  reschedulingAccepted: null | boolean;
+
+  @ApiProperty({
     description:
       'Link to the appointment associated with the virtual assessment',
   })
