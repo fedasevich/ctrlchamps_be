@@ -6,13 +6,19 @@ import { AppointmentService } from 'src/modules/appointment/appointment.service'
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
 import {
+  EVERY_10_MINUTES,
   EVERY_15_MINUTES,
   NEXT_DAY_NUMBER,
 } from 'src/modules/cron/cron.constants';
 
+import { PaymentService } from '../payment/payment.service';
+
 @Injectable()
 export class CronService {
-  constructor(private appointmentService: AppointmentService) {}
+  constructor(
+    private appointmentService: AppointmentService,
+    private paymentService: PaymentService,
+  ) {}
 
   @Cron(EVERY_15_MINUTES)
   async handleAppointmentStatusCron(): Promise<void> {
@@ -121,5 +127,19 @@ export class CronService {
     }
 
     return false;
+  }
+
+  @Cron(EVERY_10_MINUTES)
+  async checkAppointmentStatusAndCharge(): Promise<void> {
+    const appointments =
+      await this.appointmentService.checkAppointmentToBePaid();
+
+    appointments.forEach(async (appointment) => {
+      if (appointment.type === AppointmentType.OneTime) {
+        await this.paymentService.chargeForOneTimeAppointment(appointment.id);
+      } else if (appointment.type === AppointmentType.Recurring) {
+        await this.paymentService.chargeRecurringPaymentTask(appointment.id);
+      }
+    });
   }
 }

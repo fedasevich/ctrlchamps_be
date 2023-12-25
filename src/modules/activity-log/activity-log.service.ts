@@ -6,6 +6,7 @@ import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { Repository } from 'typeorm';
 
 import { CreateActivityLogDto } from './dto/create-activity-log.dto';
+import { UpdateActivityLogDto } from './dto/update-activity-log.dto';
 
 @Injectable()
 export class ActivityLogService {
@@ -31,6 +32,23 @@ export class ActivityLogService {
       throw new HttpException(
         ErrorMessage.FailedCreateActivityLog,
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async updateStatusActivityLog(
+    activityLogId: string,
+    updateActivityLogDto: UpdateActivityLogDto,
+  ): Promise<void> {
+    try {
+      await this.activityLogRepository.update(
+        { id: activityLogId },
+        { ...updateActivityLogDto },
+      );
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedUpdateActivityLogStatus,
+        HttpStatus.NOT_FOUND,
       );
     }
   }

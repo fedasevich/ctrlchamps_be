@@ -33,5 +33,7 @@ export enum ErrorMessage {
   StatusNotProvided = "Status wasn't provided",
   AssessmentAlreadyRescheduled = 'The virtual assessment can be rescheduled only once',
   FailedCreateActivityLog = 'Failed to create activity log',
+  FailedUpdateActivityLogStatus = 'Failed to update activity log status',
   FailedUpdateUser = 'Failed to update user data',
+  InsufficientFunds = 'Insufficient funds',
 }
