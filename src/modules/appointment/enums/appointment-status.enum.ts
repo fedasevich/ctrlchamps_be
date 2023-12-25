@@ -8,4 +8,5 @@ export enum AppointmentStatus {
   Active = 'Active',
   Ongoing = 'Ongoing',
   Completed = 'Completed',
+  Finished = 'Finished',
 }
