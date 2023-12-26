@@ -1,5 +1,5 @@
 export enum UserApiPath {
   DetailedInfo = '/:userId',
-  UploadAvatar = '/uploadAvatar',
-  ChangePassword = '/changePassword/:userId',
+  UploadAvatar = '/upload-avatar',
+  ChangePassword = '/change-password/:userId',
 }
