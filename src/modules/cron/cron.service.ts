@@ -23,7 +23,7 @@ export class CronService {
     private virtualAssessmentService: VirtualAssessmentService,
   ) {}
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(EVERY_15_MINUTES)
   async checkVirtualAssessmentStatus(): Promise<void> {
     const todaysVirtualAssessments =
       await this.virtualAssessmentService.getTodaysVirtualAssessmentsByTime();
