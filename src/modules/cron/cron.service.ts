@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 
 import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
 import { convertWeekdayToNumber } from 'src/common/helpers/convert-weekday-to-number.helper';

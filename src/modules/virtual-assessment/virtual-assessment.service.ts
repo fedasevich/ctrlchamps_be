@@ -12,6 +12,10 @@ import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-sta
 import { EmailService } from 'src/modules/email/services/email.service';
 import { Repository } from 'typeorm';
 
+import {
+  VIRTUAL_ASSESSMENT_DATE_FORMAT,
+  VIRTUAL_ASSESSMENT_TIME_FORMAT,
+} from './constants/virtual-assessment.constant';
 import { RescheduleVirtualAssessmentDto } from './dto/reschedule-assessment.dto';
 import { UpdateVirtualAssessmentStatusDto } from './dto/update-status.dto';
 import { CreateVirtualAssessmentDto } from './dto/virtual-assessment.dto';
@@ -282,8 +286,8 @@ export class VirtualAssessmentService {
 
   async getTodaysVirtualAssessmentsByTime(): Promise<VirtualAssessment[]> {
     try {
-      const currentDate = format(new Date(), 'yyyy-MM-dd');
-      const currentTime = format(new Date(), 'HH:mm:ss');
+      const currentDate = format(new Date(), VIRTUAL_ASSESSMENT_DATE_FORMAT);
+      const currentTime = format(new Date(), VIRTUAL_ASSESSMENT_TIME_FORMAT);
 
       const virtualAssessments = await this.virtualAssessmentRepository
         .createQueryBuilder('virtualAssessment')
