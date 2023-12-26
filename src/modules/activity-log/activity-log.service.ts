@@ -43,7 +43,7 @@ export class ActivityLogService {
     try {
       await this.activityLogRepository.update(
         { id: activityLogId },
-        { ...updateActivityLogDto },
+        { status: updateActivityLogDto.status },
       );
     } catch (error) {
       throw new HttpException(
