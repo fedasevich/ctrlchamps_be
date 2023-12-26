@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { format } from 'date-fns';
 import { Response } from 'express';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
@@ -276,6 +277,34 @@ export class VirtualAssessmentService {
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
+    }
+  }
+
+  async getTodaysVirtualAssessmentsByTime(): Promise<VirtualAssessment[]> {
+    try {
+      const currentDate = format(new Date(), 'yyyy-MM-dd');
+      const currentTime = format(new Date(), 'HH:mm:ss');
+
+      const virtualAssessments = await this.virtualAssessmentRepository
+        .createQueryBuilder('virtualAssessment')
+        .leftJoinAndSelect('virtualAssessment.appointment', 'appointment')
+        .andWhere('virtualAssessment.assessmentDate = :assessmentDate', {
+          assessmentDate: currentDate,
+        })
+        .andWhere('virtualAssessment.endTime <= :currentTime', {
+          currentTime,
+        })
+        .andWhere('virtualAssessment.status = :status', {
+          status: VirtualAssessmentStatus.Accepted,
+        })
+        .getMany();
+
+      return virtualAssessments;
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
