@@ -116,6 +116,16 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Verify user account' })
   @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User account was successfully verified',
+    schema: {
+      example: {
+        token:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0MDg5Yjg2LTYzZTctNGZhOC1iZjAwLWRhNmRkMDBkZjFmYSIsImlhdCI6MTcwMDA4MDIxOSwiZXhw',
+      },
+    },
+  })
+  @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: ErrorMessage.UserNotExist,
   })
@@ -131,13 +141,12 @@ export class AuthController {
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: 'Internal server error',
   })
-  @HttpCode(HttpStatus.NO_CONTENT)
   @Post(AuthApiPath.VerifyAccount)
-  async verifyAccount(
+  verifyAccount(
     @Param('userId') userId: string,
     @Body() otpCodeDto: UserOtpCodeDto,
-  ): Promise<void> {
-    await this.authService.verifyAccount(userId, otpCodeDto.otpCode);
+  ): Promise<Token> {
+    return this.authService.verifyAccount(userId, otpCodeDto.otpCode);
   }
 
   @ApiOperation({ summary: 'Request new verification code' })
