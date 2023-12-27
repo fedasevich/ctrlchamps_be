@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import 'dotenv/config';
 
+import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Activity } from 'src/common/entities/activity.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { Capability } from 'src/common/entities/capability.entity';
@@ -12,6 +13,7 @@ import { SeekerCapability } from 'src/common/entities/seeker-capability.entity';
 import { SeekerDiagnosis } from 'src/common/entities/seeker-diagnosis.entity';
 import { SeekerTask } from 'src/common/entities/seeker-task.entity';
 import { ActivityModule } from 'src/modules/activity/activity.module';
+import { ActivityLogModule } from 'src/modules/activity-log/activity-log.module';
 import { AppointmentModule } from 'src/modules/appointment/appointment.module';
 import { CapabilityModule } from 'src/modules/capability/capability.module';
 import { CaregiverInfoModule } from 'src/modules/caregiver-info/caregiver-info.module';
@@ -30,7 +32,9 @@ import { User } from './common/entities/user.entity';
 import { VirtualAssessment } from './common/entities/virtual-assessment.entity';
 import { WorkExperience } from './common/entities/work-experience.entity';
 import { AuthModule } from './modules/auth/auth.module';
+import { CronModule } from './modules/cron/cron.module';
 import { EmailModule } from './modules/email/email.module';
+import { PaymentModule } from './modules/payment/payment.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { UserModule } from './modules/users/user.module';
 import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-assessment.module';
@@ -63,6 +67,8 @@ import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-as
           SeekerDiagnosis,
           SeekerTask,
           VirtualAssessment,
+          PaymentModule,
+          ActivityLog,
         ],
         synchronize: true,
       }),
@@ -82,6 +88,8 @@ import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-as
     ProfileModule,
     CaregiverInfoModule,
     VirtualAssessmentModule,
+    ActivityLogModule,
+    CronModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService],
