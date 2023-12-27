@@ -7,6 +7,7 @@ import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { Certificate } from 'src/common/entities/certificate.entity';
 import { User } from 'src/common/entities/user.entity';
 import { WorkExperience } from 'src/common/entities/work-experience.entity';
+import { AuthModule } from 'src/modules/auth/auth.module';
 import { ProfileController } from 'src/modules/profile/profile.controller';
 import { ProfileService } from 'src/modules/profile/profile.service';
 
@@ -25,6 +26,7 @@ import { ProfileService } from 'src/modules/profile/profile.service';
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
   ],
   providers: [ProfileService],
   controllers: [ProfileController],

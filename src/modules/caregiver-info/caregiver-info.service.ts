@@ -61,6 +61,12 @@ export class CaregiverInfoService {
         role: UserRole.Caregiver,
       });
 
+      queryBuilder.andWhere('caregiverInfo.services IS NOT NULL');
+      queryBuilder.andWhere('caregiverInfo.availability IS NOT NULL');
+      queryBuilder.andWhere('caregiverInfo.timeZone IS NOT NULL');
+      queryBuilder.andWhere('caregiverInfo.hourlyRate IS NOT NULL');
+      queryBuilder.andWhere('caregiverInfo.description IS NOT NULL');
+
       queryBuilder.andWhere(
         'user.isOpenToSeekerHomeLiving = :isOpenToSeekerHomeLiving',
         {
@@ -157,6 +163,40 @@ export class CaregiverInfoService {
         ErrorMessage.UserNotExist,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  async isCaregiverInfoFilled(userId: string): Promise<boolean> {
+    try {
+      const caregiverInfo = await this.caregiverInfoRepository
+        .createQueryBuilder('caregiverInfo')
+        .leftJoinAndSelect('caregiverInfo.workExperiences', 'workExperiences')
+        .leftJoinAndSelect('caregiverInfo.certificates', 'certificates')
+        .where('caregiverInfo.userId = :userId', { userId })
+        .getOne();
+
+      if (!caregiverInfo) return false;
+
+      if (
+        caregiverInfo.services === null ||
+        caregiverInfo.availability === null ||
+        caregiverInfo.timeZone === null ||
+        caregiverInfo.hourlyRate === null ||
+        caregiverInfo.description === null
+      ) {
+        return false;
+      }
+
+      if (
+        caregiverInfo.workExperiences.length === 0 ||
+        caregiverInfo.certificates.length === 0
+      ) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      return false;
     }
   }
 }
