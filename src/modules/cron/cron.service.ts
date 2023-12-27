@@ -25,7 +25,7 @@ export class CronService {
 
   @Cron(EVERY_15_MINUTES)
   async checkVirtualAssessmentStatus(): Promise<void> {
-    console.log('checkVirtualAssessmentStatus CRON');
+    console.log('checkVirtualAssessmentStatus CRON', new Date());
     const todaysVirtualAssessments =
       await this.virtualAssessmentService.getTodaysVirtualAssessmentsByTime();
     await Promise.all(
@@ -40,7 +40,7 @@ export class CronService {
 
   @Cron(EVERY_15_MINUTES)
   async handleAppointmentStatusCron(): Promise<void> {
-    console.log('handleAppointmentStatusCron CRON');
+    console.log('handleAppointmentStatusCron CRON', new Date());
 
     await this.checkAndUpdateAppointments();
   }
@@ -151,7 +151,7 @@ export class CronService {
 
   @Cron(EVERY_10_MINUTES)
   async checkAppointmentStatusAndCharge(): Promise<void> {
-    console.log('checkAppointmentStatusAndCharge CRON');
+    console.log('checkAppointmentStatusAndCharge CRON', new Date());
     const appointments =
       await this.appointmentService.checkAppointmentToBePaid();
 
