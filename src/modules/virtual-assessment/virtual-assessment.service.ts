@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { format } from 'date-fns';
 import { Response } from 'express';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
@@ -11,6 +12,10 @@ import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-sta
 import { EmailService } from 'src/modules/email/services/email.service';
 import { Repository } from 'typeorm';
 
+import {
+  VIRTUAL_ASSESSMENT_DATE_FORMAT,
+  VIRTUAL_ASSESSMENT_TIME_FORMAT,
+} from './constants/virtual-assessment.constant';
 import { RescheduleVirtualAssessmentDto } from './dto/reschedule-assessment.dto';
 import { UpdateVirtualAssessmentStatusDto } from './dto/update-status.dto';
 import { CreateVirtualAssessmentDto } from './dto/virtual-assessment.dto';
@@ -276,6 +281,34 @@ export class VirtualAssessmentService {
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
+    }
+  }
+
+  async getTodaysVirtualAssessmentsByTime(): Promise<VirtualAssessment[]> {
+    try {
+      const currentDate = format(new Date(), VIRTUAL_ASSESSMENT_DATE_FORMAT);
+      const currentTime = format(new Date(), VIRTUAL_ASSESSMENT_TIME_FORMAT);
+
+      const virtualAssessments = await this.virtualAssessmentRepository
+        .createQueryBuilder('virtualAssessment')
+        .leftJoinAndSelect('virtualAssessment.appointment', 'appointment')
+        .andWhere('virtualAssessment.assessmentDate = :assessmentDate', {
+          assessmentDate: currentDate,
+        })
+        .andWhere('virtualAssessment.endTime <= :currentTime', {
+          currentTime,
+        })
+        .andWhere('virtualAssessment.status = :status', {
+          status: VirtualAssessmentStatus.Accepted,
+        })
+        .getMany();
+
+      return virtualAssessments;
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
+import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
 import { convertWeekdayToNumber } from 'src/common/helpers/convert-weekday-to-number.helper';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
@@ -12,13 +13,29 @@ import {
 } from 'src/modules/cron/cron.constants';
 
 import { PaymentService } from '../payment/payment.service';
+import { VirtualAssessmentService } from '../virtual-assessment/virtual-assessment.service';
 
 @Injectable()
 export class CronService {
   constructor(
     private appointmentService: AppointmentService,
     private paymentService: PaymentService,
+    private virtualAssessmentService: VirtualAssessmentService,
   ) {}
+
+  @Cron(EVERY_15_MINUTES)
+  async checkVirtualAssessmentStatus(): Promise<void> {
+    const todaysVirtualAssessments =
+      await this.virtualAssessmentService.getTodaysVirtualAssessmentsByTime();
+    await Promise.all(
+      todaysVirtualAssessments.map(async (virtualAssessment) => {
+        this.virtualAssessmentService.updateStatus(
+          virtualAssessment.appointment.id,
+          { status: VirtualAssessmentStatus.Finished },
+        );
+      }),
+    );
+  }
 
   @Cron(EVERY_15_MINUTES)
   async handleAppointmentStatusCron(): Promise<void> {
