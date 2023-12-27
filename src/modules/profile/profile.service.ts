@@ -8,6 +8,8 @@ import { Certificate } from 'src/common/entities/certificate.entity';
 import { User } from 'src/common/entities/user.entity';
 import { WorkExperience } from 'src/common/entities/work-experience.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { AuthService } from 'src/modules/auth/auth.service';
+import { Token } from 'src/modules/auth/types/token.type';
 import { UserRole } from 'src/modules/users/enums/user-role.enum';
 import { Repository } from 'typeorm';
 
@@ -27,6 +29,7 @@ export class ProfileService {
     private readonly workExperienceRepository: Repository<WorkExperience>,
     @InjectRepository(CaregiverInfo)
     private readonly profileRepository: Repository<CaregiverInfo>,
+    private readonly authService: AuthService,
   ) {}
 
   private readonly s3Client = new S3Client({
@@ -132,9 +135,10 @@ export class ProfileService {
   async updateProfile(
     userId: string,
     updateProfileDto: Partial<UpdateProfileDto>,
-  ): Promise<void> {
+  ): Promise<Token | void> {
     const caregiverInfo = await this.profileRepository
       .createQueryBuilder('profile')
+      .innerJoinAndSelect('profile.user', 'user')
       .where('profile.user = :userId', { userId })
       .getOne();
 
@@ -149,6 +153,10 @@ export class ProfileService {
       { user: { id: userId } },
       updateProfileDto,
     );
+
+    if (updateProfileDto.timeZone || updateProfileDto.description) {
+      return { token: await this.authService.createToken(caregiverInfo.user) };
+    }
   }
 
   async createCertificate(
