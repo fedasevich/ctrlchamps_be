@@ -15,5 +15,6 @@ import { VirtualAssessmentService } from './virtual-assessment.service';
   ],
   providers: [VirtualAssessmentService],
   controllers: [VirtualAssessmentController],
+  exports: [VirtualAssessmentService],
 })
 export class VirtualAssessmentModule {}
