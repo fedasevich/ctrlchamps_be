@@ -2,11 +2,11 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-import { compare, hash } from 'bcrypt';
 import { ErrorMessage } from 'common/enums/error-message.enum';
 import { CaregiverInfoService } from 'modules/caregiver-info/caregiver-info.service';
 import { EmailErrorMessage } from 'modules/email/enums/email-error-message.enum';
 import { EmailService } from 'modules/email/services/email.service';
+import { PasswordService } from 'modules/update-password/update-password.service';
 import { UserRole } from 'modules/users/enums/user-role.enum';
 import { UserService } from 'modules/users/user.service';
 
@@ -19,10 +19,6 @@ import { AuthenticatedRequest } from './types/user.request.type';
 
 @Injectable()
 export class AuthService {
-  private readonly saltRounds = this.configService.get<number>(
-    'PASSWORD_SALT_ROUNDS',
-  );
-
   private readonly otpCodeTemplateId = this.configService.get<string>(
     'SENDGRID_OTP_TEMPLATE_ID',
   );
@@ -48,6 +44,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly passwordService: PasswordService,
     private readonly caregiverInfoService: CaregiverInfoService,
   ) {}
 
@@ -58,7 +55,9 @@ export class AuthService {
         phoneNumber: userDto.phoneNumber,
       });
 
-      const passwordHash = await this.hashPassword(userDto.password);
+      const passwordHash = await this.passwordService.hashPassword(
+        userDto.password,
+      );
 
       const user = await this.userService.create({
         ...userDto,
@@ -84,12 +83,18 @@ export class AuthService {
     }
   }
 
-  async signIn(dto: UserLoginDto): Promise<Token> {
+  async signIn(userDto: UserLoginDto): Promise<Token> {
     try {
-      const user = await this.userService.findByEmailOrPhoneNumber(dto.email);
-      const validPassword =
-        user && (await compare(dto.password, user.password));
-      if (!user || !validPassword) {
+      const user = await this.userService.findByEmailOrPhoneNumber(
+        userDto.email,
+      );
+
+      const validPassword = await this.passwordService.checkPasswordValidity(
+        userDto.password,
+        user.password,
+      );
+
+      if (!validPassword) {
         throw new HttpException(
           ErrorMessage.BadLoginCredentials,
           HttpStatus.UNAUTHORIZED,
@@ -111,17 +116,6 @@ export class AuthService {
       }
 
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  private async hashPassword(password: string): Promise<string> {
-    try {
-      return await hash(password, Number(this.saltRounds));
-    } catch (error) {
-      throw new HttpException(
-        ErrorMessage.FailedHashPassword,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
     }
   }
 
@@ -309,10 +303,7 @@ export class AuthService {
   async resetPassword(email: string, password: string): Promise<void> {
     try {
       await this.accountCheck({ email });
-
-      const passwordHash = await this.hashPassword(password);
-
-      await this.userService.update(email, { password: passwordHash });
+      await this.passwordService.resetPassword(email, password);
     } catch (error) {
       if (
         error instanceof HttpException &&

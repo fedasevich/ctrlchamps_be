@@ -34,6 +34,7 @@ import {
   MAX_FILE_SIZE,
   USER_INFO_EXAMPLE,
 } from './constants/user-info.constants';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserUpdateDto } from './dto/user-update-info.dto';
 import { UserApiPath } from './enums/user.api-path.enum';
 import { UserService } from './user.service';
@@ -88,6 +89,30 @@ export class UserController {
     @Body() userInfo: UserUpdateDto,
   ): Promise<void> {
     await this.userService.updateUserInfo(userId, userInfo);
+  }
+
+  @Post(UserApiPath.ChangePassword)
+  @ApiOperation({ summary: 'Change user password' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User password changed successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.InvalidProvidedPassword,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.UserProfileNotFound,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  async updateUserPassword(
+    @Body() passwordData: UpdatePasswordDto,
+  ): Promise<void> {
+    await this.userService.updatePassword(passwordData);
   }
 
   @Post(UserApiPath.UploadAvatar)
