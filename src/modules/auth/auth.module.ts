@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { User } from 'common/entities/user.entity';
 import { EmailModule } from 'modules/email/email.module';
+import { PasswordModule } from 'modules/update-password/update-password.module';
+import { UserModule } from 'modules/users/user.module';
 import { UserService } from 'modules/users/user.service';
 
 import { AuthController } from './auth.controller';
@@ -21,9 +23,11 @@ import { AuthService } from './auth.service';
       inject: [ConfigService],
       global: true,
     }),
+    UserModule,
+    PasswordModule,
     EmailModule,
   ],
-  providers: [AuthService, UserService],
+  providers: [AuthService],
   controllers: [AuthController],
 })
 export class AuthModule {}

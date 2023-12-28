@@ -91,7 +91,7 @@ export class UserController {
     await this.userService.updateUserInfo(userId, userInfo);
   }
 
-  @Patch(UserApiPath.ChangePassword)
+  @Post(UserApiPath.ChangePassword)
   @ApiOperation({ summary: 'Change user password' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -110,10 +110,9 @@ export class UserController {
     description: ErrorMessage.InternalServerError,
   })
   async updateUserPassword(
-    @Param('userId') userId: string,
     @Body() passwordData: UpdatePasswordDto,
   ): Promise<void> {
-    await this.userService.updatePassword(userId, passwordData);
+    await this.userService.updatePassword(passwordData);
   }
 
   @Post(UserApiPath.UploadAvatar)

@@ -3,9 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { compare, hash } from 'bcrypt';
 import { User } from 'common/entities/user.entity';
 import { UserCreateDto } from 'modules/auth/dto/user-create.dto';
+import { PasswordService } from 'modules/update-password/update-password.service';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
 import { EntityManager, Repository } from 'typeorm';
@@ -18,6 +18,7 @@ export class UserService {
   constructor(
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly passwordService: PasswordService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
@@ -29,10 +30,6 @@ export class UserService {
       secretAccessKey: this.configService.get<string>('AWS_SECRET_KEY'),
     },
   });
-
-  private readonly saltRounds = this.configService.get<number>(
-    'PASSWORD_SALT_ROUNDS',
-  );
 
   private readonly updateUserPasswordTemplateId =
     this.configService.get<string>('SENDGRID_UPDATE_USER_PASSWORD_TEMPLATE_ID');
@@ -55,14 +52,26 @@ export class UserService {
     phoneNumber?: string,
   ): Promise<User> {
     try {
-      return await this.userRepository
+      const user = await this.userRepository
         .createQueryBuilder('user')
         .where('user.email = :email OR user.phoneNumber = :phoneNumber', {
           email,
           phoneNumber,
         })
         .getOne();
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserProfileNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      return user;
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -174,40 +183,11 @@ export class UserService {
     }
   }
 
-  async updatePassword(
-    userId: string,
-    passwordData: UpdatePasswordDto,
-  ): Promise<void> {
+  async updatePassword(userData: UpdatePasswordDto): Promise<void> {
     try {
-      const user = await this.findById(userId);
+      const user = await this.findByEmailOrPhoneNumber(userData.email);
 
-      if (!user) {
-        throw new HttpException(
-          ErrorMessage.UserProfileNotFound,
-          HttpStatus.NOT_FOUND,
-        );
-      }
-
-      const validPassword = await compare(
-        passwordData.oldPassword,
-        user.password,
-      );
-
-      if (!validPassword) {
-        throw new HttpException(
-          ErrorMessage.InvalidProvidedPassword,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
-      const hashedPassword = await hash(
-        passwordData.newPassword,
-        Number(this.saltRounds),
-      );
-
-      user.password = hashedPassword;
-
-      await this.userRepository.save(user);
+      await this.passwordService.updatePassword(user.password, userData);
 
       await this.emailService.sendEmail({
         to: user.email,
