@@ -39,14 +39,14 @@ export class PaymentController {
   })
   @Post(PaymentAPiPath.Withdraw)
   async withdrawBalance(
-    @Body() updatedBalance: number,
+    @Body() { balance }: { balance: number },
     @Req() request: AuthenticatedRequest,
   ): Promise<void> {
     const userId = request.user.id;
     if (!userId) {
       throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
     }
-    await this.paymentService.updateBalance(userId, updatedBalance);
+    await this.paymentService.updateBalance(userId, balance);
   }
 
   @ApiOperation({ summary: 'Top-up balance' })
@@ -64,13 +64,13 @@ export class PaymentController {
   })
   @Post(PaymentAPiPath.TopUp)
   async topUpBalance(
-    @Body() updatedBalance: number,
+    @Body() { balance }: { balance: number },
     @Req() request: AuthenticatedRequest,
   ): Promise<void> {
     const userId = request.user.id;
     if (!userId) {
       throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
     }
-    await this.paymentService.updateBalance(userId, updatedBalance);
+    await this.paymentService.updateBalance(userId, balance);
   }
 }
