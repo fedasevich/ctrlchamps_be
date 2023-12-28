@@ -6,7 +6,9 @@ import { SeekerActivity } from 'src/common/entities/seeker-activity.entity';
 import { SeekerCapability } from 'src/common/entities/seeker-capability.entity';
 import { SeekerDiagnosis } from 'src/common/entities/seeker-diagnosis.entity';
 import { SeekerTask } from 'src/common/entities/seeker-task.entity';
+import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
 import { User } from 'src/common/entities/user.entity';
+import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
 import {
@@ -18,8 +20,6 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-
-import { VirtualAssessment } from './virtual-assessment.entity';
 
 @Entity()
 export class Appointment {
@@ -188,4 +188,7 @@ export class Appointment {
 
   @OneToMany(() => ActivityLog, (activityLog) => activityLog.appointment)
   activityLog: ActivityLog[];
+
+  @OneToMany(() => TransactionHistory, (transaction) => transaction.appointment)
+  transaction: TransactionHistory[];
 }

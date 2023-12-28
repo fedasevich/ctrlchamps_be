@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -59,6 +65,7 @@ export class AppointmentService {
     private readonly caregiverInfoService: CaregiverInfoService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    @Inject(forwardRef(() => PaymentService))
     private paymentService: PaymentService,
   ) {}
 

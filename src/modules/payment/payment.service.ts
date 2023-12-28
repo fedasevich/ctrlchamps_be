@@ -18,6 +18,8 @@ import { ActivityLogStatus } from '../activity-log/enums/activity-log-status.enu
 import { MINIMUM_BALANCE } from '../appointment/appointment.constants';
 import { AppointmentStatus } from '../appointment/enums/appointment-status.enum';
 import { CaregiverInfoService } from '../caregiver-info/caregiver-info.service';
+import { TransactionType } from '../transaction-history/enums/transaction-type.enum';
+import { TransactionHistoryService } from '../transaction-history/transaction-history.service';
 import { UserService } from '../users/user.service';
 
 import { ALREADY_PAID_HOUR, ONE_WEEK } from './constants/payment.constants';
@@ -34,6 +36,8 @@ export class PaymentService {
     private appointmentService: AppointmentService,
     private readonly userService: UserService,
     private readonly caregiverInfoService: CaregiverInfoService,
+    @Inject(forwardRef(() => TransactionHistoryService))
+    private transactionHistoryService: TransactionHistoryService,
   ) {}
 
   public async payForHourOfWork(
@@ -68,6 +72,13 @@ export class PaymentService {
       await this.userService.updateWithTransaction(
         email,
         { balance: updatedSeekerBalance },
+        transactionalEntityManager,
+      );
+
+      await this.createSeekerCaregiverTransactions(
+        userId,
+        caregiverInfo.user.id,
+        caregiverInfo.hourlyRate,
         transactionalEntityManager,
       );
 
@@ -146,6 +157,14 @@ export class PaymentService {
           balance: caregiverUpdatedBalance,
         },
         transactionalEntityManager,
+      );
+
+      await this.createSeekerCaregiverTransactions(
+        userId,
+        caregiverInfo.user.id,
+        amountToPay,
+        transactionalEntityManager,
+        appointmentId,
       );
     } catch (error) {
       if (
@@ -240,6 +259,14 @@ export class PaymentService {
           balance: caregiverUpdatedBalance,
         },
         transactionalEntityManager,
+      );
+
+      await this.createSeekerCaregiverTransactions(
+        userId,
+        caregiverInfo.user.id,
+        payForCompletedRecurringAppointment,
+        transactionalEntityManager,
+        appointmentId,
       );
     } catch (error) {
       if (
@@ -337,6 +364,45 @@ export class PaymentService {
             { status: ActivityLogStatus.Closed },
           );
         },
+      );
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private async createSeekerCaregiverTransactions(
+    seekerId: string,
+    caregiverId: string,
+    amount: number,
+    transactionalEntityManager: EntityManager,
+    appointmentId?: string,
+  ): Promise<void> {
+    try {
+      await this.transactionHistoryService.create(
+        {
+          userId: seekerId,
+          type: TransactionType.Outcome,
+          amount,
+          appointmentId,
+        },
+        transactionalEntityManager,
+      );
+
+      await this.transactionHistoryService.create(
+        {
+          userId: caregiverId,
+          type: TransactionType.Income,
+          amount,
+          appointmentId,
+        },
+        transactionalEntityManager,
       );
     } catch (error) {
       if (
