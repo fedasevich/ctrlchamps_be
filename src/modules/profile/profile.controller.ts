@@ -1,18 +1,18 @@
 import {
-  Controller,
-  Post,
   Body,
-  HttpStatus,
-  Patch,
-  Get,
+  Controller,
   FileTypeValidator,
+  Get,
+  HttpStatus,
   MaxFileSizeValidator,
   ParseFilePipe,
-  UploadedFile,
-  UseInterceptors,
-  UseGuards,
+  Patch,
+  Post,
   Req,
   UnauthorizedException,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -29,6 +29,7 @@ import { WorkExperience } from 'src/common/entities/work-experience.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
+import { Token } from 'src/modules/auth/types/token.type';
 import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
 import { ProfileApiPath } from 'src/modules/profile/enum/profile.enum';
 import { ProfileService } from 'src/modules/profile/profile.service';
@@ -208,7 +209,17 @@ export class ProfileController {
   @ApiOperation({ summary: 'Update caregiver profile' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Profile updated successfully',
+    description: 'Profile updated successfully with token',
+    schema: {
+      example: {
+        token:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0MDg5Yjg2LTYzZTctNGZhOC1iZjAwLWRhNmRkMDBkZjFmYSIsImlhdCI6MTcwMDA4MDIxOSwiZXhw',
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Profile updated successfully with no content',
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -225,13 +236,13 @@ export class ProfileController {
   async updateProfile(
     @Req() request: AuthenticatedRequest,
     @Body() updateProfileDto: UpdateProfileDto,
-  ): Promise<void> {
+  ): Promise<Token | void> {
     const userId = request.user.id;
     if (!userId) {
       throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
     }
 
-    await this.profileService.updateProfile(userId, updateProfileDto);
+    return this.profileService.updateProfile(userId, updateProfileDto);
   }
 
   @Post(ProfileApiPath.Certificates)

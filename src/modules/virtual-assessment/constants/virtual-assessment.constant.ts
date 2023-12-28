@@ -1,3 +1,6 @@
+export const REASON_MIN_LENGTH = 7;
+export const REASON_MAX_LENGTH = 100;
+
 export const VIRTUAL_ASSESSMENT_GET_EXAMPLE = {
   id: '78b96c71-a7cb-4598-966d-52c4b92d13cf',
   startTime: '03:00:00',
@@ -30,3 +33,6 @@ export const VIRTUAL_ASSESSMENT_GET_EXAMPLE = {
     ],
   },
 };
+
+export const VIRTUAL_ASSESSMENT_DATE_FORMAT = 'yyyy-MM-dd';
+export const VIRTUAL_ASSESSMENT_TIME_FORMAT = 'HH:mm:ss';
