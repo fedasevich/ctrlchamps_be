@@ -9,7 +9,7 @@ import 'reflect-metadata';
 
 async function bootstrap(): Promise<void> {
   try {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, { cors: true });
     const configService = new ConfigService();
 
     app.enableCors({

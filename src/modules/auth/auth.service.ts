@@ -101,6 +101,7 @@ export class AuthService {
           lastName: user.lastName,
           role: user.role,
           isVerified: user.isVerified,
+          balance: user.balance,
         }),
       };
     } catch (error) {
@@ -247,6 +248,7 @@ export class AuthService {
         lastName: user.lastName,
         role: user.role,
         isVerified: user.isVerified,
+        balance: user.balance,
       });
     } catch (error) {
       throw new HttpException(
