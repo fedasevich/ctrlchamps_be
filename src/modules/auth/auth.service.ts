@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import { compare, hash } from 'bcrypt';
 import { ErrorMessage } from 'common/enums/error-message.enum';
+import { CaregiverInfoService } from 'modules/caregiver-info/caregiver-info.service';
 import { EmailErrorMessage } from 'modules/email/enums/email-error-message.enum';
 import { EmailService } from 'modules/email/services/email.service';
 import { UserRole } from 'modules/users/enums/user-role.enum';
@@ -47,6 +48,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly caregiverInfoService: CaregiverInfoService,
   ) {}
 
   async signUp(userDto: UserCreateDto): Promise<Token> {
@@ -65,7 +67,7 @@ export class AuthService {
 
       await this.sendOtpCodeEmail(userDto.email);
 
-      const token = await this.createToken(user);
+      const token = await this.createToken({ ...userDto, ...user });
 
       return {
         token,
@@ -101,7 +103,6 @@ export class AuthService {
           lastName: user.lastName,
           role: user.role,
           isVerified: user.isVerified,
-          balance: user.balance,
         }),
       };
     } catch (error) {
@@ -155,7 +156,7 @@ export class AuthService {
     }
   }
 
-  async verifyAccount(userId: string, otpCode: string): Promise<void> {
+  async verifyAccount(userId: string, otpCode: string): Promise<Token> {
     try {
       const user = await this.userService.findById(userId);
 
@@ -185,6 +186,8 @@ export class AuthService {
         otpCode: null,
       });
       await this.sendVerifiedEmail(user.email, user.role);
+
+      return { token: await this.createToken({ ...user, isVerified: true }) };
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -238,9 +241,7 @@ export class AuthService {
     }
   }
 
-  private async createToken(
-    user: AuthenticatedRequest['user'],
-  ): Promise<string> {
+  async createToken(user: AuthenticatedRequest['user']): Promise<string> {
     try {
       return this.jwtService.sign({
         firstName: user.firstName,
@@ -248,7 +249,10 @@ export class AuthService {
         lastName: user.lastName,
         role: user.role,
         isVerified: user.isVerified,
-        balance: user.balance,
+        isProfileFilled:
+          user.role === UserRole.Caregiver
+            ? await this.caregiverInfoService.isCaregiverInfoFilled(user.id)
+            : undefined,
       });
     } catch (error) {
       throw new HttpException(

@@ -58,18 +58,13 @@ export class PaymentService {
 
       const updatedSeekerBalance = balance - caregiverInfo.hourlyRate;
 
-      if (updatedSeekerBalance < MINIMUM_BALANCE) {
-        throw new HttpException(
-          ErrorMessage.NotEnoughMoney,
-          HttpStatus.BAD_REQUEST,
+      if (updatedSeekerBalance >= MINIMUM_BALANCE) {
+        await this.userService.updateWithTransaction(
+          email,
+          { balance: updatedSeekerBalance },
+          transactionalEntityManager,
         );
       }
-
-      await this.userService.updateWithTransaction(
-        email,
-        { balance: updatedSeekerBalance },
-        transactionalEntityManager,
-      );
 
       return caregiverInfo.hourlyRate;
     } catch (error) {
