@@ -2,7 +2,7 @@ import {
   Body,
   Controller,
   HttpStatus,
-  Post,
+  Patch,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -15,19 +15,18 @@ import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { TokenGuard } from '../auth/middleware/auth.middleware';
 import { AuthenticatedRequest } from '../auth/types/user.request.type';
 
-import { PaymentAPiPath } from './enums/payment.api-path.enum';
 import { PaymentService } from './payment.service';
 
-@ApiTags('Payment')
-@Controller(ApiPath.Payment)
+@ApiTags('Transactions')
+@Controller(ApiPath.Transactions)
 @UseGuards(TokenGuard)
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @ApiOperation({ summary: 'Withdraw balance' })
+  @ApiOperation({ summary: 'Top-up / Withdraw balance' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Withdraw money from balance successfully',
+    description: 'Updated balance successfully',
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -37,32 +36,7 @@ export class PaymentController {
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: ErrorMessage.InternalServerError,
   })
-  @Post(PaymentAPiPath.Withdraw)
-  async withdrawBalance(
-    @Body() { balance }: { balance: number },
-    @Req() request: AuthenticatedRequest,
-  ): Promise<void> {
-    const userId = request.user.id;
-    if (!userId) {
-      throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
-    }
-    await this.paymentService.updateBalance(userId, balance);
-  }
-
-  @ApiOperation({ summary: 'Top-up balance' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Top-up money to balance successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: ErrorMessage.UserIsNotAuthorized,
-  })
-  @ApiResponse({
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: ErrorMessage.InternalServerError,
-  })
-  @Post(PaymentAPiPath.TopUp)
+  @Patch()
   async topUpBalance(
     @Body() { balance }: { balance: number },
     @Req() request: AuthenticatedRequest,

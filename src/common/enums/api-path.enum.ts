@@ -8,5 +8,5 @@ export enum ApiPath {
   Capability = 'capability',
   ActivityLog = 'activity-log',
   User = 'user',
-  Payment = 'payment',
+  Transactions = 'transactions',
 }
