@@ -114,6 +114,7 @@ export class CaregiverInfoService {
           'caregiverInfo.hourlyRate',
           'caregiverInfo.videoLink',
           'caregiverInfo.services',
+          'caregiverInfo.availability',
         ])
         .innerJoinAndSelect('caregiverInfo.workExperiences', 'workExperiences')
         .innerJoinAndSelect('caregiverInfo.certificates', 'certificates')
