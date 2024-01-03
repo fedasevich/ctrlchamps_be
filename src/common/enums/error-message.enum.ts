@@ -34,6 +34,7 @@ export enum ErrorMessage {
   FailedCreateActivityLog = 'Failed to create activity log',
   FailedUpdateActivityLogStatus = 'Failed to update activity log status',
   FailedUpdateUser = 'Failed to update user data',
+  InvalidProvidedPassword = 'Provided password does not match the old one',
   InsufficientFunds = 'Insufficient funds',
   FailedCreateTransaction = 'Failed to create transaction',
   FailedUpdateTransaction = 'Failed to update transaction',

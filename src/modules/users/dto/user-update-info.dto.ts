@@ -7,6 +7,7 @@ import {
   IsBoolean,
   IsOptional,
   MaxLength,
+  IsNumber,
 } from 'class-validator';
 import { Country } from 'modules/users/enums/country.enum';
 import { UserCreateValidationRule } from 'modules/users/enums/user-create.validation-rule.enum';
@@ -119,4 +120,13 @@ export class UserUpdateDto {
   @IsString()
   @IsOptional()
   avatar: string;
+
+  @ApiProperty({
+    description: "User's balance",
+    example: 500,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  balance: number;
 }

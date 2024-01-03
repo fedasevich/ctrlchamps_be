@@ -476,7 +476,19 @@ export class PaymentService {
       ) {
         throw error;
       }
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
+  public async updateBalance(
+    userId: string,
+    updatedBalance: number,
+  ): Promise<void> {
+    try {
+      await this.userService.updateUserInfo(userId, {
+        balance: updatedBalance,
+      });
+    } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
