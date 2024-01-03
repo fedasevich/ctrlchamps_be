@@ -9,6 +9,7 @@ import { AppointmentModule } from '../appointment/appointment.module';
 import { CaregiverInfoModule } from '../caregiver-info/caregiver-info.module';
 import { UserModule } from '../users/user.module';
 
+import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 
 @Module({
@@ -18,6 +19,7 @@ import { PaymentService } from './payment.service';
     CaregiverInfoModule,
     UserModule,
   ],
+  controllers: [PaymentController],
   providers: [PaymentService],
   exports: [PaymentService],
 })

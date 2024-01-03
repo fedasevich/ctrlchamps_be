@@ -384,7 +384,7 @@ export class PaymentService {
     try {
       const transactions = await this.transactionHistoryRepository
         .createQueryBuilder('transactions')
-        .where('user.id = :userId', {
+        .where('userId = :userId', {
           userId,
         })
         .getMany();
