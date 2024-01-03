@@ -17,16 +17,14 @@ import { TokenGuard } from '../auth/middleware/auth.middleware';
 import { TRANSACTIONS_HISTORY_EXAMPLE } from './constants/transaction-history.constants';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionApiPath } from './enums/transaction-api-path.enum';
-import { TransactionHistoryService } from './transaction-history.service';
+import { PaymentService } from './payment.service';
 import { Transaction } from './types/transaction-history.type';
 
 @ApiTags('Transaction History')
 @Controller(ApiPath.TransactionHistory)
 @UseGuards(TokenGuard)
-export class TransactionHistoryController {
-  constructor(
-    private readonly transactionHistoryService: TransactionHistoryService,
-  ) {}
+export class PaymentController {
+  constructor(private readonly paymentService: PaymentService) {}
 
   @ApiOperation({ summary: 'Transactions history getting by user Id' })
   @ApiResponse({
@@ -48,7 +46,7 @@ export class TransactionHistoryController {
   async getTransactionHistory(
     @Param('userId') userId: string,
   ): Promise<Transaction[]> {
-    return this.transactionHistoryService.getTransactionHistory(userId);
+    return this.paymentService.getTransactionHistory(userId);
   }
 
   @ApiOperation({ summary: 'Transactions creating' })
@@ -68,6 +66,6 @@ export class TransactionHistoryController {
   async createTransaction(
     @Body() transaction: CreateTransactionDto,
   ): Promise<void> {
-    return this.transactionHistoryService.create(transaction);
+    return this.paymentService.createTransaction(transaction);
   }
 }

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { User } from 'src/common/entities/user.entity';
-import { TransactionType } from 'src/modules/transaction-history/enums/transaction-type.enum';
+import { TransactionType } from 'src/modules/payment/enums/transaction-type.enum';
 import {
   Column,
   Entity,

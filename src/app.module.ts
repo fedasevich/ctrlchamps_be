@@ -37,7 +37,6 @@ import { CronModule } from './modules/cron/cron.module';
 import { EmailModule } from './modules/email/email.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { ProfileModule } from './modules/profile/profile.module';
-import { TransactionHistoryModule } from './modules/transaction-history/transaction-history.module';
 import { UserModule } from './modules/users/user.module';
 import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-assessment.module';
 
@@ -93,7 +92,7 @@ import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-as
     VirtualAssessmentModule,
     ActivityLogModule,
     CronModule,
-    TransactionHistoryModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService],

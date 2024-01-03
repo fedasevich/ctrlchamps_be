@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { format, getDay, differenceInWeeks } from 'date-fns';
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
+import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { EntityManager, Repository } from 'typeorm';
@@ -18,12 +19,13 @@ import { ActivityLogStatus } from '../activity-log/enums/activity-log-status.enu
 import { MINIMUM_BALANCE } from '../appointment/appointment.constants';
 import { AppointmentStatus } from '../appointment/enums/appointment-status.enum';
 import { CaregiverInfoService } from '../caregiver-info/caregiver-info.service';
-import { TransactionType } from '../transaction-history/enums/transaction-type.enum';
-import { TransactionHistoryService } from '../transaction-history/transaction-history.service';
 import { UserService } from '../users/user.service';
 
 import { ALREADY_PAID_HOUR, ONE_WEEK } from './constants/payment.constants';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { TransactionType } from './enums/transaction-type.enum';
 import { getHourDifference } from './helpers/difference-in-hours';
+import { Transaction } from './types/transaction-history.type';
 
 @Injectable()
 export class PaymentService {
@@ -32,12 +34,12 @@ export class PaymentService {
     private readonly appointmentRepository: Repository<Appointment>,
     @InjectRepository(ActivityLog)
     private readonly activityLogRepository: Repository<ActivityLog>,
+    @InjectRepository(TransactionHistory)
+    private readonly transactionHistoryRepository: Repository<TransactionHistory>,
     @Inject(forwardRef(() => AppointmentService))
     private appointmentService: AppointmentService,
     private readonly userService: UserService,
     private readonly caregiverInfoService: CaregiverInfoService,
-    @Inject(forwardRef(() => TransactionHistoryService))
-    private transactionHistoryService: TransactionHistoryService,
   ) {}
 
   public async payForHourOfWork(
@@ -378,6 +380,68 @@ export class PaymentService {
     }
   }
 
+  async getTransactionHistory(userId: string): Promise<Transaction[]> {
+    try {
+      const transactions = await this.transactionHistoryRepository
+        .createQueryBuilder('transactions')
+        .where('user.id = :userId', {
+          userId,
+        })
+        .getMany();
+
+      return transactions;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async createTransaction(
+    transaction: CreateTransactionDto,
+    transactionalEntityManager?: EntityManager,
+  ): Promise<void> {
+    try {
+      const user = await this.userService.findById(transaction.userId);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserIsNotAuthorized,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (transaction.appointmentId) {
+        const appointment = await this.appointmentService.findOneById(
+          transaction.appointmentId,
+        );
+
+        if (!appointment) {
+          throw new HttpException(
+            ErrorMessage.AppointmentNotFound,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
+      const repository =
+        transactionalEntityManager ?? this.transactionHistoryRepository;
+
+      await repository
+        .createQueryBuilder()
+        .insert()
+        .into(TransactionHistory)
+        .values(transaction)
+        .execute();
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   private async createSeekerCaregiverTransactions(
     seekerId: string,
     caregiverId: string,
@@ -386,7 +450,7 @@ export class PaymentService {
     appointmentId?: string,
   ): Promise<void> {
     try {
-      await this.transactionHistoryService.create(
+      await this.createTransaction(
         {
           userId: seekerId,
           type: TransactionType.Outcome,
@@ -396,7 +460,7 @@ export class PaymentService {
         transactionalEntityManager,
       );
 
-      await this.transactionHistoryService.create(
+      await this.createTransaction(
         {
           userId: caregiverId,
           type: TransactionType.Income,
