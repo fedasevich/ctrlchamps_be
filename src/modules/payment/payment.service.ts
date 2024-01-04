@@ -19,6 +19,7 @@ import { ActivityLogStatus } from '../activity-log/enums/activity-log-status.enu
 import { MINIMUM_BALANCE } from '../appointment/appointment.constants';
 import { AppointmentStatus } from '../appointment/enums/appointment-status.enum';
 import { CaregiverInfoService } from '../caregiver-info/caregiver-info.service';
+import { UserRole } from '../users/enums/user-role.enum';
 import { UserService } from '../users/user.service';
 
 import { ALREADY_PAID_HOUR, ONE_WEEK } from './constants/payment.constants';
@@ -459,6 +460,21 @@ export class PaymentService {
     updatedBalance: number,
   ): Promise<void> {
     try {
+      const user = await this.userService.findById(userId);
+      if (user) {
+        await this.createTransaction({
+          userId,
+          type:
+            user.role === UserRole.Caregiver
+              ? TransactionType.Outcome
+              : TransactionType.Income,
+          amount:
+            user.role === UserRole.Caregiver
+              ? user.balance - updatedBalance
+              : updatedBalance - user.balance,
+        });
+      }
+
       await this.userService.updateUserInfo(userId, {
         balance: updatedBalance,
       });
