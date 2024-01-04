@@ -17,7 +17,7 @@ import { Certificate } from './certificate.entity';
 import { User } from './user.entity';
 import { WorkExperience } from './work-experience.entity';
 
-interface TimeSlot {
+export interface TimeSlot {
   day: PreferredDay;
   startTime: string;
   endTime: string;

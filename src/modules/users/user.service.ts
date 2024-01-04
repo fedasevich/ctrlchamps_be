@@ -5,15 +5,20 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { User } from 'common/entities/user.entity';
 import { UserCreateDto } from 'modules/auth/dto/user-create.dto';
+import { PasswordService } from 'modules/update-password/update-password.service';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { EmailService } from 'src/modules/email/services/email.service';
 import { EntityManager, Repository } from 'typeorm';
 
+import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserUpdateDto } from './dto/user-update-info.dto';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
+    private readonly passwordService: PasswordService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
@@ -25,6 +30,9 @@ export class UserService {
       secretAccessKey: this.configService.get<string>('AWS_SECRET_KEY'),
     },
   });
+
+  private readonly updateUserPasswordTemplateId =
+    this.configService.get<string>('SENDGRID_UPDATE_USER_PASSWORD_TEMPLATE_ID');
 
   async findById(userId: string): Promise<User> {
     try {
@@ -44,14 +52,26 @@ export class UserService {
     phoneNumber?: string,
   ): Promise<User> {
     try {
-      return await this.userRepository
+      const user = await this.userRepository
         .createQueryBuilder('user')
         .where('user.email = :email OR user.phoneNumber = :phoneNumber', {
           email,
           phoneNumber,
         })
         .getOne();
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserProfileNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      return user;
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -160,6 +180,25 @@ export class UserService {
         ErrorMessage.FailedUpdateAppointment,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  async updatePassword(userData: UpdatePasswordDto): Promise<void> {
+    try {
+      const user = await this.findByEmailOrPhoneNumber(userData.email);
+
+      await this.passwordService.updatePassword(user.password, userData);
+
+      await this.emailService.sendEmail({
+        to: user.email,
+        templateId: this.updateUserPasswordTemplateId,
+      });
+    } catch (err) {
+      if (err instanceof HttpException) {
+        throw err;
+      }
+
+      throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
