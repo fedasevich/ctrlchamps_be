@@ -4,6 +4,7 @@ import { Country } from 'modules/users/enums/country.enum';
 import { UserRole } from 'modules/users/enums/user-role.enum';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
+import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -154,4 +155,7 @@ export class User {
 
   @OneToMany(() => Appointment, (appointment) => appointment.user)
   appointment: Appointment[];
+
+  @OneToMany(() => TransactionHistory, (transaction) => transaction.user)
+  transaction: TransactionHistory[];
 }

@@ -1,11 +1,13 @@
 import {
-  Body,
   Controller,
+  Get,
+  Body,
+  Param,
+  UseGuards,
   HttpStatus,
   Patch,
   Req,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -15,13 +17,39 @@ import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { TokenGuard } from '../auth/middleware/auth.middleware';
 import { AuthenticatedRequest } from '../auth/types/user.request.type';
 
+import { TRANSACTIONS_HISTORY_EXAMPLE } from './constants/transaction-history.constants';
+import { TransactionApiPath } from './enums/transaction-api-path.enum';
 import { PaymentService } from './payment.service';
+import { Transaction } from './types/transaction-history.type';
 
 @ApiTags('Transactions')
 @Controller(ApiPath.Transactions)
 @UseGuards(TokenGuard)
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
+
+  @ApiOperation({ summary: 'Transactions history getting by user Id' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Transactions history retrieved successfully',
+    schema: {
+      example: TRANSACTIONS_HISTORY_EXAMPLE,
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.UserIsNotAuthorized,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  @Get(TransactionApiPath.UserId)
+  async getTransactionHistory(
+    @Param('userId') userId: string,
+  ): Promise<Transaction[]> {
+    return this.paymentService.getTransactionHistory(userId);
+  }
 
   @ApiOperation({ summary: 'Top-up / Withdraw balance' })
   @ApiResponse({
