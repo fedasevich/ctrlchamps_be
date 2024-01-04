@@ -78,13 +78,6 @@ export class PaymentService {
         transactionalEntityManager,
       );
 
-      await this.createSeekerCaregiverTransactions(
-        userId,
-        caregiverInfo.user.id,
-        caregiverInfo.hourlyRate,
-        transactionalEntityManager,
-      );
-
       return caregiverInfo.hourlyRate;
     } catch (error) {
       if (
@@ -412,19 +405,6 @@ export class PaymentService {
         );
       }
 
-      if (transaction.appointmentId) {
-        const appointment = await this.appointmentService.findOneById(
-          transaction.appointmentId,
-        );
-
-        if (!appointment) {
-          throw new HttpException(
-            ErrorMessage.AppointmentNotFound,
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-      }
-
       const repository =
         transactionalEntityManager ?? this.transactionHistoryRepository;
 
@@ -442,7 +422,7 @@ export class PaymentService {
     }
   }
 
-  private async createSeekerCaregiverTransactions(
+  async createSeekerCaregiverTransactions(
     seekerId: string,
     caregiverId: string,
     amount: number,

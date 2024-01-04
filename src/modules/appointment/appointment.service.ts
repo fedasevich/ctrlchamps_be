@@ -138,6 +138,19 @@ export class AppointmentService {
               ),
             ),
           );
+
+          const caregiverInfo =
+            await this.caregiverInfoService.findUserByCaregiverInfoId(
+              createAppointment.caregiverInfoId,
+            );
+
+          await this.paymentService.createSeekerCaregiverTransactions(
+            userId,
+            caregiverInfo.user.id,
+            caregiverInfo.hourlyRate,
+            transactionalEntityManager,
+            appointmentId,
+          );
         },
       );
 
