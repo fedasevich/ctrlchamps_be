@@ -72,12 +72,6 @@ export class PaymentService {
         );
       }
 
-      await this.userService.updateWithTransaction(
-        email,
-        { balance: updatedSeekerBalance },
-        transactionalEntityManager,
-      );
-
       return caregiverInfo.hourlyRate;
     } catch (error) {
       if (
