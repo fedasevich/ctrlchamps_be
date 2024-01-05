@@ -375,6 +375,7 @@ export class PaymentService {
         .where('userId = :userId', {
           userId,
         })
+        .orderBy('transactions.createdAt', 'DESC')
         .getMany();
 
       return transactions;
