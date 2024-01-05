@@ -36,4 +36,6 @@ export enum ErrorMessage {
   FailedUpdateUser = 'Failed to update user data',
   InvalidProvidedPassword = 'Provided password does not match the old one',
   InsufficientFunds = 'Insufficient funds',
+  FailedCreateTransaction = 'Failed to create transaction',
+  FailedUpdateTransaction = 'Failed to update transaction',
 }

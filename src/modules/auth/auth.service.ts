@@ -89,6 +89,13 @@ export class AuthService {
         userDto.email,
       );
 
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.BadLoginCredentials,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
       const validPassword = await this.passwordService.checkPasswordValidity(
         userDto.password,
         user.password,

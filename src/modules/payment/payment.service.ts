@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { format, getDay, differenceInWeeks } from 'date-fns';
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
+import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { EntityManager, Repository } from 'typeorm';
@@ -18,10 +19,14 @@ import { ActivityLogStatus } from '../activity-log/enums/activity-log-status.enu
 import { MINIMUM_BALANCE } from '../appointment/appointment.constants';
 import { AppointmentStatus } from '../appointment/enums/appointment-status.enum';
 import { CaregiverInfoService } from '../caregiver-info/caregiver-info.service';
+import { UserRole } from '../users/enums/user-role.enum';
 import { UserService } from '../users/user.service';
 
 import { ALREADY_PAID_HOUR, ONE_WEEK } from './constants/payment.constants';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { TransactionType } from './enums/transaction-type.enum';
 import { getHourDifference } from './helpers/difference-in-hours';
+import { Transaction } from './types/transaction-history.type';
 
 @Injectable()
 export class PaymentService {
@@ -30,6 +35,8 @@ export class PaymentService {
     private readonly appointmentRepository: Repository<Appointment>,
     @InjectRepository(ActivityLog)
     private readonly activityLogRepository: Repository<ActivityLog>,
+    @InjectRepository(TransactionHistory)
+    private readonly transactionHistoryRepository: Repository<TransactionHistory>,
     @Inject(forwardRef(() => AppointmentService))
     private appointmentService: AppointmentService,
     private readonly userService: UserService,
@@ -142,6 +149,14 @@ export class PaymentService {
         },
         transactionalEntityManager,
       );
+
+      await this.createSeekerCaregiverTransactions(
+        userId,
+        caregiverInfo.user.id,
+        amountToPay,
+        transactionalEntityManager,
+        appointmentId,
+      );
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -235,6 +250,14 @@ export class PaymentService {
           balance: caregiverUpdatedBalance,
         },
         transactionalEntityManager,
+      );
+
+      await this.createSeekerCaregiverTransactions(
+        userId,
+        caregiverInfo.user.id,
+        payForCompletedRecurringAppointment,
+        transactionalEntityManager,
+        appointmentId,
       );
     } catch (error) {
       if (
@@ -345,11 +368,113 @@ export class PaymentService {
     }
   }
 
+  async getTransactionHistory(userId: string): Promise<Transaction[]> {
+    try {
+      const transactions = await this.transactionHistoryRepository
+        .createQueryBuilder('transactions')
+        .where('userId = :userId', {
+          userId,
+        })
+        .getMany();
+
+      return transactions;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async createTransaction(
+    transaction: CreateTransactionDto,
+    transactionalEntityManager?: EntityManager,
+  ): Promise<void> {
+    try {
+      const user = await this.userService.findById(transaction.userId);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserIsNotAuthorized,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const repository =
+        transactionalEntityManager ?? this.transactionHistoryRepository;
+
+      await repository
+        .createQueryBuilder()
+        .insert()
+        .into(TransactionHistory)
+        .values(transaction)
+        .execute();
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async createSeekerCaregiverTransactions(
+    seekerId: string,
+    caregiverId: string,
+    amount: number,
+    transactionalEntityManager: EntityManager,
+    appointmentId?: string,
+  ): Promise<void> {
+    try {
+      await this.createTransaction(
+        {
+          userId: seekerId,
+          type: TransactionType.Outcome,
+          amount,
+          appointmentId,
+        },
+        transactionalEntityManager,
+      );
+
+      await this.createTransaction(
+        {
+          userId: caregiverId,
+          type: TransactionType.Income,
+          amount,
+          appointmentId,
+        },
+        transactionalEntityManager,
+      );
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   public async updateBalance(
     userId: string,
     updatedBalance: number,
   ): Promise<void> {
     try {
+      const user = await this.userService.findById(userId);
+      if (user) {
+        await this.createTransaction({
+          userId,
+          type:
+            user.role === UserRole.Caregiver
+              ? TransactionType.Outcome
+              : TransactionType.Income,
+          amount:
+            user.role === UserRole.Caregiver
+              ? user.balance - updatedBalance
+              : updatedBalance - user.balance,
+        });
+      }
+
       await this.userService.updateUserInfo(userId, {
         balance: updatedBalance,
       });

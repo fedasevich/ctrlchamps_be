@@ -28,6 +28,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CaregiverInfo } from './common/entities/caregiver.profile.entity';
 import { Certificate } from './common/entities/certificate.entity';
+import { TransactionHistory } from './common/entities/transaction-history.entity';
 import { User } from './common/entities/user.entity';
 import { VirtualAssessment } from './common/entities/virtual-assessment.entity';
 import { WorkExperience } from './common/entities/work-experience.entity';
@@ -69,6 +70,7 @@ import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-as
           VirtualAssessment,
           PaymentModule,
           ActivityLog,
+          TransactionHistory,
         ],
         synchronize: true,
       }),
@@ -90,6 +92,7 @@ import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-as
     VirtualAssessmentModule,
     ActivityLogModule,
     CronModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService],

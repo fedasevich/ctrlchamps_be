@@ -60,13 +60,6 @@ export class UserService {
         })
         .getOne();
 
-      if (!user) {
-        throw new HttpException(
-          ErrorMessage.UserProfileNotFound,
-          HttpStatus.NOT_FOUND,
-        );
-      }
-
       return user;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -186,6 +179,13 @@ export class UserService {
   async updatePassword(userData: UpdatePasswordDto): Promise<void> {
     try {
       const user = await this.findByEmailOrPhoneNumber(userData.email);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserProfileNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
 
       await this.passwordService.updatePassword(user.password, userData);
 

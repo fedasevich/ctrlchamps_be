@@ -84,7 +84,7 @@ export class CaregiverInfoController {
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: ErrorMessage.InternalServerError,
   })
-  getDetailedInfo(
+  async getDetailedInfo(
     @Param('userId') userId: string,
   ): Promise<DetailedCaregiverInfo> {
     return this.caregiverInfoService.getDetailedInfo(userId);
