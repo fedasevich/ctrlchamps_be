@@ -12,6 +12,7 @@ import { EntityManager, Repository } from 'typeorm';
 
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserUpdateDto } from './dto/user-update-info.dto';
+import { UserRole } from './enums/user-role.enum';
 
 @Injectable()
 export class UserService {
@@ -33,6 +34,10 @@ export class UserService {
 
   private readonly updateUserPasswordTemplateId =
     this.configService.get<string>('SENDGRID_UPDATE_USER_PASSWORD_TEMPLATE_ID');
+
+  private readonly deleteUserTemplateId = this.configService.get<string>(
+    'SENDGRID_DELETE_USER_TEMPLATE_ID',
+  );
 
   async findById(userId: string): Promise<User> {
     try {
@@ -231,6 +236,40 @@ export class UserService {
         ErrorMessage.BacketNotFound,
         HttpStatus.NOT_FOUND,
       );
+    }
+  }
+
+  async delete(userId: string): Promise<void> {
+    try {
+      const user = await this.findById(userId);
+
+      if (!user) {
+        throw new HttpException(
+          ErrorMessage.UserProfileNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      if (user.role === UserRole.SuperAdmin) {
+        throw new HttpException(
+          ErrorMessage.SuperAdminDeleteForbidden,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.userRepository
+        .createQueryBuilder()
+        .delete()
+        .from(User)
+        .where('id = :id', { id: userId })
+        .execute();
+
+      await this.emailService.sendEmail({
+        to: user.email,
+        templateId: this.deleteUserTemplateId,
+      });
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

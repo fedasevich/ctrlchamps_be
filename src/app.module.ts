@@ -93,6 +93,7 @@ import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-as
     ActivityLogModule,
     CronModule,
     PaymentModule,
+    AdminPanelModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService],
