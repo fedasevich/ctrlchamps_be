@@ -14,6 +14,7 @@ import { SeekerDiagnosis } from 'src/common/entities/seeker-diagnosis.entity';
 import { SeekerTask } from 'src/common/entities/seeker-task.entity';
 import { ActivityModule } from 'src/modules/activity/activity.module';
 import { ActivityLogModule } from 'src/modules/activity-log/activity-log.module';
+import { AdminPanelModule } from 'src/modules/admin-panel/admin-panel.module';
 import { AppointmentModule } from 'src/modules/appointment/appointment.module';
 import { CapabilityModule } from 'src/modules/capability/capability.module';
 import { CaregiverInfoModule } from 'src/modules/caregiver-info/caregiver-info.module';
