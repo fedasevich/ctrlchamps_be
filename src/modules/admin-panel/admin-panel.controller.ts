@@ -19,7 +19,7 @@ import { AdminListResponse, UserQuery } from './types/admin-panel.types';
 export class AdminPanelController {
   constructor(private readonly adminPanelService: AdminPanelService) {}
 
-  @Get(AdminApiPath.GetAdmins)
+  @Get(AdminApiPath.Admins)
   @AllowedRoles(UserRole.SuperAdmin)
   @ApiOperation({ summary: 'Get admins list' })
   @ApiQuery({

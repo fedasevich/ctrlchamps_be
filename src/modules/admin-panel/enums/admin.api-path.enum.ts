@@ -1,3 +1,3 @@
 export enum AdminApiPath {
-  GetAdmins = '/admins',
+  Admins = '/admins',
 }
