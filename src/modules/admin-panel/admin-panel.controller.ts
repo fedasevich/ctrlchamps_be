@@ -1,7 +1,6 @@
 import { Controller, Get, HttpStatus, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { User } from 'src/common/entities/user.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { AllowedRoles } from 'src/decorators/roles-auth.decorator';
@@ -11,7 +10,7 @@ import { UserRole } from 'src/modules/users/enums/user-role.enum';
 import { AdminPanelService } from './admin-panel.service';
 import { FETCHED_ADMINS_EXAMPLE } from './constants/admin-panel.constants';
 import { AdminApiPath } from './enums/admin.api-path.enum';
-import { UserQuery } from './types/admin-panel.types';
+import { AdminListResponse, UserQuery } from './types/admin-panel.types';
 
 @ApiTags('Admin Panel')
 @UseGuards(TokenGuard)
@@ -62,9 +61,7 @@ export class AdminPanelController {
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: ErrorMessage.InternalServerError,
   })
-  async getAdmins(
-    @Query() query: UserQuery,
-  ): Promise<{ data: User[]; count: number }> {
+  async getAdmins(@Query() query: UserQuery): Promise<AdminListResponse> {
     return this.adminPanelService.fetchAdmins(query);
   }
 }

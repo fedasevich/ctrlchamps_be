@@ -6,7 +6,7 @@ import { UserRole } from 'src/modules/users/enums/user-role.enum';
 import { Brackets, Repository } from 'typeorm';
 
 import { PAGINATION_LIMIT } from './constants/admin-panel.constants';
-import { UserQuery } from './types/admin-panel.types';
+import { AdminListResponse, UserQuery } from './types/admin-panel.types';
 
 @Injectable()
 export class AdminPanelService {
@@ -15,9 +15,7 @@ export class AdminPanelService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async fetchAdmins(
-    query: UserQuery,
-  ): Promise<{ data: User[]; count: number }> {
+  async fetchAdmins(query: UserQuery): Promise<AdminListResponse> {
     try {
       const limit = query.limit || PAGINATION_LIMIT;
       const offset = query.offset || 0;
