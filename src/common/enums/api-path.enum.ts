@@ -9,4 +9,5 @@ export enum ApiPath {
   ActivityLog = 'activity-log',
   User = 'user',
   Transactions = 'transactions',
+  Notifications = 'notifications',
 }
