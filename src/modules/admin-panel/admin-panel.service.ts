@@ -31,9 +31,9 @@ export class AdminPanelService {
           new Brackets((qb) => {
             qb.where('user.firstName LIKE :name', { name: `%${name}%` });
             qb.orWhere('user.lastName LIKE :name', { name: `%${name}%` });
+            qb.orWhere('user.email LIKE :email', { email: `%${email}%` });
           }),
         )
-        .andWhere('user.email LIKE :email', { email: `%${email}%` })
         .take(limit)
         .skip(offset)
         .getManyAndCount();
