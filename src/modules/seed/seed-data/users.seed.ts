@@ -1,14 +1,15 @@
+import { hashSync } from 'bcrypt';
 import { User } from 'src/common/entities/user.entity';
+import { SALT_LENGTH } from 'src/modules/update-password/constants';
 import { Country } from 'src/modules/users/enums/country.enum';
 import { UserRole } from 'src/modules/users/enums/user-role.enum';
 
-const ONE_TO_EIGHT_PASSWORD_HASH =
-  '$2b$10$P8iwh9v8mP6MRZ6J4YegXO2Yw34M5Yxwlrt/ZGH.fohY6..Au2ndO';
+const ONE_TO_EIGHT_PASSWORD = '12345678';
 
 export const USERS_SEED: Partial<User>[] = [
   {
     email: 'superadmin@gmail.com',
-    password: ONE_TO_EIGHT_PASSWORD_HASH,
+    password: hashSync(ONE_TO_EIGHT_PASSWORD, SALT_LENGTH),
     firstName: 'SuperAdmin',
     lastName: 'SuperAdmin',
     phoneNumber: '+14575444474',
@@ -27,7 +28,7 @@ export const USERS_SEED: Partial<User>[] = [
   },
   {
     email: 'admin@gmail.com',
-    password: ONE_TO_EIGHT_PASSWORD_HASH,
+    password: hashSync(ONE_TO_EIGHT_PASSWORD, SALT_LENGTH),
     firstName: 'Admin',
     lastName: 'Admin',
     phoneNumber: '+14575444488',
@@ -46,7 +47,7 @@ export const USERS_SEED: Partial<User>[] = [
   },
   {
     email: 'caregiver@gmail.com',
-    password: ONE_TO_EIGHT_PASSWORD_HASH,
+    password: hashSync(ONE_TO_EIGHT_PASSWORD, SALT_LENGTH),
     firstName: 'Caregiver',
     lastName: 'Caregiver',
     phoneNumber: '+14545464444',
@@ -65,7 +66,7 @@ export const USERS_SEED: Partial<User>[] = [
   },
   {
     email: 'seeker@gmail.com',
-    password: ONE_TO_EIGHT_PASSWORD_HASH,
+    password: hashSync(ONE_TO_EIGHT_PASSWORD, SALT_LENGTH),
     firstName: 'Seeker',
     lastName: 'Seeker',
     phoneNumber: '+14545474444',
