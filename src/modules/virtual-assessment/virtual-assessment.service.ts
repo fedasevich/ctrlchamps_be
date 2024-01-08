@@ -248,6 +248,8 @@ export class VirtualAssessmentService {
     res: Response,
   ): Promise<void> {
     try {
+      res.redirect(this.configService.get<string>('CORS_ORIGIN'));
+
       const virtualAssessment =
         await this.findVirtualAssessmentById(appointmentId);
 
@@ -270,8 +272,6 @@ export class VirtualAssessmentService {
       }
 
       await this.virtualAssessmentRepository.save(virtualAssessment);
-
-      res.redirect(this.configService.get<string>('CORS_ORIGIN'));
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
