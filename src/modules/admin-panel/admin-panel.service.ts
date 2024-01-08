@@ -27,17 +27,8 @@ export class AdminPanelService {
           roles: [UserRole.Admin, UserRole.SuperAdmin],
         })
         .andWhere(
-          new Brackets((qb) => {
-            qb.where('user.firstName LIKE :keyword', {
-              keyword: `%${searchKeyword}%`,
-            });
-            qb.orWhere('user.lastName LIKE :keyword', {
-              keyword: `%${searchKeyword}%`,
-            });
-            qb.orWhere('user.email LIKE :keyword', {
-              keyword: `%${searchKeyword}%`,
-            });
-          }),
+          `(user.firstName LIKE :keyword OR user.lastName LIKE :keyword OR user.email LIKE :keyword)`,
+          { keyword: `%${searchKeyword}%` },
         )
         .take(limit)
         .skip(offset)
