@@ -35,14 +35,8 @@ export class AdminPanelController {
     required: false,
   })
   @ApiQuery({
-    name: 'name',
-    description: 'Search by name (firstName or lastName)',
-    type: String,
-    required: false,
-  })
-  @ApiQuery({
-    name: 'email',
-    description: 'Search by email',
+    name: 'search',
+    description: 'Search by keyword (firstName/lastName or email)',
     type: String,
     required: false,
   })

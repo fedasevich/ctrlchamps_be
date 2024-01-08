@@ -19,8 +19,7 @@ export class AdminPanelService {
     try {
       const limit = query.limit || PAGINATION_LIMIT;
       const offset = query.offset || 0;
-      const email = query.email || '';
-      const name = query.name || '';
+      const searchKeyword = query.search || '';
 
       const [result, total] = await this.userRepository
         .createQueryBuilder('user')
@@ -29,9 +28,15 @@ export class AdminPanelService {
         })
         .andWhere(
           new Brackets((qb) => {
-            qb.where('user.firstName LIKE :name', { name: `%${name}%` });
-            qb.orWhere('user.lastName LIKE :name', { name: `%${name}%` });
-            qb.orWhere('user.email LIKE :email', { email: `%${email}%` });
+            qb.where('user.firstName LIKE :keyword', {
+              keyword: `%${searchKeyword}%`,
+            });
+            qb.orWhere('user.lastName LIKE :keyword', {
+              keyword: `%${searchKeyword}%`,
+            });
+            qb.orWhere('user.email LIKE :keyword', {
+              keyword: `%${searchKeyword}%`,
+            });
           }),
         )
         .take(limit)
