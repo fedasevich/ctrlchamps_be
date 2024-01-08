@@ -32,7 +32,9 @@ export class SeekerActivity {
   })
   answer: ActivityAnswer;
 
-  @ManyToOne(() => Appointment, (appointment) => appointment.seekerActivities)
+  @ManyToOne(() => Appointment, (appointment) => appointment.seekerActivities, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'appointmentId' })
   appointment: Appointment;
 

@@ -151,6 +151,13 @@ export class Appointment {
   @Column({ type: 'timestamp', nullable: true })
   signingDate: Date;
 
+  @ApiProperty({
+    example: '2023-11-28T15:30:00.000Z',
+    description: 'Date of the appointment creation',
+  })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
   @OneToMany(
     () => SeekerDiagnosis,
     (seekerDiagnosis) => seekerDiagnosis.appointment,
