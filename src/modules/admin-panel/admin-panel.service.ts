@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { User } from 'src/common/entities/user.entity';
 import { UserRole } from 'src/modules/users/enums/user-role.enum';
-import { Brackets, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 import { PAGINATION_LIMIT } from './constants/admin-panel.constants';
 import { AdminListResponse, UserQuery } from './types/admin-panel.types';
