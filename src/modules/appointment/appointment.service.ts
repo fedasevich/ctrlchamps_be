@@ -74,7 +74,9 @@ export class AppointmentService {
     private paymentService: PaymentService,
   ) {}
 
-  async findAll(query?: AppointmentQuery): Promise<AppointmentListResponse> {
+  async findAll(
+    query: AppointmentQuery = {},
+  ): Promise<AppointmentListResponse> {
     try {
       const limit = query.limit || 0;
       const offset = query.offset || 0;
