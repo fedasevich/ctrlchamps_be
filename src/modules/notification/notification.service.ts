@@ -16,9 +16,16 @@ export class NotificationService {
     const notifications = await this.notificationRepository
       .createQueryBuilder('notifications')
       .innerJoin('notifications.user', 'user')
+      .innerJoin('notifications.appointment', 'appointment')
+      .select([
+        'notifications.id AS id',
+        'notifications.message AS status',
+        'user.id AS userId',
+        'appointment.id AS appointmentId',
+      ])
       .where('user.id = :userId', { userId })
       .orderBy('notifications.createdAt', 'DESC')
-      .getMany();
+      .getRawMany();
 
     return notifications;
   }

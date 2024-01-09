@@ -3,17 +3,53 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { Repository } from 'typeorm';
+
+import { NotificationService } from '../notification/notification.service';
 
 import { CreateActivityLogDto } from './dto/create-activity-log.dto';
 import { UpdateActivityLogDto } from './dto/update-activity-log.dto';
+import { ActivityLogStatus } from './enums/activity-log-status.enum';
 
 @Injectable()
 export class ActivityLogService {
   constructor(
     @InjectRepository(ActivityLog)
     private readonly activityLogRepository: Repository<ActivityLog>,
+    private readonly notificationService: NotificationService,
   ) {}
+
+  async getActivityLogById(activityLogId: string): Promise<ActivityLog> {
+    try {
+      const activityLog = await this.activityLogRepository
+        .createQueryBuilder('activityLog')
+        .where('activityLog.id = :id', { id: activityLogId })
+        .getOne();
+
+      console.log(activityLog);
+      if (!activityLog) {
+        throw new HttpException(
+          ErrorMessage.ActivityLogNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      return activityLog;
+    } catch (error) {
+      if (
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.BAD_REQUEST
+      ) {
+        throw error;
+      }
+
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
   async create(activityLog: CreateActivityLogDto): Promise<void> {
     try {
@@ -45,6 +81,24 @@ export class ActivityLogService {
         { id: activityLogId },
         { status: updateActivityLogDto.status },
       );
+
+      const activityLog = await this.getActivityLogById(activityLogId);
+      if (updateActivityLogDto.status === ActivityLogStatus.Approved) {
+        this.notificationService.createNotification(
+          activityLog.appointment.caregiverInfo.user.id,
+          NotificationMessage.ActivityLogApproved,
+        );
+      } else if (updateActivityLogDto.status === ActivityLogStatus.Rejected) {
+        this.notificationService.createNotification(
+          activityLog.appointment.caregiverInfo.user.id,
+          NotificationMessage.ActivityLogRejected,
+        );
+      } else if (updateActivityLogDto.status === ActivityLogStatus.Pending) {
+        this.notificationService.createNotification(
+          activityLog.appointment.userId,
+          NotificationMessage.ActivityLogReview,
+        );
+      }
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedUpdateActivityLogStatus,

@@ -38,4 +38,5 @@ export enum ErrorMessage {
   InsufficientFunds = 'Insufficient funds',
   FailedCreateTransaction = 'Failed to create transaction',
   FailedUpdateTransaction = 'Failed to update transaction',
+  ActivityLogNotFound = 'Activity log not found',
 }

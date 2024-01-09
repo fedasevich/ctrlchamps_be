@@ -1,9 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { User } from 'src/common/entities/user.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 
 import { NotificationMessage } from '../enums/notification-message.enum';
+
+import { Appointment } from './appointment.entity';
 
 @Entity()
 export class Notification {
@@ -34,5 +42,10 @@ export class Notification {
     type: () => User,
   })
   @ManyToOne(() => User, (user) => user.notification)
+  @JoinColumn({ name: 'userId' })
   user: User;
+
+  @ManyToOne(() => Appointment, (appointment) => appointment.notification)
+  @JoinColumn({ name: 'appointmentId' })
+  appointment: Appointment;
 }

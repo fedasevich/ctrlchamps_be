@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import { Appointment as AppointmentType } from 'src/modules/appointment/types/appointment.type';
 import { CaregiverInfoService } from 'src/modules/caregiver-info/caregiver-info.service';
@@ -21,6 +22,7 @@ import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
 import { UserService } from 'src/modules/users/user.service';
 import { EntityManager, Repository } from 'typeorm';
 
+import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
 import { UserRole } from '../users/enums/user-role.enum';
 
@@ -65,6 +67,7 @@ export class AppointmentService {
     private readonly caregiverInfoService: CaregiverInfoService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly notificationService: NotificationService,
     @Inject(forwardRef(() => PaymentService))
     private paymentService: PaymentService,
   ) {}
@@ -434,6 +437,43 @@ export class AppointmentService {
         .execute();
 
       if (appointment.status) {
+        if (appointment.status === AppointmentStatus.Rejected) {
+          if (appointmentToUpdate.status === AppointmentStatus.Pending) {
+            this.notificationService.createNotification(
+              appointment.userId,
+              NotificationMessage.RequestRejected,
+            );
+          } else {
+            this.notificationService.createNotification(
+              appointment.userId,
+              NotificationMessage.RejectedAppointment,
+            );
+            this.notificationService.createNotification(
+              appointment.caregiverInfo.user.id,
+              NotificationMessage.RejectedAppointment,
+            );
+          }
+          await this.appointmentRepository.manager.transaction(
+            async (transactionalEntityManager) => {
+              this.paymentService.payForHourOfWork(
+                appointment.user.id,
+                appointment.caregiverInfoId,
+                transactionalEntityManager,
+                true,
+              );
+            },
+          );
+        } else if (appointment.status === AppointmentStatus.Accepted) {
+          this.notificationService.createNotification(
+            appointment.userId,
+            NotificationMessage.RequestAccepted,
+          );
+        } else if (appointment.status === AppointmentStatus.Pending) {
+          this.notificationService.createNotification(
+            appointment.caregiverInfo.user.id,
+            NotificationMessage.RequestedAppointment,
+          );
+        }
         const templateId = this.getTemplateIdForStatus(appointment.status);
 
         if (!templateId) return;
