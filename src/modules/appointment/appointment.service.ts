@@ -28,7 +28,6 @@ import { EntityManager, Repository } from 'typeorm';
 import { PaymentService } from '../payment/payment.service';
 import { UserRole } from '../users/enums/user-role.enum';
 
-import { PAGINATION_LIMIT } from './appointment.constants';
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { AppointmentType as TypeOfAppointment } from './enums/appointment-type.enum';
 import { SortOrder } from './enums/sort-query.enum';
@@ -77,7 +76,7 @@ export class AppointmentService {
 
   async findAll(query?: AppointmentQuery): Promise<AppointmentListResponse> {
     try {
-      const limit = query.limit || PAGINATION_LIMIT;
+      const limit = query.limit || 0;
       const offset = query.offset || 0;
       const name = query.name || '';
       const sort = query.sort || SortOrder.DESC;
