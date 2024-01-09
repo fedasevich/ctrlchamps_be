@@ -441,15 +441,18 @@ export class AppointmentService {
           if (appointmentToUpdate.status === AppointmentStatus.Pending) {
             this.notificationService.createNotification(
               appointment.userId,
+              appointmentId,
               NotificationMessage.RequestRejected,
             );
           } else {
             this.notificationService.createNotification(
               appointment.userId,
+              appointmentId,
               NotificationMessage.RejectedAppointment,
             );
             this.notificationService.createNotification(
               appointment.caregiverInfo.user.id,
+              appointmentId,
               NotificationMessage.RejectedAppointment,
             );
           }
@@ -466,11 +469,13 @@ export class AppointmentService {
         } else if (appointment.status === AppointmentStatus.Accepted) {
           this.notificationService.createNotification(
             appointment.userId,
+            appointmentId,
             NotificationMessage.RequestAccepted,
           );
         } else if (appointment.status === AppointmentStatus.Pending) {
           this.notificationService.createNotification(
             appointment.caregiverInfo.user.id,
+            appointmentId,
             NotificationMessage.RequestedAppointment,
           );
         }
@@ -509,6 +514,8 @@ export class AppointmentService {
     try {
       return await this.appointmentRepository
         .createQueryBuilder('appointment')
+        .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .innerJoinAndSelect('caregiverInfo.user', 'user')
         .getMany();
     } catch (error) {
       throw new HttpException(

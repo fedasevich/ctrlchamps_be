@@ -115,6 +115,8 @@ export class VirtualAssessmentService {
         .createQueryBuilder('virtualAssessment')
         .leftJoinAndSelect('virtualAssessment.appointment', 'appointment')
         .innerJoinAndSelect('appointment.user', 'user')
+        .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .innerJoinAndSelect('caregiverInfo.user', 'userCaregiverInfo')
         .where('appointment.id = :id', { id: appointmentId })
         .getOne();
 
@@ -179,10 +181,12 @@ export class VirtualAssessmentService {
         await this.sendSubmitContractProposalEmails(appointmentId);
         await this.notificationService.createNotification(
           virtualAssessment.appointment.userId,
+          virtualAssessment.appointment.id,
           NotificationMessage.SignOff,
         );
         await this.notificationService.createNotification(
           virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
           NotificationMessage.SignOff,
         );
       }
@@ -191,20 +195,24 @@ export class VirtualAssessmentService {
         await this.sendCaregiverAcceptedAppointmentEmail(appointmentId);
         await this.notificationService.createNotification(
           virtualAssessment.appointment.userId,
+          virtualAssessment.appointment.id,
           NotificationMessage.AcceptedVA,
         );
         await this.notificationService.createNotification(
           virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
           NotificationMessage.AcceptedVA,
         );
       }
       if (updateStatusDto.status === VirtualAssessmentStatus.Rejected) {
         await this.notificationService.createNotification(
           virtualAssessment.appointment.userId,
+          virtualAssessment.appointment.id,
           NotificationMessage.RejectedVA,
         );
         await this.notificationService.createNotification(
           virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
           NotificationMessage.RejectedVA,
         );
       }
@@ -250,6 +258,7 @@ export class VirtualAssessmentService {
 
       await this.notificationService.createNotification(
         virtualAssessment.appointment.userId,
+        virtualAssessment.appointment.id,
         NotificationMessage.RescheduleVA,
       );
 

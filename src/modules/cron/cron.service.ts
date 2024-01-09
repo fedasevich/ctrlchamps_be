@@ -72,6 +72,7 @@ export class CronService {
           });
           await this.notificationService.createNotification(
             appointment.caregiverInfo.user.id,
+            appointment.id,
             NotificationMessage.ActivityLogRequest,
           );
         } else if (
@@ -81,6 +82,7 @@ export class CronService {
         ) {
           await this.notificationService.createNotification(
             appointment.caregiverInfo.user.id,
+            appointment.id,
             NotificationMessage.ActivityLogRequest,
           );
           if (

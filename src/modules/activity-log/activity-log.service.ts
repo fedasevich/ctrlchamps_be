@@ -24,10 +24,12 @@ export class ActivityLogService {
     try {
       const activityLog = await this.activityLogRepository
         .createQueryBuilder('activityLog')
+        .innerJoinAndSelect('activityLog.appointment', 'appointment')
+        .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .innerJoinAndSelect('caregiverInfo.user', 'user')
         .where('activityLog.id = :id', { id: activityLogId })
         .getOne();
 
-      console.log(activityLog);
       if (!activityLog) {
         throw new HttpException(
           ErrorMessage.ActivityLogNotFound,
@@ -83,19 +85,23 @@ export class ActivityLogService {
       );
 
       const activityLog = await this.getActivityLogById(activityLogId);
+
       if (updateActivityLogDto.status === ActivityLogStatus.Approved) {
-        this.notificationService.createNotification(
+        await this.notificationService.createNotification(
           activityLog.appointment.caregiverInfo.user.id,
+          activityLog.appointment.id,
           NotificationMessage.ActivityLogApproved,
         );
       } else if (updateActivityLogDto.status === ActivityLogStatus.Rejected) {
-        this.notificationService.createNotification(
+        await this.notificationService.createNotification(
           activityLog.appointment.caregiverInfo.user.id,
+          activityLog.appointment.id,
           NotificationMessage.ActivityLogRejected,
         );
       } else if (updateActivityLogDto.status === ActivityLogStatus.Pending) {
-        this.notificationService.createNotification(
+        await this.notificationService.createNotification(
           activityLog.appointment.userId,
+          activityLog.appointment.id,
           NotificationMessage.ActivityLogReview,
         );
       }

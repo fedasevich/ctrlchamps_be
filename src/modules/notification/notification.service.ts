@@ -13,31 +13,40 @@ export class NotificationService {
   ) {}
 
   async getNotifications(userId: string): Promise<Notification[]> {
-    const notifications = await this.notificationRepository
-      .createQueryBuilder('notifications')
-      .innerJoin('notifications.user', 'user')
-      .innerJoin('notifications.appointment', 'appointment')
-      .select([
-        'notifications.id AS id',
-        'notifications.message AS status',
-        'user.id AS userId',
-        'appointment.id AS appointmentId',
-      ])
-      .where('user.id = :userId', { userId })
-      .orderBy('notifications.createdAt', 'DESC')
-      .getRawMany();
+    try {
+      const notifications = await this.notificationRepository
+        .createQueryBuilder('notifications')
+        .innerJoin('notifications.user', 'user')
+        .innerJoin('notifications.appointment', 'appointment')
+        .select([
+          'notifications.id AS id',
+          'notifications.message AS status',
+          'appointment.id AS appointmentId',
+          `CONCAT(user.firstName, ' ', user.lastName) AS user`,
+        ])
+        .where('user.id = :userId', { userId })
+        .orderBy('notifications.createdAt', 'DESC')
+        .getRawMany();
 
-    return notifications;
+      return notifications;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
-  async createNotification(
+  public async createNotification(
     userId: string,
+    appointmentId: string,
     message: NotificationMessage,
   ): Promise<void> {
     try {
       await this.notificationRepository.save({
         message,
         user: { id: userId },
+        appointment: { id: appointmentId },
       });
     } catch (error) {
       if (error instanceof HttpException) {
