@@ -14,6 +14,7 @@ import {
   FileTypeValidator,
   Req,
   UnauthorizedException,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -27,6 +28,7 @@ import {
 import { User } from 'src/common/entities/user.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { AllowedRoles } from 'src/decorators/roles-auth.decorator';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
 
@@ -36,6 +38,7 @@ import {
 } from './constants/user-info.constants';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserUpdateDto } from './dto/user-update-info.dto';
+import { UserRole } from './enums/user-role.enum';
 import { UserApiPath } from './enums/user.api-path.enum';
 import { UserService } from './user.service';
 
@@ -161,5 +164,28 @@ export class UserController {
       throw new UnauthorizedException(ErrorMessage.UserIsNotAuthorized);
     }
     await this.userService.uploadAvatar(file.originalname, file.buffer, userId);
+  }
+
+  @Delete(UserApiPath.DetailedInfo)
+  @AllowedRoles(UserRole.SuperAdmin, UserRole.Admin)
+  @ApiOperation({ summary: 'Delete user' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User was deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.SuperAdminDeleteForbidden,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.UserProfileNotFound,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  async deleteUser(@Param('userId') userId: string): Promise<void> {
+    await this.userService.delete(userId);
   }
 }
