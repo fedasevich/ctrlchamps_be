@@ -1,4 +1,5 @@
 export enum ErrorMessage {
+  ForbiddenResource = 'Forbidden resource',
   InternalServerError = 'Internal server error',
   UserEmailAlreadyExists = 'User with this email already exists',
   UserPhoneNumberAlreadyExists = 'User with this phone number already exists',
@@ -39,4 +40,5 @@ export enum ErrorMessage {
   FailedCreateTransaction = 'Failed to create transaction',
   FailedUpdateTransaction = 'Failed to update transaction',
   ActivityLogNotFound = 'Activity log not found',
+  SuperAdminDeleteForbidden = 'Super admin cannot be deleted',
 }

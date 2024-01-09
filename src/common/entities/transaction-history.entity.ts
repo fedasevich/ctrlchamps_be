@@ -60,4 +60,11 @@ export class TransactionHistory {
   @ManyToOne(() => Appointment, (appointment) => appointment.transaction)
   @JoinColumn({ name: 'appointmentId' })
   appointment: Appointment;
+
+  @ApiProperty({
+    description: 'Date of transaction',
+    example: '2021-01-01 00:00:00',
+  })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
 }

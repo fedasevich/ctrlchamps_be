@@ -10,4 +10,5 @@ export enum ApiPath {
   User = 'user',
   Transactions = 'transactions',
   Notifications = 'notifications',
+  AdminPanel = 'admin-panel',
 }

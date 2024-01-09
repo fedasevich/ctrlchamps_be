@@ -3,11 +3,12 @@ import { Injectable } from '@nestjs/common';
 import { Activity } from 'src/common/entities/activity.entity';
 import { Capability } from 'src/common/entities/capability.entity';
 import { Diagnosis } from 'src/common/entities/diagnosis.entity';
+import { User } from 'src/common/entities/user.entity';
 import { ACTIVITIES_SEED } from 'src/modules/seed/seed-data/activity.seed';
+import { CAPABILITIES_SEED } from 'src/modules/seed/seed-data/capability.seed';
 import { DIAGNOSES_SEED } from 'src/modules/seed/seed-data/diagnosis.seed';
+import { USERS_SEED } from 'src/modules/seed/seed-data/users.seed';
 import { DeepPartial, EntityManager, EntityTarget } from 'typeorm';
-
-import { CAPABILITIES_SEED } from './seed-data/capability.seed';
 
 @Injectable()
 export class SeedingService {
@@ -18,6 +19,7 @@ export class SeedingService {
       this.seedTable(Diagnosis, DIAGNOSES_SEED),
       this.seedTable(Activity, ACTIVITIES_SEED),
       this.seedTable(Capability, CAPABILITIES_SEED),
+      this.seedTable(User, USERS_SEED),
     ]);
   }
 
