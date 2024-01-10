@@ -285,7 +285,7 @@ export class UserService {
     offset = DEFAULT_OFFSET,
     search = '',
     sort = SortOrder.DESC,
-  }: UserQuery = {}): Promise<FilteredUserList> {
+  }: UserQuery): Promise<FilteredUserList> {
     try {
       const queryBuilder = this.userRepository
         .createQueryBuilder('user')

@@ -65,7 +65,7 @@ export class AuthService {
         password: passwordHash,
       });
 
-      await this.sendOtpCodeEmail(userDto.email);
+      // await this.sendOtpCodeEmail(userDto.email);
 
       const token = await this.createToken({ ...userDto, ...user });
 
