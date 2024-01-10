@@ -40,4 +40,7 @@ export enum ErrorMessage {
   FailedCreateTransaction = 'Failed to create transaction',
   FailedUpdateTransaction = 'Failed to update transaction',
   SuperAdminDeleteForbidden = 'Super admin cannot be deleted',
+  FailedFetchUsers = 'Failed to fetch users',
+  InactiveAccount = 'Your profile has been suspended, please contact your administrator to find out why support@gmail.com',
+  UserDeletedByAdmin = "This account didn't exist",
 }

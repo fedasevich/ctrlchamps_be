@@ -5,12 +5,14 @@ import { UserRole } from 'modules/users/enums/user-role.enum';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
+import { UserStatus } from 'src/modules/users/enums/user-status.enum';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   OneToOne,
   OneToMany,
+  CreateDateColumn,
 } from 'typeorm';
 
 @Entity()
@@ -149,6 +151,27 @@ export class User {
   })
   @Column({ default: null, nullable: true })
   avatar: string;
+
+  @ApiProperty({
+    description: "User's status",
+    example: UserStatus.Active,
+  })
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.Active,
+  })
+  status: UserStatus;
+
+  @ApiProperty({
+    description: 'Indicates whether the user account was deleted by admin',
+    example: false,
+  })
+  @Column({ default: false })
+  isDeletedByAdmin: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
 
   @OneToOne(() => CaregiverInfo, (caregiverInfo) => caregiverInfo.user)
   caregiverInfo: CaregiverInfo;

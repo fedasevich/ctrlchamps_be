@@ -9,6 +9,7 @@ import { EmailService } from 'modules/email/services/email.service';
 import { PasswordService } from 'modules/update-password/update-password.service';
 import { UserRole } from 'modules/users/enums/user-role.enum';
 import { UserService } from 'modules/users/user.service';
+import { UserStatus } from 'src/modules/users/enums/user-status.enum';
 
 import { AccountCheckDto } from './dto/account-check.dto';
 import { UserCreateDto } from './dto/user-create.dto';
@@ -104,6 +105,20 @@ export class AuthService {
       if (!validPassword) {
         throw new HttpException(
           ErrorMessage.BadLoginCredentials,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      if (user.isDeletedByAdmin) {
+        throw new HttpException(
+          ErrorMessage.UserDeletedByAdmin,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      if (user.status === UserStatus.Inactive) {
+        throw new HttpException(
+          ErrorMessage.InactiveAccount,
           HttpStatus.UNAUTHORIZED,
         );
       }

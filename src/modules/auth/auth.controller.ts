@@ -68,6 +68,14 @@ export class AuthController {
     description: ErrorMessage.BadLoginCredentials,
   })
   @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: ErrorMessage.InactiveAccount,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: ErrorMessage.UserDeletedByAdmin,
+  })
+  @ApiResponse({
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: 'Internal server error',
   })

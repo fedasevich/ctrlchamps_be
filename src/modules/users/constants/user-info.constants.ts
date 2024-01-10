@@ -1,3 +1,5 @@
+import { UserStatus } from 'src/modules/users/enums/user-status.enum';
+
 export const MAX_FILE_SIZE = 5242880;
 
 export const USER_INFO_EXAMPLE = {
@@ -17,4 +19,11 @@ export const USER_INFO_EXAMPLE = {
   address: '123 Maple Street',
   balance: 100,
   avatar: 'https://images/avatar',
+  status: UserStatus.Active,
+  isDeletedByAdmin: false,
+  createdAt: '2024-01-09 16:24:14.963807',
 };
+
+export const DEFAULT_PAGINATION_LIMIT = 6;
+
+export const DEFAULT_OFFSET = 0;
