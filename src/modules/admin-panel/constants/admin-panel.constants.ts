@@ -67,6 +67,17 @@ export const FETCHED_APPOINTMENTS_EXAMPLE = {
       weekday: '["Friday"]',
       signingDate: null,
       createdAt: '2024-01-08T17:39:03.000Z',
+      user: {
+        firstName: 'Max',
+        lastName: 'Vaerf',
+      },
+      caregiverInfo: {
+        id: '82f63888-8f8b-4855-8246-77bca6c3b5c8',
+        user: {
+          firstName: 'Alex',
+          lastName: 'Polofj',
+        },
+      },
     },
     {
       id: '3f245415-f593-4912-aa1c-489c57791862',
@@ -87,6 +98,17 @@ export const FETCHED_APPOINTMENTS_EXAMPLE = {
       weekday: '["Friday"]',
       signingDate: null,
       createdAt: '2024-01-08T17:39:03.000Z',
+      user: {
+        firstName: 'Max',
+        lastName: 'Vaerf',
+      },
+      caregiverInfo: {
+        id: '82f63888-8f8b-4855-8246-77bca6c3b5c8',
+        user: {
+          firstName: 'Alex',
+          lastName: 'Polofj',
+        },
+      },
     },
   ],
   count: 2,

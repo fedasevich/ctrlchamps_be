@@ -85,6 +85,16 @@ export class AppointmentService {
 
       const [result, total] = await this.appointmentRepository
         .createQueryBuilder('appointment')
+
+        .leftJoin('appointment.user', 'user')
+        .addSelect(['user.firstName', 'user.lastName'])
+
+        .leftJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .addSelect('caregiverInfo.id')
+
+        .leftJoin('caregiverInfo.user', 'caregiverUser')
+        .addSelect(['caregiverUser.firstName', 'caregiverUser.lastName'])
+
         .where(`(appointment.name LIKE :name )`, {
           name: `%${name}%`,
         })
