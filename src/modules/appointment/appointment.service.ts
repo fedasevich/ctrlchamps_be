@@ -461,6 +461,16 @@ export class AppointmentService {
               singleAppointment.userId,
             );
           }
+          await this.appointmentRepository.manager.transaction(
+            async (transactionalEntityManager) => {
+              await this.paymentService.payForHourOfWork(
+                singleAppointment.user.id,
+                singleAppointment.caregiverInfo.id,
+                transactionalEntityManager,
+                true,
+              );
+            },
+          );
         } else if (appointment.status === AppointmentStatus.Accepted) {
           this.notificationService.createNotification(
             singleAppointment.userId,
