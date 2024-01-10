@@ -1,4 +1,5 @@
 import { User } from 'src/common/entities/user.entity';
+import { UserRole } from 'src/modules/users/enums/user-role.enum';
 
 export interface UserQuery {
   limit?: number;
@@ -10,3 +11,18 @@ export interface AdminListResponse {
   data: User[];
   count: number;
 }
+
+export type Token = {
+  token: string;
+};
+
+export type AdminDetails = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  role: UserRole;
+  password: string;
+  updatedAt: Date;
+};

@@ -1,4 +1,14 @@
-import { Controller, Get, HttpStatus, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { ApiPath } from 'src/common/enums/api-path.enum';
@@ -8,9 +18,20 @@ import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { UserRole } from 'src/modules/users/enums/user-role.enum';
 
 import { AdminPanelService } from './admin-panel.service';
-import { FETCHED_ADMINS_EXAMPLE } from './constants/admin-panel.constants';
+import {
+  ADMIN_DETAILS_EXAMPLE,
+  FETCHED_ADMINS_EXAMPLE,
+} from './constants/admin-panel.constants';
+import { AdminCreateDto } from './dto/admin-create.dto';
+import { AdminUpdateDto } from './dto/admin-update.dto';
+import { PasswordUpdateDto } from './dto/password-update.dto';
 import { AdminApiPath } from './enums/admin.api-path.enum';
-import { AdminListResponse, UserQuery } from './types/admin-panel.types';
+import {
+  AdminDetails,
+  AdminListResponse,
+  Token,
+  UserQuery,
+} from './types/admin-panel.types';
 
 @ApiTags('Admin Panel')
 @UseGuards(TokenGuard)
@@ -57,5 +78,105 @@ export class AdminPanelController {
   })
   async getAdmins(@Query() query: UserQuery): Promise<AdminListResponse> {
     return this.adminPanelService.fetchAdmins(query);
+  }
+
+  @Post(AdminApiPath.Admins)
+  @AllowedRoles(UserRole.SuperAdmin)
+  @ApiOperation({ summary: 'Create new admin' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Admin created successfully',
+    schema: {
+      example: {
+        token:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImZhOWQ4YzQ1LTUyZDMtNDkwYi04NDJhLTIxODdhMGFmZWRjMCIsImlhdCI6MTcwMDA4ODk3MCwiZXhwIjoxNzAwMzQ4MTcwfQ.Qt_tTSecxBA0CwyZ4NUgC40zSxpZRV2icds8TlOwgCk',
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UserEmailAlreadyExists,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  async createAdmin(@Body() adminDto: AdminCreateDto): Promise<Token> {
+    return this.adminPanelService.createAdmin(adminDto);
+  }
+
+  @Patch(`${AdminApiPath.Admins}${AdminApiPath.DetailedInfo}`)
+  @AllowedRoles(UserRole.SuperAdmin)
+  @ApiOperation({ summary: 'Update admin data' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Admin data updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.FailedUpdateUser,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.UserProfileNotFound,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  async updateAdmin(
+    @Param('adminId') adminId: string,
+    @Body() adminInfo: AdminUpdateDto,
+  ): Promise<void> {
+    await this.adminPanelService.updateAdmin(adminId, adminInfo);
+  }
+
+  @Patch(
+    `${AdminApiPath.Admins}${AdminApiPath.UpdatePassword}${AdminApiPath.DetailedInfo}`,
+  )
+  @AllowedRoles(UserRole.SuperAdmin)
+  @ApiOperation({ summary: 'Update admin password' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Admin password updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.FailedUpdateUser,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.UserProfileNotFound,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  async updateAdminPassword(
+    @Param('adminId') adminId: string,
+    @Body() passwordDto: PasswordUpdateDto,
+  ): Promise<void> {
+    await this.adminPanelService.updatePassword(adminId, passwordDto);
+  }
+
+  @Get(`${AdminApiPath.Admins}${AdminApiPath.DetailedInfo}`)
+  @ApiOperation({ summary: 'Get admin information' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Admin detailed info retrieved successfully',
+    schema: {
+      example: ADMIN_DETAILS_EXAMPLE,
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.UserProfileNotFound,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  async getUserInfo(@Param('adminId') adminId: string): Promise<AdminDetails> {
+    return this.adminPanelService.getAdminInfo(adminId);
   }
 }

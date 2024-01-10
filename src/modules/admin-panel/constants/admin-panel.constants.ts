@@ -45,3 +45,14 @@ export const FETCHED_ADMINS_EXAMPLE = {
   ],
   count: 2,
 };
+
+export const ADMIN_DETAILS_EXAMPLE = {
+  id: 'f037e391-f212-4f58-a11d-3d83e564b0',
+  email: 'admin@gmail.com',
+  firstName: 'Admin',
+  lastName: 'New',
+  phoneNumber: '+14575444472',
+  role: 'Admin',
+  password: '$2b$10$uUmwPkO8t5PSLRbA7xI00edrhycvHGeakrUWWZEKJqpWetPKHdB',
+  updatedAt: '2024-01-10 15:10:40.765056',
+};

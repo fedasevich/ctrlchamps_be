@@ -11,6 +11,7 @@ import {
   Column,
   OneToOne,
   OneToMany,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
@@ -61,7 +62,7 @@ export class User {
     description: "User's dateOfBirth",
     example: '11/11/1960',
   })
-  @Column()
+  @Column({ nullable: true })
   dateOfBirth: string;
 
   @ApiProperty({
@@ -98,6 +99,7 @@ export class User {
   @Column({
     type: 'enum',
     enum: Country,
+    nullable: true,
   })
   country: Country;
 
@@ -105,28 +107,30 @@ export class User {
     description: "User's state",
     example: 'Texas',
   })
-  @Column()
+  @Column({ nullable: true })
   state: string;
 
   @ApiProperty({
     description: "User's city",
     example: 'Dallas',
+    nullable: true,
   })
-  @Column()
+  @Column({ nullable: true })
   city: string;
 
   @ApiProperty({
     description: "User's zipCode",
     example: '75201',
+    nullable: true,
   })
-  @Column()
+  @Column({ nullable: true })
   zipCode: string;
 
   @ApiProperty({
     description: "User's address",
     example: '123 Maple Street',
   })
-  @Column()
+  @Column({ nullable: true })
   address: string;
 
   @ApiProperty({
@@ -149,6 +153,13 @@ export class User {
   })
   @Column({ default: null, nullable: true })
   avatar: string;
+
+  @ApiProperty({
+    description: 'Date of last update',
+    example: '2021-01-01 00:00:00',
+  })
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
 
   @OneToOne(() => CaregiverInfo, (caregiverInfo) => caregiverInfo.user)
   caregiverInfo: CaregiverInfo;

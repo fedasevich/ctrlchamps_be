@@ -40,4 +40,5 @@ export enum ErrorMessage {
   FailedCreateTransaction = 'Failed to create transaction',
   FailedUpdateTransaction = 'Failed to update transaction',
   SuperAdminDeleteForbidden = 'Super admin cannot be deleted',
+  NotAdminRole = 'User role must be only Admin',
 }

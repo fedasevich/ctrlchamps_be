@@ -62,7 +62,8 @@ export class AppointmentService {
     private readonly seekerCapabilityService: SeekerCapabilityService,
     private readonly seekerDiagnosisService: SeekerDiagnosisService,
     private readonly userService: UserService,
-    private readonly caregiverInfoService: CaregiverInfoService,
+    @Inject(forwardRef(() => CaregiverInfoService))
+    private caregiverInfoService: CaregiverInfoService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
     @Inject(forwardRef(() => PaymentService))

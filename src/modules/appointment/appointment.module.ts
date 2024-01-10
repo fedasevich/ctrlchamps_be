@@ -22,7 +22,7 @@ import { UserModule } from 'src/modules/users/user.module';
     SeekerCapabilityModule,
     SeekerDiagnosisModule,
     SeekerTaskModule,
-    CaregiverInfoModule,
+    forwardRef(() => CaregiverInfoModule),
     UserModule,
     EmailModule,
     forwardRef(() => PaymentModule),
