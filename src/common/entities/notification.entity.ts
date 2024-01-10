@@ -41,7 +41,9 @@ export class Notification {
     description: 'Link to the associated appointment',
     type: () => User,
   })
-  @ManyToOne(() => Appointment, (appointment) => appointment.notification)
+  @ManyToOne(() => Appointment, (appointment) => appointment.notification, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'appointmentId' })
   appointment: Appointment;
 

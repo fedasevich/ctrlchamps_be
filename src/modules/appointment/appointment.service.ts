@@ -409,6 +409,7 @@ export class AppointmentService {
   async updateById(
     appointmentId: string,
     appointment: Partial<Appointment>,
+    role?: UserRole,
   ): Promise<void> {
     try {
       const appointmentToUpdate = await this.appointmentRepository
@@ -441,12 +442,21 @@ export class AppointmentService {
       if (appointment.status) {
         if (appointment.status === AppointmentStatus.Rejected) {
           if (appointmentToUpdate.status === AppointmentStatus.Pending) {
-            this.notificationService.createNotification(
-              singleAppointment.userId,
-              appointmentId,
-              NotificationMessage.RequestRejected,
-              singleAppointment.caregiverInfo.user.id,
-            );
+            if (role === UserRole.Caregiver) {
+              this.notificationService.createNotification(
+                singleAppointment.userId,
+                appointmentId,
+                NotificationMessage.RequestRejected,
+                singleAppointment.caregiverInfo.user.id,
+              );
+            } else if (role === UserRole.Seeker) {
+              this.notificationService.createNotification(
+                singleAppointment.caregiverInfo.user.id,
+                appointmentId,
+                NotificationMessage.RequestRejected,
+                singleAppointment.userId,
+              );
+            }
           } else {
             this.notificationService.createNotification(
               singleAppointment.userId,
