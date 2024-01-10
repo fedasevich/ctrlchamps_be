@@ -24,7 +24,9 @@ export class SeekerDiagnosis {
   @JoinColumn({ name: 'diagnosisId' })
   diagnosis: Diagnosis;
 
-  @ManyToOne(() => Appointment, (appointment) => appointment.seekerDiagnoses)
+  @ManyToOne(() => Appointment, (appointment) => appointment.seekerDiagnoses, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'appointmentId' })
   appointment: Appointment;
 }

@@ -20,7 +20,13 @@ export class SeekerCapability {
   @PrimaryColumn('uuid')
   capabilityId: string;
 
-  @ManyToOne(() => Appointment, (appointment) => appointment.seekerCapabilities)
+  @ManyToOne(
+    () => Appointment,
+    (appointment) => appointment.seekerCapabilities,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   @JoinColumn({ name: 'appointmentId' })
   appointment: Appointment;
 

@@ -12,7 +12,11 @@ import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
-import { Appointment as AppointmentType } from 'src/modules/appointment/types/appointment.type';
+import {
+  AppointmentListResponse,
+  AppointmentQuery,
+  Appointment as AppointmentType,
+} from 'src/modules/appointment/types/appointment.type';
 import { CaregiverInfoService } from 'src/modules/caregiver-info/caregiver-info.service';
 import { EmailService } from 'src/modules/email/services/email.service';
 import { SeekerActivityService } from 'src/modules/seeker-activity/seeker-activity.service';
@@ -28,6 +32,7 @@ import { UserRole } from '../users/enums/user-role.enum';
 
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { AppointmentType as TypeOfAppointment } from './enums/appointment-type.enum';
+import { SortOrder } from './enums/sort-query.enum';
 
 @Injectable()
 export class AppointmentService {
@@ -71,6 +76,47 @@ export class AppointmentService {
     @Inject(forwardRef(() => PaymentService))
     private paymentService: PaymentService,
   ) {}
+
+  async findAll(
+    query: AppointmentQuery = {},
+  ): Promise<AppointmentListResponse> {
+    try {
+      const limit = query.limit || 0;
+      const offset = query.offset || 0;
+      const name = query.name || '';
+      const sort = query.sort || SortOrder.DESC;
+
+      const [result, total] = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+
+        .leftJoin('appointment.user', 'user')
+        .addSelect(['user.firstName', 'user.lastName'])
+
+        .leftJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .addSelect('caregiverInfo.id')
+
+        .leftJoin('caregiverInfo.user', 'caregiver')
+        .addSelect(['caregiver.firstName', 'caregiver.lastName'])
+
+        .where(`(appointment.name LIKE :name )`, {
+          name: `%${name}%`,
+        })
+        .orderBy('appointment.createdAt', sort)
+        .take(limit)
+        .skip(offset)
+        .getManyAndCount();
+
+      return {
+        appointments: result,
+        count: total,
+      };
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
   async create(
     createAppointment: CreateAppointmentDto,
@@ -516,6 +562,35 @@ export class AppointmentService {
     }
   }
 
+  async deleteById(appointmentId: string): Promise<void> {
+    try {
+      const appointment = await this.findOneById(appointmentId);
+
+      if (!appointment) {
+        throw new HttpException(
+          ErrorMessage.AppointmentNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      if (appointment.status !== AppointmentStatus.Completed) {
+        throw new HttpException(
+          ErrorMessage.UncompletedAppointmentDelete,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .delete()
+        .from(Appointment)
+        .where('id = :id', { id: appointmentId })
+        .execute();
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   private getTemplateIdForStatus(status: AppointmentStatus): string {
     switch (status) {
       case AppointmentStatus.Accepted:
@@ -524,21 +599,6 @@ export class AppointmentService {
         return this.caregiverAppointmentRequestRejectTemplateId;
       default:
         return '';
-    }
-  }
-
-  async findAll(): Promise<Appointment[]> {
-    try {
-      return await this.appointmentRepository
-        .createQueryBuilder('appointment')
-        .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
-        .innerJoinAndSelect('caregiverInfo.user', 'user')
-        .getMany();
-    } catch (error) {
-      throw new HttpException(
-        ErrorMessage.InternalServerError,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
     }
   }
 }
