@@ -161,7 +161,7 @@ export class AdminPanelController {
     return this.adminPanelService.createAdmin(adminDto);
   }
 
-  @Patch(`${AdminApiPath.Admins}${AdminApiPath.DetailedInfo}`)
+  @Patch(AdminApiPath.DetailedInfo)
   @AllowedRoles(UserRole.SuperAdmin)
   @ApiOperation({ summary: 'Update admin data' })
   @ApiResponse({
@@ -187,9 +187,7 @@ export class AdminPanelController {
     await this.adminPanelService.updateAdmin(adminId, adminInfo);
   }
 
-  @Patch(
-    `${AdminApiPath.Admins}${AdminApiPath.UpdatePassword}${AdminApiPath.DetailedInfo}`,
-  )
+  @Patch(`${AdminApiPath.UpdatePassword}${AdminApiPath.DetailedInfo}`)
   @AllowedRoles(UserRole.SuperAdmin)
   @ApiOperation({ summary: 'Update admin password' })
   @ApiResponse({
@@ -215,7 +213,7 @@ export class AdminPanelController {
     await this.adminPanelService.updatePassword(adminId, passwordDto);
   }
 
-  @Get(`${AdminApiPath.Admins}${AdminApiPath.DetailedInfo}`)
+  @Get(AdminApiPath.DetailedInfo)
   @ApiOperation({ summary: 'Get admin information' })
   @ApiResponse({
     status: HttpStatus.OK,

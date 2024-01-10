@@ -47,6 +47,7 @@ export class AdminPanelService {
         )
         .take(limit)
         .skip(offset)
+        .orderBy('user.updatedAt', 'DESC')
         .getManyAndCount();
 
       return {
@@ -147,29 +148,16 @@ export class AdminPanelService {
         );
       }
 
-      const {
-        id,
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        role,
-        password,
-        updatedAt,
-      } = admin;
-
-      const adminToReturn = {
-        id,
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        role,
-        password,
-        updatedAt,
+      return {
+        id: admin.id,
+        firstName: admin.firstName,
+        lastName: admin.lastName,
+        email: admin.email,
+        phoneNumber: admin.phoneNumber,
+        role: admin.role,
+        password: admin.password,
+        updatedAt: admin.updatedAt,
       };
-
-      return adminToReturn;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
