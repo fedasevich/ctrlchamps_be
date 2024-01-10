@@ -91,18 +91,21 @@ export class ActivityLogService {
           activityLog.appointment.caregiverInfo.user.id,
           activityLog.appointment.id,
           NotificationMessage.ActivityLogApproved,
+          activityLog.appointment.userId,
         );
       } else if (updateActivityLogDto.status === ActivityLogStatus.Rejected) {
         await this.notificationService.createNotification(
           activityLog.appointment.caregiverInfo.user.id,
           activityLog.appointment.id,
           NotificationMessage.ActivityLogRejected,
+          activityLog.appointment.userId,
         );
       } else if (updateActivityLogDto.status === ActivityLogStatus.Pending) {
         await this.notificationService.createNotification(
           activityLog.appointment.userId,
           activityLog.appointment.id,
           NotificationMessage.ActivityLogReview,
+          activityLog.appointment.caregiverInfo.user.id,
         );
       }
     } catch (error) {

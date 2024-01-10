@@ -74,6 +74,7 @@ export class CronService {
             appointment.caregiverInfo.user.id,
             appointment.id,
             NotificationMessage.ActivityLogRequest,
+            appointment.user.id,
           );
         } else if (
           appointment.status === AppointmentStatus.Ongoing &&
@@ -84,6 +85,7 @@ export class CronService {
             appointment.caregiverInfo.user.id,
             appointment.id,
             NotificationMessage.ActivityLogRequest,
+            appointment.user.id,
           );
           if (
             this.isMoreAppointmentDays(

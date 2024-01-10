@@ -183,11 +183,13 @@ export class VirtualAssessmentService {
           virtualAssessment.appointment.userId,
           virtualAssessment.appointment.id,
           NotificationMessage.SignOff,
+          virtualAssessment.appointment.caregiverInfo.user.id,
         );
         await this.notificationService.createNotification(
           virtualAssessment.appointment.caregiverInfo.user.id,
           virtualAssessment.appointment.id,
           NotificationMessage.SignOff,
+          virtualAssessment.appointment.userId,
         );
       }
 
@@ -197,11 +199,13 @@ export class VirtualAssessmentService {
           virtualAssessment.appointment.userId,
           virtualAssessment.appointment.id,
           NotificationMessage.AcceptedVA,
+          virtualAssessment.appointment.caregiverInfo.user.id,
         );
         await this.notificationService.createNotification(
           virtualAssessment.appointment.caregiverInfo.user.id,
           virtualAssessment.appointment.id,
           NotificationMessage.AcceptedVA,
+          virtualAssessment.appointment.userId,
         );
       }
       if (updateStatusDto.status === VirtualAssessmentStatus.Rejected) {
@@ -209,11 +213,13 @@ export class VirtualAssessmentService {
           virtualAssessment.appointment.userId,
           virtualAssessment.appointment.id,
           NotificationMessage.RejectedVA,
+          virtualAssessment.appointment.caregiverInfo.user.id,
         );
         await this.notificationService.createNotification(
           virtualAssessment.appointment.caregiverInfo.user.id,
           virtualAssessment.appointment.id,
           NotificationMessage.RejectedVA,
+          virtualAssessment.appointment.userId,
         );
       }
     } catch (error) {
@@ -260,6 +266,7 @@ export class VirtualAssessmentService {
         virtualAssessment.appointment.userId,
         virtualAssessment.appointment.id,
         NotificationMessage.RescheduleVA,
+        virtualAssessment.appointment.caregiverInfo.user.id,
       );
 
       await this.emailService.sendEmail({

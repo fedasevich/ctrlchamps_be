@@ -15,17 +15,18 @@ export class NotificationService {
   async getNotifications(userId: string): Promise<Notification[]> {
     try {
       const notifications = await this.notificationRepository
-        .createQueryBuilder('notifications')
-        .innerJoin('notifications.user', 'user')
-        .innerJoin('notifications.appointment', 'appointment')
+        .createQueryBuilder('notification')
         .select([
-          'notifications.id AS id',
-          'notifications.message AS status',
+          'notification.id AS id',
           'appointment.id AS appointmentId',
-          `CONCAT(user.firstName, ' ', user.lastName) AS user`,
+          'notification.message AS status',
+          `CONCAT(sender.firstName, ' ', sender.lastName) AS user`,
         ])
-        .where('user.id = :userId', { userId })
-        .orderBy('notifications.createdAt', 'DESC')
+        .innerJoin('notification.sender', 'sender')
+        .innerJoin('notification.receiver', 'receiver')
+        .innerJoin('notification.appointment', 'appointment')
+        .where('receiver.id = :userId', { userId })
+        .orderBy('notification.createdAt', 'DESC')
         .getRawMany();
 
       return notifications;
@@ -41,18 +42,23 @@ export class NotificationService {
     userId: string,
     appointmentId: string,
     message: NotificationMessage,
+    initiatorUserId?: string,
   ): Promise<void> {
     try {
-      await this.notificationRepository.save({
+      console.log(userId, appointmentId, message, initiatorUserId);
+      const newNotification = this.notificationRepository.create({
         message,
-        user: { id: userId },
+        sender: { id: initiatorUserId },
+        receiver: { id: userId },
         appointment: { id: appointmentId },
       });
+
+      await this.notificationRepository.save(newNotification);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        error.message || 'Failed to create notification',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

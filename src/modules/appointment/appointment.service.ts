@@ -436,31 +436,36 @@ export class AppointmentService {
         })
         .execute();
 
+      const singleAppointment = await this.findOneById(appointmentId);
+
       if (appointment.status) {
         if (appointment.status === AppointmentStatus.Rejected) {
           if (appointmentToUpdate.status === AppointmentStatus.Pending) {
             this.notificationService.createNotification(
-              appointment.userId,
+              singleAppointment.userId,
               appointmentId,
               NotificationMessage.RequestRejected,
+              singleAppointment.caregiverInfo.user.id,
             );
           } else {
             this.notificationService.createNotification(
-              appointment.userId,
+              singleAppointment.userId,
               appointmentId,
               NotificationMessage.RejectedAppointment,
+              singleAppointment.caregiverInfo.user.id,
             );
             this.notificationService.createNotification(
-              appointment.caregiverInfo.user.id,
+              singleAppointment.caregiverInfo.user.id,
               appointmentId,
               NotificationMessage.RejectedAppointment,
+              singleAppointment.userId,
             );
           }
           await this.appointmentRepository.manager.transaction(
             async (transactionalEntityManager) => {
               this.paymentService.payForHourOfWork(
-                appointment.user.id,
-                appointment.caregiverInfoId,
+                singleAppointment.user.id,
+                singleAppointment.caregiverInfoId,
                 transactionalEntityManager,
                 true,
               );
@@ -468,15 +473,17 @@ export class AppointmentService {
           );
         } else if (appointment.status === AppointmentStatus.Accepted) {
           this.notificationService.createNotification(
-            appointment.userId,
+            singleAppointment.userId,
             appointmentId,
             NotificationMessage.RequestAccepted,
+            singleAppointment.caregiverInfo.user.id,
           );
         } else if (appointment.status === AppointmentStatus.Pending) {
           this.notificationService.createNotification(
-            appointment.caregiverInfo.user.id,
+            singleAppointment.caregiverInfo.user.id,
             appointmentId,
             NotificationMessage.RequestedAppointment,
+            singleAppointment.userId,
           );
         }
         const templateId = this.getTemplateIdForStatus(appointment.status);

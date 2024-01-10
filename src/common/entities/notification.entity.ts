@@ -38,14 +38,27 @@ export class Notification {
   createdAt: Date;
 
   @ApiProperty({
-    description: 'Link to the associated user',
+    description: 'Link to the associated appointment',
     type: () => User,
   })
-  @ManyToOne(() => User, (user) => user.notification)
-  @JoinColumn({ name: 'userId' })
-  user: User;
-
   @ManyToOne(() => Appointment, (appointment) => appointment.notification)
   @JoinColumn({ name: 'appointmentId' })
   appointment: Appointment;
+
+  @ApiProperty({
+    description: 'Link to the associated user',
+    type: () => User,
+  })
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'receiverId' })
+  receiver: User;
+
+  @ApiProperty({
+    description: 'Link to the initiator of notification',
+    type: () => User,
+    required: false,
+  })
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'senderId' })
+  sender: User;
 }

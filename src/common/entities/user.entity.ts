@@ -160,6 +160,9 @@ export class User {
   @OneToMany(() => TransactionHistory, (transaction) => transaction.user)
   transaction: TransactionHistory[];
 
-  @OneToMany(() => Notification, (notification) => notification.user)
-  notification: Notification[];
+  @OneToMany(() => Notification, (notification) => notification.sender)
+  sentNotifications: Notification[];
+
+  @OneToMany(() => Notification, (notification) => notification.receiver)
+  receivedNotifications: Notification[];
 }
