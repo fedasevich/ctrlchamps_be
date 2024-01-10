@@ -45,7 +45,6 @@ export class NotificationService {
     initiatorUserId?: string,
   ): Promise<void> {
     try {
-      console.log(userId, appointmentId, message, initiatorUserId);
       const newNotification = this.notificationRepository.create({
         message,
         sender: { id: initiatorUserId },
