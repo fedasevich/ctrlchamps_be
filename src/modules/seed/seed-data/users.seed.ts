@@ -9,7 +9,7 @@ const ONE_TO_EIGHT_PASSWORD = '12345678';
 export const USERS_SEED: Partial<User>[] = [
   {
     email: 'superadmin@gmail.com',
-    password: hashSync(ONE_TO_EIGHT_PASSWORD, SALT_LENGTH),
+    password: hashSync(process.env.ADMIN_DEFAULT_PASSWORD, SALT_LENGTH),
     firstName: 'SuperAdmin',
     lastName: 'SuperAdmin',
     phoneNumber: '+14575444474',
@@ -28,7 +28,7 @@ export const USERS_SEED: Partial<User>[] = [
   },
   {
     email: 'admin@gmail.com',
-    password: hashSync(ONE_TO_EIGHT_PASSWORD, SALT_LENGTH),
+    password: hashSync(process.env.ADMIN_DEFAULT_PASSWORD, SALT_LENGTH),
     firstName: 'Admin',
     lastName: 'Admin',
     phoneNumber: '+14575444488',
