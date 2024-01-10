@@ -86,26 +86,32 @@ export class ActivityLogService {
 
       const activityLog = await this.getActivityLogById(activityLogId);
 
-      if (updateActivityLogDto.status === ActivityLogStatus.Approved) {
+      let notificationMessage: NotificationMessage;
+
+      switch (updateActivityLogDto.status) {
+        case ActivityLogStatus.Approved:
+          notificationMessage = NotificationMessage.ActivityLogApproved;
+          break;
+        case ActivityLogStatus.Rejected:
+          notificationMessage = NotificationMessage.ActivityLogRejected;
+          break;
+        case ActivityLogStatus.Pending:
+          notificationMessage = NotificationMessage.ActivityLogReview;
+          break;
+        default:
+          break;
+      }
+
+      if (notificationMessage) {
         await this.notificationService.createNotification(
-          activityLog.appointment.caregiverInfo.user.id,
+          updateActivityLogDto.status === ActivityLogStatus.Pending
+            ? activityLog.appointment.userId
+            : activityLog.appointment.caregiverInfo.user.id,
           activityLog.appointment.id,
-          NotificationMessage.ActivityLogApproved,
-          activityLog.appointment.userId,
-        );
-      } else if (updateActivityLogDto.status === ActivityLogStatus.Rejected) {
-        await this.notificationService.createNotification(
-          activityLog.appointment.caregiverInfo.user.id,
-          activityLog.appointment.id,
-          NotificationMessage.ActivityLogRejected,
-          activityLog.appointment.userId,
-        );
-      } else if (updateActivityLogDto.status === ActivityLogStatus.Pending) {
-        await this.notificationService.createNotification(
-          activityLog.appointment.userId,
-          activityLog.appointment.id,
-          NotificationMessage.ActivityLogReview,
-          activityLog.appointment.caregiverInfo.user.id,
+          notificationMessage,
+          updateActivityLogDto.status === ActivityLogStatus.Pending
+            ? activityLog.appointment.caregiverInfo.user.id
+            : activityLog.appointment.userId,
         );
       }
     } catch (error) {

@@ -485,75 +485,91 @@ export class AppointmentService {
 
       const singleAppointment = await this.findOneById(appointmentId);
 
-      if (appointment.status) {
-        if (appointment.status === AppointmentStatus.Rejected) {
-          if (appointmentToUpdate.status === AppointmentStatus.Pending) {
-            if (role === UserRole.Caregiver) {
-              this.notificationService.createNotification(
-                singleAppointment.userId,
-                appointmentId,
-                NotificationMessage.RequestRejected,
-                singleAppointment.caregiverInfo.user.id,
-              );
-            } else if (role === UserRole.Seeker) {
-              this.notificationService.createNotification(
-                singleAppointment.caregiverInfo.user.id,
-                appointmentId,
-                NotificationMessage.RequestRejected,
-                singleAppointment.userId,
-              );
-            }
+      const { status: appointmentStatus } = appointment;
+
+      const {
+        status: appointmentToUpdateStatus,
+        user: { email: userEmail },
+      } = appointmentToUpdate;
+
+      const { userId, caregiverInfo } = singleAppointment;
+
+      const caregiverUser = caregiverInfo.user;
+
+      switch (appointmentStatus) {
+        case AppointmentStatus.Rejected:
+          if (appointmentToUpdateStatus === AppointmentStatus.Pending) {
+            const notificationRecipient =
+              role === UserRole.Caregiver ? userId : caregiverUser.id;
+
+            this.notificationService.createNotification(
+              notificationRecipient,
+              appointmentId,
+              NotificationMessage.RequestRejected,
+              role === UserRole.Caregiver ? caregiverUser.id : userId,
+            );
           } else {
             this.notificationService.createNotification(
-              singleAppointment.userId,
+              userId,
               appointmentId,
               NotificationMessage.RejectedAppointment,
-              singleAppointment.caregiverInfo.user.id,
+              caregiverUser.id,
             );
             this.notificationService.createNotification(
-              singleAppointment.caregiverInfo.user.id,
+              caregiverUser.id,
               appointmentId,
               NotificationMessage.RejectedAppointment,
-              singleAppointment.userId,
+              userId,
             );
           }
+
           await this.appointmentRepository.manager.transaction(
             async (transactionalEntityManager) => {
               await this.paymentService.payForHourOfWork(
-                singleAppointment.user.id,
-                singleAppointment.caregiverInfo.id,
+                userId,
+                caregiverInfo.id,
                 transactionalEntityManager,
                 true,
               );
             },
           );
-        } else if (appointment.status === AppointmentStatus.Accepted) {
+          break;
+
+        case AppointmentStatus.Accepted:
           this.notificationService.createNotification(
-            singleAppointment.userId,
+            userId,
             appointmentId,
             NotificationMessage.RequestAccepted,
-            singleAppointment.caregiverInfo.user.id,
+            caregiverUser.id,
           );
-        } else if (appointment.status === AppointmentStatus.Pending) {
+          break;
+
+        case AppointmentStatus.Pending:
           this.notificationService.createNotification(
-            singleAppointment.caregiverInfo.user.id,
+            caregiverUser.id,
             appointmentId,
             NotificationMessage.RequestedAppointment,
-            singleAppointment.userId,
+            userId,
           );
-        }
-        const templateId = this.getTemplateIdForStatus(appointment.status);
+          break;
 
-        if (!templateId) return;
-
-        await this.emailService.sendEmail({
-          to: appointmentToUpdate.user.email,
-          templateId,
-          dynamicTemplateData: {
-            appointmentLink: this.seekerAppointmentRedirectLink,
-          },
-        });
+        default:
+          break;
       }
+
+      const templateId = this.getTemplateIdForStatus(appointmentStatus);
+
+      if (!templateId) {
+        return;
+      }
+
+      await this.emailService.sendEmail({
+        to: userEmail,
+        templateId,
+        dynamicTemplateData: {
+          appointmentLink: this.seekerAppointmentRedirectLink,
+        },
+      });
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedUpdateAppointment,
