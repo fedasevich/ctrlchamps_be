@@ -92,8 +92,8 @@ export class AppointmentService {
         .leftJoin('appointment.caregiverInfo', 'caregiverInfo')
         .addSelect('caregiverInfo.id')
 
-        .leftJoin('caregiverInfo.user', 'caregiverUser')
-        .addSelect(['caregiverUser.firstName', 'caregiverUser.lastName'])
+        .leftJoin('caregiverInfo.user', 'caregiver')
+        .addSelect(['caregiver.firstName', 'caregiver.lastName'])
 
         .where(`(appointment.name LIKE :name )`, {
           name: `%${name}%`,
