@@ -43,7 +43,7 @@ export class CronService {
   }
 
   private async checkAndUpdateAppointments(): Promise<void> {
-    const appointments = await this.appointmentService.findAll();
+    const { appointments } = await this.appointmentService.findAll();
 
     await Promise.all(
       appointments.map(async (appointment): Promise<void> => {
