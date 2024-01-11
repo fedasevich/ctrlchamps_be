@@ -53,7 +53,6 @@ export const ADMIN_DETAILS_EXAMPLE = {
   lastName: 'New',
   phoneNumber: '+14575444472',
   role: 'Admin',
-  password: '$2b$10$uUmwPkO8t5PSLRbA7xI00edrhycvHGeakrUWWZEKJqpWetPKHdB',
   updatedAt: '2024-01-10 15:10:40.765056',
 };
 

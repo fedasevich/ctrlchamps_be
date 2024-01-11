@@ -16,7 +16,6 @@ import { PasswordUpdateDto } from './dto/password-update.dto';
 import {
   AdminListResponse,
   UserQuery,
-  Token,
   AdminDetails,
 } from './types/admin-panel.types';
 
@@ -59,7 +58,7 @@ export class AdminPanelService {
     }
   }
 
-  async createAdmin(adminDto: AdminCreateDto): Promise<Token> {
+  async createAdmin(adminDto: AdminCreateDto): Promise<void> {
     try {
       if (adminDto.role !== UserRole.Admin) {
         throw new HttpException(
@@ -76,18 +75,10 @@ export class AdminPanelService {
       const hashedPassword = await this.passwordService.hashPassword(
         adminDto.password,
       );
-      const admin = await this.userService.create({
+      await this.userService.create({
         ...adminDto,
         password: hashedPassword,
       });
-      const token = await this.authService.createToken({
-        ...adminDto,
-        ...admin,
-      });
-
-      return {
-        token,
-      };
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -155,7 +146,6 @@ export class AdminPanelService {
         email: admin.email,
         phoneNumber: admin.phoneNumber,
         role: admin.role,
-        password: admin.password,
         updatedAt: admin.updatedAt,
       };
     } catch (error) {

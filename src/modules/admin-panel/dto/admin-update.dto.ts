@@ -6,7 +6,6 @@ import {
   IsString,
   IsOptional,
   MaxLength,
-  MinLength,
 } from 'class-validator';
 import { UserCreateValidationRule } from 'modules/users/enums/user-create.validation-rule.enum';
 import { UserRole } from 'src/modules/users/enums/user-role.enum';
@@ -51,14 +50,4 @@ export class AdminUpdateDto {
   @IsString()
   @IsEnum(UserRole)
   role: UserRole;
-
-  @ApiProperty({
-    description: "Admin's password",
-    example: 'A234567!',
-    required: false,
-  })
-  @MinLength(UserCreateValidationRule.MinPasswordLength)
-  @IsOptional()
-  @IsString()
-  password: string;
 }

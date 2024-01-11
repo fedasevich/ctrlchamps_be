@@ -35,7 +35,6 @@ import { AdminApiPath } from './enums/admin.api-path.enum';
 import {
   AdminDetails,
   AdminListResponse,
-  Token,
   UserQuery,
 } from './types/admin-panel.types';
 
@@ -136,18 +135,12 @@ export class AdminPanelController {
     return this.appointmentService.findAll(query);
   }
 
-  @Post(AdminApiPath.Admins)
+  @Post()
   @AllowedRoles(UserRole.SuperAdmin)
   @ApiOperation({ summary: 'Create new admin' })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Admin created successfully',
-    schema: {
-      example: {
-        token:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImZhOWQ4YzQ1LTUyZDMtNDkwYi04NDJhLTIxODdhMGFmZWRjMCIsImlhdCI6MTcwMDA4ODk3MCwiZXhwIjoxNzAwMzQ4MTcwfQ.Qt_tTSecxBA0CwyZ4NUgC40zSxpZRV2icds8TlOwgCk',
-      },
-    },
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -157,7 +150,7 @@ export class AdminPanelController {
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: 'Internal server error',
   })
-  async createAdmin(@Body() adminDto: AdminCreateDto): Promise<Token> {
+  async createAdmin(@Body() adminDto: AdminCreateDto): Promise<void> {
     return this.adminPanelService.createAdmin(adminDto);
   }
 

@@ -12,10 +12,6 @@ export interface AdminListResponse {
   count: number;
 }
 
-export type Token = {
-  token: string;
-};
-
 export type AdminDetails = {
   id: string;
   email: string;
@@ -23,6 +19,5 @@ export type AdminDetails = {
   lastName: string;
   phoneNumber: string;
   role: UserRole;
-  password: string;
   updatedAt: Date;
 };
