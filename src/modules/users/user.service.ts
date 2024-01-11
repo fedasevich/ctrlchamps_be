@@ -175,7 +175,7 @@ export class UserService {
         .execute();
     } catch (error) {
       throw new HttpException(
-        ErrorMessage.FailedUpdateAppointment,
+        ErrorMessage.FailedUpdateUser,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

@@ -16,7 +16,7 @@ import { PaymentService } from './payment.service';
   imports: [
     TypeOrmModule.forFeature([Appointment, ActivityLog, TransactionHistory]),
     forwardRef(() => AppointmentModule),
-    CaregiverInfoModule,
+    forwardRef(() => CaregiverInfoModule),
     UserModule,
   ],
   controllers: [PaymentController],
