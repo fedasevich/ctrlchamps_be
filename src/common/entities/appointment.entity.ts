@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
+import { Notification } from 'src/common/entities/notification.entity';
 import { SeekerActivity } from 'src/common/entities/seeker-activity.entity';
 import { SeekerCapability } from 'src/common/entities/seeker-capability.entity';
 import { SeekerDiagnosis } from 'src/common/entities/seeker-diagnosis.entity';
@@ -198,4 +199,7 @@ export class Appointment {
 
   @OneToMany(() => TransactionHistory, (transaction) => transaction.appointment)
   transaction: TransactionHistory[];
+
+  @OneToMany(() => Notification, (notification) => notification.appointment)
+  notification: Notification[];
 }

@@ -40,6 +40,7 @@ export enum ErrorMessage {
   InsufficientFunds = 'Insufficient funds',
   FailedCreateTransaction = 'Failed to create transaction',
   FailedUpdateTransaction = 'Failed to update transaction',
+  ActivityLogNotFound = 'Activity log not found',
   SuperAdminDeleteForbidden = 'Super admin cannot be deleted',
   UncompletedAppointmentDelete = 'Uncompleted appointment cannot be deleted',
 }

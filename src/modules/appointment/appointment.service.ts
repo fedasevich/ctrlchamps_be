@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import {
   AppointmentListResponse,
@@ -25,6 +26,7 @@ import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
 import { UserService } from 'src/modules/users/user.service';
 import { EntityManager, Repository } from 'typeorm';
 
+import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
 import { UserRole } from '../users/enums/user-role.enum';
 
@@ -70,6 +72,7 @@ export class AppointmentService {
     private readonly caregiverInfoService: CaregiverInfoService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly notificationService: NotificationService,
     @Inject(forwardRef(() => PaymentService))
     private paymentService: PaymentService,
   ) {}
@@ -452,6 +455,7 @@ export class AppointmentService {
   async updateById(
     appointmentId: string,
     appointment: Partial<Appointment>,
+    role?: UserRole,
   ): Promise<void> {
     try {
       const appointmentToUpdate = await this.appointmentRepository
@@ -479,19 +483,93 @@ export class AppointmentService {
         })
         .execute();
 
-      if (appointment.status) {
-        const templateId = this.getTemplateIdForStatus(appointment.status);
+      const singleAppointment = await this.findOneById(appointmentId);
 
-        if (!templateId) return;
+      const { status: appointmentStatus } = appointment;
 
-        await this.emailService.sendEmail({
-          to: appointmentToUpdate.user.email,
-          templateId,
-          dynamicTemplateData: {
-            appointmentLink: this.seekerAppointmentRedirectLink,
-          },
-        });
+      const {
+        status: appointmentToUpdateStatus,
+        user: { email: userEmail },
+      } = appointmentToUpdate;
+
+      const { userId, caregiverInfo } = singleAppointment;
+
+      const caregiverUser = caregiverInfo.user;
+
+      switch (appointmentStatus) {
+        case AppointmentStatus.Rejected:
+          if (appointmentToUpdateStatus === AppointmentStatus.Pending) {
+            const notificationRecipient =
+              role === UserRole.Caregiver ? userId : caregiverUser.id;
+
+            this.notificationService.createNotification(
+              notificationRecipient,
+              appointmentId,
+              NotificationMessage.RequestRejected,
+              role === UserRole.Caregiver ? caregiverUser.id : userId,
+            );
+          } else {
+            this.notificationService.createNotification(
+              userId,
+              appointmentId,
+              NotificationMessage.RejectedAppointment,
+              caregiverUser.id,
+            );
+            this.notificationService.createNotification(
+              caregiverUser.id,
+              appointmentId,
+              NotificationMessage.RejectedAppointment,
+              userId,
+            );
+          }
+
+          await this.appointmentRepository.manager.transaction(
+            async (transactionalEntityManager) => {
+              await this.paymentService.payForHourOfWork(
+                userId,
+                caregiverInfo.id,
+                transactionalEntityManager,
+                true,
+              );
+            },
+          );
+          break;
+
+        case AppointmentStatus.Accepted:
+          this.notificationService.createNotification(
+            userId,
+            appointmentId,
+            NotificationMessage.RequestAccepted,
+            caregiverUser.id,
+          );
+          break;
+
+        case AppointmentStatus.Pending:
+          this.notificationService.createNotification(
+            caregiverUser.id,
+            appointmentId,
+            NotificationMessage.RequestedAppointment,
+            userId,
+          );
+          break;
+
+        default:
+          break;
       }
+
+      const templateId = this.getTemplateIdForStatus(appointmentStatus);
+
+      if (!templateId) {
+        return;
+      }
+
+      await this.emailService.sendEmail({
+        to: userEmail,
+        templateId,
+        dynamicTemplateData: {
+          appointmentLink: this.seekerAppointmentRedirectLink,
+        },
+      });
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedUpdateAppointment,

@@ -76,12 +76,15 @@ export class AppointmentController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(AppointmentApiPath.AppointmentId)
   async update(
+    @Req() req: AuthenticatedRequest,
     @Param('appointmentId') appointmentId: string,
     @Body() updateAppointmentDto: UpdateAppointmentDto,
   ): Promise<void> {
+    const { role } = req.user;
     await this.appointmentService.updateById(
       appointmentId,
       updateAppointmentDto,
+      role,
     );
   }
 
