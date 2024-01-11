@@ -6,6 +6,7 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "incremental": true,
+    "skipLibCheck": true,
     "lib": ["ES2020", "DOM"],
     "baseUrl": "./",
     "outDir": "./dist",
