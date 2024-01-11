@@ -9,6 +9,7 @@ import {
   MinLength,
   IsOptional,
   MaxLength,
+  IsBoolean,
 } from 'class-validator';
 import { Country } from 'modules/users/enums/country.enum';
 import { UserCreateValidationMessage } from 'modules/users/enums/user-create.validation-message.enum';
@@ -124,4 +125,13 @@ export class AdminCreateDto {
   @IsOptional()
   @IsString()
   address: string;
+
+  @ApiProperty({
+    description: 'Indicates whether the user account was verified via otp code',
+    example: 'true',
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isVerified: boolean;
 }
