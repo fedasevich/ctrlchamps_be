@@ -47,6 +47,7 @@ export class PaymentService {
     userId: string,
     caregiverInfoId: string,
     transactionalEntityManager: EntityManager,
+    payBack = false,
   ): Promise<number> {
     try {
       const { balance, email } = await this.userService.findById(userId);
@@ -61,6 +62,18 @@ export class PaymentService {
           ErrorMessage.CaregiverInfoNotFound,
           HttpStatus.BAD_REQUEST,
         );
+      }
+
+      if (payBack) {
+        const updatedSeekerBalance = balance + caregiverInfo.hourlyRate;
+
+        await this.userService.updateWithTransaction(
+          email,
+          { balance: updatedSeekerBalance },
+          transactionalEntityManager,
+        );
+
+        return caregiverInfo.hourlyRate;
       }
 
       const updatedSeekerBalance = balance - caregiverInfo.hourlyRate;

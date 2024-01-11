@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
+import { Notification } from 'src/common/entities/notification.entity';
 import { SeekerActivity } from 'src/common/entities/seeker-activity.entity';
 import { SeekerCapability } from 'src/common/entities/seeker-capability.entity';
 import { SeekerDiagnosis } from 'src/common/entities/seeker-diagnosis.entity';
@@ -151,6 +152,13 @@ export class Appointment {
   @Column({ type: 'timestamp', nullable: true })
   signingDate: Date;
 
+  @ApiProperty({
+    example: '2023-11-28T15:30:00.000Z',
+    description: 'Date of the appointment creation',
+  })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
   @OneToMany(
     () => SeekerDiagnosis,
     (seekerDiagnosis) => seekerDiagnosis.appointment,
@@ -191,4 +199,7 @@ export class Appointment {
 
   @OneToMany(() => TransactionHistory, (transaction) => transaction.appointment)
   transaction: TransactionHistory[];
+
+  @OneToMany(() => Notification, (notification) => notification.appointment)
+  notification: Notification[];
 }

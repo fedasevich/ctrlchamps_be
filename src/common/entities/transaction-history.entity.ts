@@ -57,7 +57,9 @@ export class TransactionHistory {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToOne(() => Appointment, (appointment) => appointment.transaction)
+  @ManyToOne(() => Appointment, (appointment) => appointment.transaction, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'appointmentId' })
   appointment: Appointment;
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
+import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
 import { convertWeekdayToNumber } from 'src/common/helpers/convert-weekday-to-number.helper';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
@@ -12,6 +13,7 @@ import {
   NEXT_DAY_NUMBER,
 } from 'src/modules/cron/cron.constants';
 
+import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
 import { VirtualAssessmentService } from '../virtual-assessment/virtual-assessment.service';
 
@@ -21,6 +23,7 @@ export class CronService {
     private appointmentService: AppointmentService,
     private paymentService: PaymentService,
     private virtualAssessmentService: VirtualAssessmentService,
+    private notificationService: NotificationService,
   ) {}
 
   @Cron(EVERY_15_MINUTES)
@@ -43,7 +46,7 @@ export class CronService {
   }
 
   private async checkAndUpdateAppointments(): Promise<void> {
-    const appointments = await this.appointmentService.findAll();
+    const { appointments } = await this.appointmentService.findAll();
 
     await Promise.all(
       appointments.map(async (appointment): Promise<void> => {
@@ -67,11 +70,23 @@ export class CronService {
           await this.appointmentService.updateById(appointment.id, {
             status: AppointmentStatus.Completed,
           });
+          await this.notificationService.createNotification(
+            appointment.caregiverInfo.user.id,
+            appointment.id,
+            NotificationMessage.ActivityLogRequest,
+            appointment.user.id,
+          );
         } else if (
           appointment.status === AppointmentStatus.Ongoing &&
           currentDate.getHours() === appointment.endDate.getHours() &&
           currentDate.getMinutes() === appointment.endDate.getMinutes()
         ) {
+          await this.notificationService.createNotification(
+            appointment.caregiverInfo.user.id,
+            appointment.id,
+            NotificationMessage.ActivityLogRequest,
+            appointment.user.id,
+          );
           if (
             this.isMoreAppointmentDays(
               appointment.endDate,

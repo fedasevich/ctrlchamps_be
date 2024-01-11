@@ -16,7 +16,9 @@ export class SeekerTask {
   @PrimaryColumn()
   name: string;
 
-  @ManyToOne(() => Appointment, (appointment) => appointment.seekerTasks)
+  @ManyToOne(() => Appointment, (appointment) => appointment.seekerTasks, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'appointmentId' })
   appointment: Appointment;
 }

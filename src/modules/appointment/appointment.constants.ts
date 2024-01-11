@@ -1,4 +1,5 @@
 export const MINIMUM_BALANCE = 0;
+export const PAGINATION_LIMIT = 10;
 
 export const APPOINTMENT_EXAMPLE = {
   id: '249a967c-d924-4626-bf8f-df422594841d',

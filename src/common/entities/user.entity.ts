@@ -4,6 +4,7 @@ import { Country } from 'modules/users/enums/country.enum';
 import { UserRole } from 'modules/users/enums/user-role.enum';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
+import { Notification } from 'src/common/entities/notification.entity';
 import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
 import { UserStatus } from 'src/modules/users/enums/user-status.enum';
 import {
@@ -181,4 +182,10 @@ export class User {
 
   @OneToMany(() => TransactionHistory, (transaction) => transaction.user)
   transaction: TransactionHistory[];
+
+  @OneToMany(() => Notification, (notification) => notification.sender)
+  sentNotifications: Notification[];
+
+  @OneToMany(() => Notification, (notification) => notification.receiver)
+  receivedNotifications: Notification[];
 }

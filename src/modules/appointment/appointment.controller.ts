@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -16,6 +17,7 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { AllowedRoles } from 'src/decorators/roles-auth.decorator';
 import {
   APPOINTMENTS_EXAMPLE,
   APPOINTMENT_EXAMPLE,
@@ -26,6 +28,7 @@ import { UpdateAppointmentDto } from 'src/modules/appointment/dto/update-appoint
 import { AppointmentApiPath } from 'src/modules/appointment/enums/appointment.api-path.enum';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
+import { UserRole } from 'src/modules/users/enums/user-role.enum';
 
 @ApiTags('Appointment')
 @Controller(ApiPath.Appointment)
@@ -73,12 +76,15 @@ export class AppointmentController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(AppointmentApiPath.AppointmentId)
   async update(
+    @Req() req: AuthenticatedRequest,
     @Param('appointmentId') appointmentId: string,
     @Body() updateAppointmentDto: UpdateAppointmentDto,
   ): Promise<void> {
+    const { role } = req.user;
     await this.appointmentService.updateById(
       appointmentId,
       updateAppointmentDto,
+      role,
     );
   }
 
@@ -150,5 +156,30 @@ export class AppointmentController {
     @Param('date') date: string,
   ): Promise<Appointment[]> {
     return this.appointmentService.findAllByDate(req.user.id, date);
+  }
+
+  @ApiOperation({ summary: 'Delete the appointment by id' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Appointment was deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: ErrorMessage.UncompletedAppointmentDelete,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.AppointmentNotFound,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.FailedDeleteAppointment,
+  })
+  @AllowedRoles(UserRole.SuperAdmin, UserRole.Admin)
+  @Delete(AppointmentApiPath.AppointmentId)
+  async deleteOne(
+    @Param('appointmentId') appointmentId: string,
+  ): Promise<void> {
+    await this.appointmentService.deleteById(appointmentId);
   }
 }

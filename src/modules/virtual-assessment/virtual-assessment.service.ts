@@ -7,10 +7,13 @@ import { Response } from 'express';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
 import { Repository } from 'typeorm';
+
+import { NotificationService } from '../notification/notification.service';
 
 import {
   VIRTUAL_ASSESSMENT_DATE_FORMAT,
@@ -62,6 +65,7 @@ export class VirtualAssessmentService {
     private readonly appointmentRepository: Repository<Appointment>,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createVirtualAssessment(
@@ -111,6 +115,8 @@ export class VirtualAssessmentService {
         .createQueryBuilder('virtualAssessment')
         .leftJoinAndSelect('virtualAssessment.appointment', 'appointment')
         .innerJoinAndSelect('appointment.user', 'user')
+        .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .innerJoinAndSelect('caregiverInfo.user', 'userCaregiverInfo')
         .where('appointment.id = :id', { id: appointmentId })
         .getOne();
 
@@ -173,10 +179,48 @@ export class VirtualAssessmentService {
 
       if (updateStatusDto.status === VirtualAssessmentStatus.Finished) {
         await this.sendSubmitContractProposalEmails(appointmentId);
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.userId,
+          virtualAssessment.appointment.id,
+          NotificationMessage.SignOff,
+          virtualAssessment.appointment.caregiverInfo.user.id,
+        );
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.SignOff,
+          virtualAssessment.appointment.userId,
+        );
       }
 
       if (updateStatusDto.status === VirtualAssessmentStatus.Accepted) {
         await this.sendCaregiverAcceptedAppointmentEmail(appointmentId);
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.userId,
+          virtualAssessment.appointment.id,
+          NotificationMessage.AcceptedVA,
+          virtualAssessment.appointment.caregiverInfo.user.id,
+        );
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.AcceptedVA,
+          virtualAssessment.appointment.userId,
+        );
+      }
+      if (updateStatusDto.status === VirtualAssessmentStatus.Rejected) {
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.userId,
+          virtualAssessment.appointment.id,
+          NotificationMessage.RejectedVA,
+          virtualAssessment.appointment.caregiverInfo.user.id,
+        );
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.RejectedVA,
+          virtualAssessment.appointment.userId,
+        );
       }
     } catch (error) {
       if (error instanceof HttpException) {
@@ -217,6 +261,13 @@ export class VirtualAssessmentService {
         })
         .where('appointmentId = :appointmentId', { appointmentId })
         .execute();
+
+      await this.notificationService.createNotification(
+        virtualAssessment.appointment.caregiverInfo.user.id,
+        virtualAssessment.appointment.id,
+        NotificationMessage.RescheduleVA,
+        virtualAssessment.appointment.userId,
+      );
 
       await this.emailService.sendEmail({
         to: virtualAssessment.appointment.user.email,
