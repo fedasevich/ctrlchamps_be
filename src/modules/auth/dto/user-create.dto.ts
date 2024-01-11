@@ -133,4 +133,13 @@ export class UserCreateDto {
   @IsNotEmpty()
   @IsString()
   address: string;
+
+  @ApiProperty({
+    description: 'Indicates whether the user account was verified via otp code',
+    example: 'true',
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isVerified: boolean;
 }

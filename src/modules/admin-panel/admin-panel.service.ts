@@ -77,6 +77,7 @@ export class AdminPanelService {
       );
       await this.userService.create({
         ...adminDto,
+        isVerified: true,
         password: hashedPassword,
       });
     } catch (error) {
