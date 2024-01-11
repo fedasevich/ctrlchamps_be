@@ -1,5 +1,7 @@
+import { Appointment as AppointmentEntity } from 'src/common/entities/appointment.entity';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
+import { SortOrder } from 'src/modules/appointment/enums/sort-query.enum';
 
 export type Appointment = {
   caregiverInfoId: string;
@@ -16,4 +18,16 @@ export type Appointment = {
   timezone: string;
   weekdays?: string[];
   payment?: number;
+};
+
+export type AppointmentQuery = {
+  limit?: number;
+  offset?: number;
+  name?: string;
+  sort?: SortOrder.ASC | SortOrder.DESC;
+};
+
+export type AppointmentListResponse = {
+  appointments: AppointmentEntity[];
+  count: number;
 };

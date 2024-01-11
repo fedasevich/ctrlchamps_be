@@ -27,6 +27,7 @@ export enum ErrorMessage {
   CaregiverNotExist = 'Caregiver does not exist',
   AppointmentNotFound = 'Appointment not found',
   FailedUpdateAppointment = 'Failed to update appointment',
+  FailedDeleteAppointment = 'Failed to delete appointment',
   VirtualAssessmentNotFound = 'Virtual Assessment not found',
   CaregiverNotFound = "Caregiver with such id wasn't found",
   UnsupportedAppointmentStatus = 'Unsupported appointment status',
@@ -39,5 +40,7 @@ export enum ErrorMessage {
   InsufficientFunds = 'Insufficient funds',
   FailedCreateTransaction = 'Failed to create transaction',
   FailedUpdateTransaction = 'Failed to update transaction',
+  ActivityLogNotFound = 'Activity log not found',
   SuperAdminDeleteForbidden = 'Super admin cannot be deleted',
+  UncompletedAppointmentDelete = 'Uncompleted appointment cannot be deleted',
 }
