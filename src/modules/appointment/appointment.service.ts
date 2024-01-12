@@ -590,7 +590,7 @@ export class AppointmentService {
         );
       }
 
-      if (appointment.status !== AppointmentStatus.Completed) {
+      if (appointment.status !== AppointmentStatus.Finished) {
         throw new HttpException(
           ErrorMessage.UncompletedAppointmentDelete,
           HttpStatus.BAD_REQUEST,
