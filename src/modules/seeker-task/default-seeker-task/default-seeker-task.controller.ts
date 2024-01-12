@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { DefaultSeekerTask } from 'src/common/entities/default-seeker-task.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
@@ -60,6 +60,24 @@ export class DefaultSeekerTaskController {
   }
 
   @ApiOperation({ summary: 'Getting all default seeker tasks' })
+  @ApiQuery({
+    name: 'limit',
+    description: 'Number of items per page',
+    type: Number,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'offset',
+    description: 'Number of items to skip',
+    type: Number,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'search',
+    description: 'Search by efault seeker task name',
+    type: String,
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Default seeker tasks were sent successfully',
