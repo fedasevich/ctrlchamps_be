@@ -44,6 +44,7 @@ export enum ErrorMessage {
   SuperAdminDeleteForbidden = 'Super admin cannot be deleted',
   FailedFetchUsers = 'Failed to fetch users',
   InactiveAccount = 'Your profile has been suspended, please contact your administrator to find out why support@gmail.com',
-  UserDeletedByAdmin = "This account didn't exist",
+  UserDeletedByAdmin = "This account doesn't exist",
+  NotAdminRole = 'User role must be only Admin',
   UncompletedAppointmentDelete = 'Uncompleted appointment cannot be deleted',
 }

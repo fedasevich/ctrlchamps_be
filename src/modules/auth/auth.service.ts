@@ -294,7 +294,7 @@ export class AuthService {
 
       if (
         existingUser?.email === userDto.email &&
-        existingUser.phoneNumber === userDto.phoneNumber
+        existingUser?.phoneNumber === userDto.phoneNumber
       ) {
         throw new HttpException(
           ErrorMessage.UserEmailAndPhoneAlreadyExists,
