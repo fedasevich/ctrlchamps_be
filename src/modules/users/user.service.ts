@@ -53,7 +53,7 @@ export class UserService {
   }
 
   async findByEmailOrPhoneNumber(
-    email: string,
+    email?: string,
     phoneNumber?: string,
   ): Promise<User> {
     try {
