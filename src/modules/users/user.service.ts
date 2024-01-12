@@ -8,6 +8,13 @@ import { UserCreateDto } from 'modules/auth/dto/user-create.dto';
 import { PasswordService } from 'modules/update-password/update-password.service';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
+import {
+  DEFAULT_OFFSET,
+  DEFAULT_PAGINATION_LIMIT,
+} from 'src/modules/users/constants/user-info.constants';
+import { SortOrder } from 'src/modules/users/enums/sort-query.enum';
+import { FilteredUserList } from 'src/modules/users/types/filtered-user-list.type';
+import { UserQuery } from 'src/modules/users/types/user-query.type';
 import { EntityManager, Repository } from 'typeorm';
 
 import { UpdatePasswordDto } from './dto/update-password.dto';
@@ -53,7 +60,7 @@ export class UserService {
   }
 
   async findByEmailOrPhoneNumber(
-    email: string,
+    email?: string,
     phoneNumber?: string,
   ): Promise<User> {
     try {
@@ -175,7 +182,7 @@ export class UserService {
         .execute();
     } catch (error) {
       throw new HttpException(
-        ErrorMessage.FailedUpdateAppointment,
+        ErrorMessage.FailedUpdateUser,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -270,6 +277,54 @@ export class UserService {
       });
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getFilteredUsers({
+    limit = DEFAULT_PAGINATION_LIMIT,
+    offset = DEFAULT_OFFSET,
+    search = '',
+    sort = SortOrder.DESC,
+  }: UserQuery): Promise<FilteredUserList> {
+    try {
+      const queryBuilder = this.userRepository
+        .createQueryBuilder('user')
+        .where('user.role NOT IN (:...roles)', {
+          roles: [UserRole.Admin, UserRole.SuperAdmin],
+        })
+        .andWhere('user.isDeletedByAdmin = :isDeletedByAdmin', {
+          isDeletedByAdmin: false,
+        })
+        .select([
+          'user.id',
+          'user.firstName',
+          'user.lastName',
+          'user.role',
+          'user.status',
+        ]);
+
+      if (search) {
+        queryBuilder.andWhere(
+          `(user.firstName LIKE :keyword OR user.lastName LIKE :keyword)`,
+          { keyword: `%${search}%` },
+        );
+      }
+
+      const [result, total] = await queryBuilder
+        .take(limit)
+        .skip(offset)
+        .orderBy('user.createdAt', sort)
+        .getManyAndCount();
+
+      return {
+        data: result,
+        count: total,
+      };
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedFetchUsers,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
