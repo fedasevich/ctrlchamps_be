@@ -42,5 +42,6 @@ export enum ErrorMessage {
   FailedUpdateTransaction = 'Failed to update transaction',
   ActivityLogNotFound = 'Activity log not found',
   SuperAdminDeleteForbidden = 'Super admin cannot be deleted',
+  NotAdminRole = 'User role must be only Admin',
   UncompletedAppointmentDelete = 'Uncompleted appointment cannot be deleted',
 }

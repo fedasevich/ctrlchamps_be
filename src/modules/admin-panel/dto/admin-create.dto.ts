@@ -7,19 +7,19 @@ import {
   Matches,
   IsString,
   MinLength,
-  IsBoolean,
   IsOptional,
   MaxLength,
+  IsBoolean,
 } from 'class-validator';
 import { Country } from 'modules/users/enums/country.enum';
 import { UserCreateValidationMessage } from 'modules/users/enums/user-create.validation-message.enum';
 import { UserCreateValidationRule } from 'modules/users/enums/user-create.validation-rule.enum';
 import { UserRole } from 'modules/users/enums/user-role.enum';
 
-export class UserCreateDto {
+export class AdminCreateDto {
   @ApiProperty({
-    description: "User's email",
-    example: 'user@gmail.com',
+    description: "Admin's email",
+    example: 'admin@gmail.com',
   })
   @IsEmail({}, { message: UserCreateValidationMessage.IncorrectEmail })
   @MaxLength(UserCreateValidationRule.MaxLength)
@@ -27,7 +27,7 @@ export class UserCreateDto {
   email: string;
 
   @ApiProperty({
-    description: "User's password",
+    description: "Admin's password",
     example: 'A234567!',
   })
   @MinLength(UserCreateValidationRule.MinPasswordLength)
@@ -36,8 +36,8 @@ export class UserCreateDto {
   password: string;
 
   @ApiProperty({
-    description: "User's firstName",
-    example: 'Max',
+    description: "Admin's firstName",
+    example: 'James',
   })
   @MaxLength(UserCreateValidationRule.MaxLength)
   @IsNotEmpty()
@@ -45,8 +45,8 @@ export class UserCreateDto {
   firstName: string;
 
   @ApiProperty({
-    description: "User's lastName",
-    example: 'Volovo',
+    description: "Admin's lastName",
+    example: 'Bean',
   })
   @MaxLength(UserCreateValidationRule.MaxLength)
   @IsNotEmpty()
@@ -54,7 +54,7 @@ export class UserCreateDto {
   lastName: string;
 
   @ApiProperty({
-    description: "User's phoneNumber",
+    description: "Admin's phoneNumber",
     example: '+15551234567',
   })
   @IsNotEmpty()
@@ -63,26 +63,8 @@ export class UserCreateDto {
   phoneNumber: string;
 
   @ApiProperty({
-    description: "User's dateOfBirth",
-    example: '11/11/1960',
-  })
-  @IsNotEmpty()
-  @IsString()
-  dateOfBirth: string;
-
-  @ApiProperty({
-    description:
-      "Indicates whether the user is open to living in a seeker's home",
-    example: 'true',
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isOpenToSeekerHomeLiving?: boolean | null;
-
-  @ApiProperty({
-    description: "User's role",
-    example: 'Caregiver',
+    description: "Admin's role",
+    example: 'Admin',
   })
   @IsNotEmpty()
   @IsString()
@@ -90,47 +72,57 @@ export class UserCreateDto {
   role: UserRole;
 
   @ApiProperty({
-    description: "User's country",
-    example: 'USA',
+    description: "Admin's dateOfBirth",
+    example: null,
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
+  @IsString()
+  dateOfBirth: string;
+
+  @ApiProperty({
+    description: "Admin's country",
+    example: null,
+    required: false,
+  })
+  @IsOptional()
   @IsString()
   @IsEnum(Country)
   country: Country;
 
   @ApiProperty({
-    description: "User's state",
-    example: 'Texas',
+    description: "Admin's state",
+    example: null,
+    required: false,
   })
-  @MaxLength(UserCreateValidationRule.MaxLength)
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   state: string;
 
   @ApiProperty({
-    description: "User's city",
-    example: 'Dallas',
+    description: "Admin's city",
+    example: null,
+    required: false,
   })
-  @MaxLength(UserCreateValidationRule.MaxLength)
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   city: string;
 
   @ApiProperty({
-    description: "User's zipCode",
-    example: '75201',
+    description: "Admin's zipCode",
+    example: null,
+    required: false,
   })
-  @MaxLength(UserCreateValidationRule.MaxLength)
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   zipCode: string;
 
   @ApiProperty({
-    description: "User's address",
-    example: '123 Maple Street',
+    description: "Admin's address",
+    example: null,
+    required: false,
   })
-  @MaxLength(UserCreateValidationRule.MaxLength)
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   address: string;
 
