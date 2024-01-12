@@ -15,12 +15,14 @@ import {
   Req,
   UnauthorizedException,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiConsumes,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -31,6 +33,9 @@ import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { AllowedRoles } from 'src/decorators/roles-auth.decorator';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { AuthenticatedRequest } from 'src/modules/auth/types/user.request.type';
+import { SortOrder } from 'src/modules/users/enums/sort-query.enum';
+import { FilteredUserList } from 'src/modules/users/types/filtered-user-list.type';
+import { UserQuery } from 'src/modules/users/types/user-query.type';
 
 import {
   MAX_FILE_SIZE,
@@ -187,5 +192,51 @@ export class UserController {
   })
   async deleteUser(@Param('userId') userId: string): Promise<void> {
     await this.userService.delete(userId);
+  }
+
+  @Get(UserApiPath.Root)
+  @AllowedRoles(UserRole.SuperAdmin, UserRole.Admin)
+  @ApiOperation({ summary: 'Get filtered user list' })
+  @ApiQuery({
+    name: 'limit',
+    description: 'Number of items per page',
+    type: Number,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'offset',
+    description: 'Number of items to skip',
+    type: Number,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'search',
+    description: 'Search by keyword (firstName/lastName)',
+    type: String,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'sort',
+    description: 'Sort by createdAt',
+    enum: SortOrder,
+    required: false,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Fetched user list successfully',
+    schema: {
+      example: [USER_INFO_EXAMPLE],
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: ErrorMessage.ForbiddenResource,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.FailedFetchUsers,
+  })
+  async getFilteredUsers(@Query() query: UserQuery): Promise<FilteredUserList> {
+    return this.userService.getFilteredUsers(query);
   }
 }
