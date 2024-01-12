@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
@@ -173,5 +173,29 @@ export class CronService {
         await this.paymentService.chargeRecurringPaymentTask(appointment.id);
       }
     });
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async sendVirtualAssessmentStartNotification(): Promise<void> {
+    const virtualAssessments =
+      await this.virtualAssessmentService.getAssessmentsStartingInFiveMinutes();
+
+    await Promise.all(
+      virtualAssessments.map(async (virtualAssessment) => {
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.FiveMinBeforeVA,
+          virtualAssessment.appointment.user.id,
+        );
+
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.FiveMinBeforeVA,
+          virtualAssessment.appointment.caregiverInfo.user.id,
+        );
+      }),
+    );
   }
 }
