@@ -200,12 +200,13 @@ export class AppointmentService {
             transactionalEntityManager,
             appointmentId,
           );
-        },
-      );
 
-      await this.sendAppointmentConfirmationEmails(
-        userId,
-        createAppointment.caregiverInfoId,
+          await this.sendAppointmentConfirmationEmails(
+            userId,
+            createAppointment.caregiverInfoId,
+            appointmentId,
+          );
+        },
       );
     } catch (error) {
       if (
@@ -264,6 +265,7 @@ export class AppointmentService {
   private async sendAppointmentConfirmationEmails(
     userId: string,
     caregiverInfoId: string,
+    appointmentId: string,
   ): Promise<void> {
     try {
       const { email, firstName } = await this.userService.findById(userId);
@@ -295,6 +297,13 @@ export class AppointmentService {
           link: this.caregiverAppointmentRedirectLink,
         },
       });
+
+      this.notificationService.createNotification(
+        caregiverInfo.user.id,
+        appointmentId,
+        NotificationMessage.RequestedAppointment,
+        userId,
+      );
     } catch (error) {
       if (
         error instanceof HttpException &&
