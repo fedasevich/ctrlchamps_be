@@ -55,6 +55,11 @@ export class AppointmentService {
       'SENDGRID_APPOINTMENT_REQUEST_REJECT_TEMPLATE_ID',
     );
 
+  private readonly seekerAppointmentRejectTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_APPOINTMENT_REQUEST_REJECT_TEMPLATE_ID',
+    );
+
   private readonly seekerAppointmentRedirectLink =
     this.configService.get<string>('SEEKER_APPOINTMENT_REDIRECT_LINK');
 
@@ -496,13 +501,12 @@ export class AppointmentService {
       const { userId, caregiverInfo } = singleAppointment;
 
       const caregiverUser = caregiverInfo.user;
+      const notificationRecipient =
+        role === UserRole.Caregiver ? userId : caregiverUser.id;
 
       switch (appointmentStatus) {
         case AppointmentStatus.Rejected:
           if (appointmentToUpdateStatus === AppointmentStatus.Pending) {
-            const notificationRecipient =
-              role === UserRole.Caregiver ? userId : caregiverUser.id;
-
             this.notificationService.createNotification(
               notificationRecipient,
               appointmentId,
@@ -511,19 +515,12 @@ export class AppointmentService {
             );
           } else {
             this.notificationService.createNotification(
-              userId,
+              notificationRecipient,
               appointmentId,
               NotificationMessage.RejectedAppointment,
-              caregiverUser.id,
-            );
-            this.notificationService.createNotification(
-              caregiverUser.id,
-              appointmentId,
-              NotificationMessage.RejectedAppointment,
-              userId,
+              role === UserRole.Caregiver ? caregiverUser.id : userId,
             );
           }
-
           await this.appointmentRepository.manager.transaction(
             async (transactionalEntityManager) => {
               await this.paymentService.payForHourOfWork(
@@ -558,7 +555,7 @@ export class AppointmentService {
           break;
       }
 
-      const templateId = this.getTemplateIdForStatus(appointmentStatus);
+      const templateId = this.getTemplateIdForStatus(appointmentStatus, role);
 
       if (!templateId) {
         return;
@@ -608,12 +605,21 @@ export class AppointmentService {
     }
   }
 
-  private getTemplateIdForStatus(status: AppointmentStatus): string {
+  private getTemplateIdForStatus(
+    status: AppointmentStatus,
+    role: UserRole,
+  ): string {
     switch (status) {
       case AppointmentStatus.Accepted:
         return this.caregiverAppointmentRequestAcceptTemplateId;
       case AppointmentStatus.Rejected:
-        return this.caregiverAppointmentRequestRejectTemplateId;
+        if (role === UserRole.Caregiver) {
+          return this.caregiverAppointmentRequestRejectTemplateId;
+        }
+        if (role === UserRole.Seeker) {
+          return this.seekerAppointmentRejectTemplateId;
+        }
+        break;
       default:
         return '';
     }

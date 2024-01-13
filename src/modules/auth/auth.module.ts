@@ -8,7 +8,6 @@ import { CaregiverInfoModule } from 'modules/caregiver-info/caregiver-info.modul
 import { EmailModule } from 'modules/email/email.module';
 import { PasswordModule } from 'modules/update-password/update-password.module';
 import { UserModule } from 'modules/users/user.module';
-import { UserService } from 'modules/users/user.service';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
