@@ -29,6 +29,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CaregiverInfo } from './common/entities/caregiver.profile.entity';
 import { Certificate } from './common/entities/certificate.entity';
+import { DefaultSeekerTask } from './common/entities/default-seeker-task.entity';
 import { Notification } from './common/entities/notification.entity';
 import { TransactionHistory } from './common/entities/transaction-history.entity';
 import { User } from './common/entities/user.entity';
@@ -40,6 +41,7 @@ import { EmailModule } from './modules/email/email.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { ProfileModule } from './modules/profile/profile.module';
+import { DefaultSeekerTaskModule } from './modules/seeker-task/default-seeker-task/default-seeker-task.module';
 import { UserModule } from './modules/users/user.module';
 import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-assessment.module';
 
@@ -70,6 +72,7 @@ import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-as
           SeekerCapability,
           SeekerDiagnosis,
           SeekerTask,
+          DefaultSeekerTask,
           VirtualAssessment,
           PaymentModule,
           ActivityLog,
@@ -99,6 +102,7 @@ import { VirtualAssessmentModule } from './modules/virtual-assessment/virtual-as
     PaymentModule,
     AdminPanelModule,
     NotificationModule,
+    DefaultSeekerTaskModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService],
