@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
@@ -12,6 +13,7 @@ import {
   EVERY_15_MINUTES,
   NEXT_DAY_NUMBER,
 } from 'src/modules/cron/cron.constants';
+import { EmailService } from 'src/modules/email/services/email.service';
 
 import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
@@ -19,11 +21,16 @@ import { VirtualAssessmentService } from '../virtual-assessment/virtual-assessme
 
 @Injectable()
 export class CronService {
+  private readonly assessmentReminderTemplateId =
+    this.configService.get<string>('SENDGRID_ASSESSMENT_REMINDER_TEMPLATE_ID');
+
   constructor(
     private appointmentService: AppointmentService,
     private paymentService: PaymentService,
     private virtualAssessmentService: VirtualAssessmentService,
     private notificationService: NotificationService,
+    private emailService: EmailService,
+    private configService: ConfigService,
   ) {}
 
   @Cron(EVERY_15_MINUTES)
@@ -195,6 +202,16 @@ export class CronService {
           NotificationMessage.FiveMinBeforeVA,
           virtualAssessment.appointment.caregiverInfo.user.id,
         );
+
+        await this.emailService.sendEmail({
+          to: virtualAssessment.appointment.user.email,
+          templateId: this.assessmentReminderTemplateId,
+        });
+
+        await this.emailService.sendEmail({
+          to: virtualAssessment.appointment.caregiverInfo.user.email,
+          templateId: this.assessmentReminderTemplateId,
+        });
       }),
     );
   }
