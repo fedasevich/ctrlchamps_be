@@ -529,6 +529,13 @@ export class AppointmentService {
                 transactionalEntityManager,
                 true,
               );
+              await this.paymentService.createSeekerCaregiverTransactions(
+                caregiverInfo.user.id,
+                userId,
+                caregiverInfo.hourlyRate,
+                transactionalEntityManager,
+                appointmentId,
+              );
             },
           );
           break;
