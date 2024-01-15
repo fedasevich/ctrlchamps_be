@@ -199,6 +199,13 @@ export class AppointmentService {
               createAppointment.caregiverInfoId,
             );
 
+          this.notificationService.createNotification(
+            caregiverInfo.user.id,
+            appointmentId,
+            NotificationMessage.RequestedAppointment,
+            userId,
+          );
+
           await this.paymentService.createSeekerCaregiverTransactions(
             userId,
             caregiverInfo.user.id,
