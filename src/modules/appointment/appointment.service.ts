@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { addHours, isBefore, format, isAfter } from 'date-fns';
+import { format } from 'date-fns';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
@@ -32,10 +32,10 @@ import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
 import { UserRole } from '../users/enums/user-role.enum';
 
+import { DATE_FORMAT, TODAY_DATE } from 'src/common/constants/date.constants';
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { AppointmentType as TypeOfAppointment } from './enums/appointment-type.enum';
 import { SortOrder } from './enums/sort-query.enum';
-import { DATE_FORMAT, TODAY_DATE } from 'src/common/constants/date.constants';
 
 @Injectable()
 export class AppointmentService {
@@ -218,11 +218,11 @@ export class AppointmentService {
             appointmentId,
           );
 
-          // await this.sendAppointmentConfirmationEmails(
-          //   userId,
-          //   createAppointment.caregiverInfoId,
-          //   appointmentId,
-          // );
+          await this.sendAppointmentConfirmationEmails(
+            userId,
+            createAppointment.caregiverInfoId,
+            appointmentId,
+          );
         },
       );
     } catch (error) {
