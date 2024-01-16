@@ -5,6 +5,7 @@ import {
   Injectable,
   forwardRef,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { format, getDay, differenceInWeeks } from 'date-fns';
@@ -19,6 +20,7 @@ import { ActivityLogStatus } from '../activity-log/enums/activity-log-status.enu
 import { MINIMUM_BALANCE } from '../appointment/appointment.constants';
 import { AppointmentStatus } from '../appointment/enums/appointment-status.enum';
 import { CaregiverInfoService } from '../caregiver-info/caregiver-info.service';
+import { EmailService } from '../email/services/email.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UserService } from '../users/user.service';
 
@@ -26,10 +28,15 @@ import { ALREADY_PAID_HOUR, ONE_WEEK } from './constants/payment.constants';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionType } from './enums/transaction-type.enum';
 import { getHourDifference } from './helpers/difference-in-hours';
+import { PayForHourOfWorkResponse } from './types/payment-response.type';
 import { Transaction } from './types/transaction-history.type';
 
 @Injectable()
 export class PaymentService {
+  private readonly seekerBalanceLowTemplateId = this.configService.get<string>(
+    'SENDGRID_INSUFFICIENT_APPOINTMENT_CREATION_BALANCE_TEMPLATE_ID',
+  );
+
   constructor(
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
@@ -41,6 +48,8 @@ export class PaymentService {
     private appointmentService: AppointmentService,
     private readonly userService: UserService,
     private readonly caregiverInfoService: CaregiverInfoService,
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   public async payForHourOfWork(
@@ -48,7 +57,7 @@ export class PaymentService {
     caregiverInfoId: string,
     transactionalEntityManager: EntityManager,
     payBack = false,
-  ): Promise<number> {
+  ): Promise<PayForHourOfWorkResponse> {
     try {
       const { balance, email } = await this.userService.findById(userId);
 
@@ -64,6 +73,8 @@ export class PaymentService {
         );
       }
 
+      const isSufficientCost = balance >= caregiverInfo.hourlyRate;
+
       if (payBack) {
         const updatedSeekerBalance = balance + caregiverInfo.hourlyRate;
 
@@ -73,7 +84,7 @@ export class PaymentService {
           transactionalEntityManager,
         );
 
-        return caregiverInfo.hourlyRate;
+        return { hourlyRate: caregiverInfo.hourlyRate, isSufficientCost };
       }
 
       const updatedSeekerBalance = balance - caregiverInfo.hourlyRate;
@@ -84,9 +95,14 @@ export class PaymentService {
           { balance: updatedSeekerBalance },
           transactionalEntityManager,
         );
+      } else {
+        await this.emailService.sendEmail({
+          to: email,
+          templateId: this.seekerBalanceLowTemplateId,
+        });
       }
 
-      return caregiverInfo.hourlyRate;
+      return { hourlyRate: caregiverInfo.hourlyRate, isSufficientCost };
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -475,6 +491,7 @@ export class PaymentService {
   ): Promise<void> {
     try {
       const user = await this.userService.findById(userId);
+
       if (user) {
         await this.createTransaction({
           userId,
@@ -489,8 +506,33 @@ export class PaymentService {
         });
       }
 
+      const notPaidAppointments =
+        await this.appointmentService.getAllUnpaidAppointments(userId);
+
+      if (!notPaidAppointments.length) {
+        await this.userService.updateUserInfo(userId, {
+          balance: updatedBalance,
+        });
+
+        return;
+      }
+
+      let newlyUpdatedBalance = updatedBalance;
+
+      for (const appointment of notPaidAppointments) {
+        if (appointment.payment <= newlyUpdatedBalance) {
+          await this.appointmentService.updateById(appointment.id, {
+            paidForFirstHour: true,
+          });
+
+          newlyUpdatedBalance -= appointment.payment;
+        } else {
+          continue;
+        }
+      }
+
       await this.userService.updateUserInfo(userId, {
-        balance: updatedBalance,
+        balance: newlyUpdatedBalance,
       });
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);

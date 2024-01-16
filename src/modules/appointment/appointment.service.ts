@@ -8,6 +8,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { addHours, isBefore, format, isAfter } from 'date-fns';
+
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
@@ -33,6 +35,7 @@ import { UserRole } from '../users/enums/user-role.enum';
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { AppointmentType as TypeOfAppointment } from './enums/appointment-type.enum';
 import { SortOrder } from './enums/sort-query.enum';
+import { DATE_FORMAT, TODAY_DATE } from 'src/common/constants/date.constants';
 
 @Injectable()
 export class AppointmentService {
@@ -139,15 +142,16 @@ export class AppointmentService {
             ...appointment
           } = createAppointment;
 
-          const payment = await this.paymentService.payForHourOfWork(
-            userId,
-            createAppointment.caregiverInfoId,
-            transactionalEntityManager,
-          );
+          const { hourlyRate: payment, isSufficientCost: paidForFirstHour } =
+            await this.paymentService.payForHourOfWork(
+              userId,
+              createAppointment.caregiverInfoId,
+              transactionalEntityManager,
+            );
 
           const appointmentId = await this.registerNewAppointment(
             transactionalEntityManager,
-            { ...appointment, payment },
+            { ...appointment, payment, paidForFirstHour },
             userId,
           );
 
@@ -214,11 +218,11 @@ export class AppointmentService {
             appointmentId,
           );
 
-          await this.sendAppointmentConfirmationEmails(
-            userId,
-            createAppointment.caregiverInfoId,
-            appointmentId,
-          );
+          // await this.sendAppointmentConfirmationEmails(
+          //   userId,
+          //   createAppointment.caregiverInfoId,
+          //   appointmentId,
+          // );
         },
       );
     } catch (error) {
@@ -455,6 +459,59 @@ export class AppointmentService {
     }
   }
 
+  async getTodayUnpaidAppointments(): Promise<Appointment[]> {
+    try {
+      const currentDate = format(TODAY_DATE, DATE_FORMAT);
+
+      const todayAppointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .leftJoinAndSelect('appointment.user', 'user')
+        .leftJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .leftJoinAndSelect('caregiverInfo.user', 'caregiverUser')
+        .where('DATE(appointment.startDate) = :startDate', {
+          startDate: currentDate,
+        })
+        .andWhere('appointment.paidForFirstHour = :paidForFirstHour', {
+          paidForFirstHour: false,
+        })
+        .andWhere('appointment.status != :rejectedStatus', {
+          rejectedStatus: 'Rejected',
+        })
+        .select([
+          'appointment',
+          'user.id',
+          'caregiverInfo.id',
+          'caregiverUser.id as caregiverUserId',
+        ])
+        .getMany();
+
+      return todayAppointments;
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getAllUnpaidAppointments(userId: string): Promise<Appointment[]> {
+    try {
+      return await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where('appointment.userId = :userId', { userId })
+        .andWhere('appointment.paidForFirstHour = :paidForFirstHour', {
+          paidForFirstHour: false,
+        })
+        .orderBy('appointment.createdAt', SortOrder.ASC)
+        .getMany();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   async checkAppointmentToBePaid(): Promise<Appointment[]> {
     const appointments = await this.appointmentRepository
       .createQueryBuilder('appointment')
@@ -591,6 +648,47 @@ export class AppointmentService {
           appointmentLink: this.seekerAppointmentRedirectLink,
         },
       });
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedUpdateAppointment,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async cancelUnpaidAppointment(appointmentId: string): Promise<void> {
+    try {
+      const appointment = await this.findOneById(appointmentId);
+
+      if (!appointment) {
+        throw new HttpException(
+          ErrorMessage.AppointmentNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      await this.appointmentRepository
+        .createQueryBuilder()
+        .update(Appointment)
+        .set({ status: AppointmentStatus.Rejected })
+        .where('appointment.id = :appointmentId', {
+          appointmentId,
+        })
+        .execute();
+
+      await this.notificationService.createNotification(
+        appointment.userId,
+        appointmentId,
+        NotificationMessage.RequestedAppointment,
+        appointment.caregiverInfo.user.id,
+      );
+
+      await this.notificationService.createNotification(
+        appointment.caregiverInfo.user.id,
+        appointmentId,
+        NotificationMessage.RequestedAppointment,
+        appointment.userId,
+      );
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedUpdateAppointment,
