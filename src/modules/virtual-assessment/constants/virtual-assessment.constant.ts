@@ -36,3 +36,4 @@ export const VIRTUAL_ASSESSMENT_GET_EXAMPLE = {
 
 export const VIRTUAL_ASSESSMENT_DATE_FORMAT = 'yyyy-MM-dd';
 export const VIRTUAL_ASSESSMENT_TIME_FORMAT = 'HH:mm:ss';
+export const UTC_TIMEZONE = 'UTC';
