@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { format } from 'date-fns';
+import { format, addMinutes } from 'date-fns';
 import { Response } from 'express';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
@@ -16,6 +16,8 @@ import { Repository } from 'typeorm';
 import { NotificationService } from '../notification/notification.service';
 
 import {
+  FOUR_MINUTES,
+  SIX_MINUTES,
   VIRTUAL_ASSESSMENT_DATE_FORMAT,
   VIRTUAL_ASSESSMENT_TIME_FORMAT,
 } from './constants/virtual-assessment.constant';
@@ -58,6 +60,11 @@ export class VirtualAssessmentService {
       'SENDGRID_ACCEPTED_VIRTUAL_ASSESSMENT_TEMPLATE_ID',
     );
 
+  private readonly seekerAcceptedRescheduledVirtualAssessmentTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_SEEKER_ACCEPTED_RESCHEDULED_VIRTUAL_ASSESSMENT_TEMPLATE_ID',
+    );
+
   constructor(
     @InjectRepository(VirtualAssessment)
     private readonly virtualAssessmentRepository: Repository<VirtualAssessment>,
@@ -93,6 +100,13 @@ export class VirtualAssessmentService {
           scheduleLink: this.caregiverAppointmentRedirectLink,
         },
       });
+
+      await this.notificationService.createNotification(
+        virtualAssessment.appointment.caregiverInfo.user.id,
+        virtualAssessment.appointment.id,
+        NotificationMessage.RequestedVA,
+        virtualAssessment.appointment.userId,
+      );
 
       await this.virtualAssessmentRepository.save(virtualAssessment);
     } catch (error) {
@@ -314,6 +328,18 @@ export class VirtualAssessmentService {
       if (status === VirtualAssessmentStatus.Accepted) {
         virtualAssessment.reschedulingAccepted = true;
         virtualAssessment.status = VirtualAssessmentStatus.Accepted;
+
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.AcceptedVA,
+          virtualAssessment.appointment.userId,
+        );
+
+        await this.emailService.sendEmail({
+          to: virtualAssessment.appointment.caregiverInfo.user.email,
+          templateId: this.seekerAcceptedRescheduledVirtualAssessmentTemplateId,
+        });
       }
 
       if (status === VirtualAssessmentStatus.Rejected) {
@@ -433,6 +459,63 @@ export class VirtualAssessmentService {
         templateId: this.caregiverAcceptedVirtualAssessmentTemplateId,
       });
     } catch (err) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getAssessmentsStartingInFiveMinutes(): Promise<VirtualAssessment[]> {
+    try {
+      const currentDate = new Date();
+      const currentDateFormat = format(
+        currentDate,
+        VIRTUAL_ASSESSMENT_DATE_FORMAT,
+      );
+
+      const fourMinutesLater = addMinutes(currentDate, FOUR_MINUTES);
+      const sixMinutesLater = addMinutes(currentDate, SIX_MINUTES);
+
+      const fourMinutesFromNowTime = format(
+        fourMinutesLater,
+        VIRTUAL_ASSESSMENT_TIME_FORMAT,
+      );
+      const sixMinutesFromNowTime = format(
+        sixMinutesLater,
+        VIRTUAL_ASSESSMENT_TIME_FORMAT,
+      );
+
+      const virtualAssessments = await this.virtualAssessmentRepository
+        .createQueryBuilder('virtualAssessment')
+        .leftJoinAndSelect('virtualAssessment.appointment', 'appointment')
+
+        .leftJoinAndSelect('appointment.user', 'user')
+        .addSelect('user.id')
+
+        .leftJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .addSelect('caregiverInfo.id')
+
+        .leftJoinAndSelect('caregiverInfo.user', 'caregiver')
+        .addSelect('caregiver.id')
+
+        .andWhere('virtualAssessment.assessmentDate = :assessmentDate', {
+          assessmentDate: currentDateFormat,
+        })
+        .andWhere('virtualAssessment.status = :status', {
+          status: VirtualAssessmentStatus.Accepted,
+        })
+        .andWhere(
+          'virtualAssessment.startTime >= :fourMinutesFromNowTime AND virtualAssessment.startTime <= :sixMinutesFromNowTime',
+          {
+            fourMinutesFromNowTime,
+            sixMinutesFromNowTime,
+          },
+        )
+        .getMany();
+
+      return virtualAssessments;
+    } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,
         HttpStatus.INTERNAL_SERVER_ERROR,

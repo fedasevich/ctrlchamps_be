@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
@@ -13,8 +13,8 @@ import {
   EVERY_15_MINUTES,
   NEXT_DAY_NUMBER,
 } from 'src/modules/cron/cron.constants';
+import { EmailService } from 'src/modules/email/services/email.service';
 
-import { EmailService } from '../email/services/email.service';
 import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
 import { VirtualAssessmentService } from '../virtual-assessment/virtual-assessment.service';
@@ -30,6 +30,9 @@ export class CronService {
     this.configService.get<string>(
       'SENDGRID_CAREGIVER_SUBMIT_CONTRACT_PROPOSAL_TEMPLATE_ID',
     );
+
+  private readonly assessmentReminderTemplateId =
+    this.configService.get<string>('SENDGRID_ASSESSMENT_REMINDER_TEMPLATE_ID');
 
   constructor(
     private configService: ConfigService,
@@ -211,5 +214,39 @@ export class CronService {
         await this.paymentService.chargeRecurringPaymentTask(appointment.id);
       }
     });
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async sendVirtualAssessmentStartNotification(): Promise<void> {
+    const virtualAssessments =
+      await this.virtualAssessmentService.getAssessmentsStartingInFiveMinutes();
+
+    await Promise.all(
+      virtualAssessments.map(async (virtualAssessment) => {
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.FiveMinBeforeVA,
+          virtualAssessment.appointment.user.id,
+        );
+
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.FiveMinBeforeVA,
+          virtualAssessment.appointment.caregiverInfo.user.id,
+        );
+
+        await this.emailService.sendEmail({
+          to: virtualAssessment.appointment.user.email,
+          templateId: this.assessmentReminderTemplateId,
+        });
+
+        await this.emailService.sendEmail({
+          to: virtualAssessment.appointment.caregiverInfo.user.email,
+          templateId: this.assessmentReminderTemplateId,
+        });
+      }),
+    );
   }
 }

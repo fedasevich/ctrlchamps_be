@@ -36,3 +36,6 @@ export const VIRTUAL_ASSESSMENT_GET_EXAMPLE = {
 
 export const VIRTUAL_ASSESSMENT_DATE_FORMAT = 'yyyy-MM-dd';
 export const VIRTUAL_ASSESSMENT_TIME_FORMAT = 'HH:mm:ss';
+
+export const FOUR_MINUTES = 4;
+export const SIX_MINUTES = 6;

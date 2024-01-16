@@ -47,4 +47,8 @@ export enum ErrorMessage {
   UserDeletedByAdmin = "This account doesn't exist",
   NotAdminRole = 'User role must be only Admin',
   UncompletedAppointmentDelete = 'Uncompleted appointment cannot be deleted',
+  FailedCreateDefaultSeekerTask = 'Failed to create default seeker task',
+  DefaultSeekerTaskNotFound = 'Default seeker task not found',
+  FailedUpdateDefaultSeekerTask = 'Failed to update default seeker task',
+  FailedDeleteDefaultSeekerTask = 'Failed to delete default seeker task',
 }
