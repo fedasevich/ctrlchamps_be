@@ -427,6 +427,8 @@ export class AppointmentService {
         );
       }
 
+      const currentDate = new Date().toISOString().split('T')[0];
+
       const appointments = await this.appointmentRepository
         .createQueryBuilder('appointment')
 
@@ -436,14 +438,56 @@ export class AppointmentService {
         .innerJoin('appointment.user', 'user')
         .addSelect(['user.id', 'user.lastName', 'user.firstName'])
 
-        .where('caregiverInfo.userId = :userId', { userId })
+        .leftJoin('appointment.virtualAssessment', 'virtualAssessment')
+        .addSelect([
+          'virtualAssessment.id',
+          'virtualAssessment.status',
+          'virtualAssessment.startTime',
+          'virtualAssessment.assessmentDate',
+        ])
 
-        .andWhere('DATE(appointment.startDate) <= :date', {
-          date,
+        .andWhere('(appointment.status  NOT IN (:...statuses)', {
+          statuses: [
+            AppointmentStatus.Virtual,
+            AppointmentStatus.SignedSeeker,
+            AppointmentStatus.SignedCaregiver,
+            AppointmentStatus.Pending,
+          ],
         })
-        .andWhere('DATE(appointment.endDate) >= :date', {
-          date,
+        .andWhere('DATE(appointment.startDate) <= :date', { date })
+        .andWhere('DATE(appointment.endDate) >= :date', { date })
+
+        .orWhere('appointment.status IN (:...statuses)', {
+          statuses: [
+            AppointmentStatus.Virtual,
+            AppointmentStatus.SignedSeeker,
+            AppointmentStatus.SignedCaregiver,
+          ],
         })
+        .andWhere('DATE(virtualAssessment.assessmentDate) = :date', { date })
+
+        .orWhere('appointment.status = :status', {
+          status: AppointmentStatus.Pending,
+        })
+        .andWhere(':date = :currentDate)', {
+          date,
+          currentDate,
+        })
+
+        .andWhere('caregiverInfo.userId = :userId', { userId })
+
+        .orderBy(
+          `CASE
+              WHEN appointment.status = "${AppointmentStatus.Active}" THEN 1
+              WHEN appointment.status IN ("${AppointmentStatus.Virtual}", "${AppointmentStatus.SignedSeeker}", "${AppointmentStatus.SignedCaregiver}") THEN 2
+              WHEN appointment.status = "${AppointmentStatus.Pending}" THEN 3
+              WHEN appointment.status = "${AppointmentStatus.Paused}" THEN 4
+              WHEN appointment.status = "${AppointmentStatus.Rejected}" THEN 6
+              ELSE 5
+            END`,
+          'ASC',
+        )
+
         .getMany();
 
       return appointments;
