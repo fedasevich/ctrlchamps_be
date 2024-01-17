@@ -8,6 +8,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { format } from 'date-fns';
+import { DATE_FORMAT, TODAY_DATE } from 'src/common/constants/date.constants';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
@@ -427,7 +429,7 @@ export class AppointmentService {
         );
       }
 
-      const currentDate = new Date().toISOString().split('T')[0];
+      const currentDate = format(TODAY_DATE, DATE_FORMAT);
 
       const appointments = await this.appointmentRepository
         .createQueryBuilder('appointment')
