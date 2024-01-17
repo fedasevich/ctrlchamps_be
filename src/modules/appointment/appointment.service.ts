@@ -487,7 +487,7 @@ export class AppointmentService {
               WHEN appointment.status = "${AppointmentStatus.Rejected}" THEN 6
               ELSE 5
             END`,
-          'ASC',
+          SortOrder.ASC,
         )
 
         .getMany();
