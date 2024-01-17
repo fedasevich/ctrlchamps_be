@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
@@ -6,6 +7,8 @@ import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { Repository } from 'typeorm';
 
+import { AdminPanelService } from '../admin-panel/admin-panel.service';
+import { EmailService } from '../email/services/email.service';
 import { NotificationService } from '../notification/notification.service';
 
 import { CreateActivityLogDto } from './dto/create-activity-log.dto';
@@ -14,10 +17,18 @@ import { ActivityLogStatus } from './enums/activity-log-status.enum';
 
 @Injectable()
 export class ActivityLogService {
+  private readonly allAdminsRejectedActivityLogTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_ALL_ADMINS_REJECTED_ACTIVITY_LOG_TEMPLATE_ID',
+    );
+
   constructor(
     @InjectRepository(ActivityLog)
     private readonly activityLogRepository: Repository<ActivityLog>,
     private readonly notificationService: NotificationService,
+    private readonly adminPanelService: AdminPanelService,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) {}
 
   async getActivityLogById(activityLogId: string): Promise<ActivityLog> {
@@ -26,7 +37,8 @@ export class ActivityLogService {
         .createQueryBuilder('activityLog')
         .innerJoinAndSelect('activityLog.appointment', 'appointment')
         .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
-        .innerJoinAndSelect('caregiverInfo.user', 'user')
+        .innerJoinAndSelect('appointment.user', 'seeker')
+        .innerJoinAndSelect('caregiverInfo.user', 'caregiver')
         .where('activityLog.id = :id', { id: activityLogId })
         .getOne();
 
@@ -113,6 +125,21 @@ export class ActivityLogService {
             ? activityLog.appointment.caregiverInfo.user.id
             : activityLog.appointment.userId,
         );
+      }
+
+      if (updateActivityLogDto.reason) {
+        const admins = await this.adminPanelService.getAllAdmins();
+
+        await this.emailService.sendEmail({
+          to: admins.map((admin) => admin.email),
+          templateId: this.allAdminsRejectedActivityLogTemplateId,
+          dynamicTemplateData: {
+            seekerName: `${activityLog.appointment.user.firstName} ${activityLog.appointment.user.lastName}`,
+            caregiverName: `${activityLog.appointment.caregiverInfo.user.firstName} ${activityLog.appointment.caregiverInfo.user.lastName}`,
+            appointmentId: activityLog.appointment.id,
+            reason: updateActivityLogDto.reason,
+          },
+        });
       }
     } catch (error) {
       throw new HttpException(

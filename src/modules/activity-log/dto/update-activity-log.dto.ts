@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsEnum, IsNotEmpty } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 import { ActivityLogStatus } from '../enums/activity-log-status.enum';
 
@@ -12,4 +12,12 @@ export class UpdateActivityLogDto {
   @IsEnum(ActivityLogStatus)
   @IsNotEmpty()
   status: ActivityLogStatus;
+
+  @ApiProperty({
+    description: 'Reason for the rejected status',
+  })
+  @IsString()
+  @IsOptional()
+  @IsNotEmpty()
+  reason?: string;
 }
