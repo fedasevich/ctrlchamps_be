@@ -21,16 +21,26 @@ import { VirtualAssessmentService } from '../virtual-assessment/virtual-assessme
 
 @Injectable()
 export class CronService {
+  private readonly seekerVirtualAssessmentDoneTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_SEEKER_SUBMIT_CONTRACT_PROPOSAL_TEMPLATE_ID',
+    );
+
+  private readonly caregiverVirtualAssessmentDoneTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_CAREGIVER_SUBMIT_CONTRACT_PROPOSAL_TEMPLATE_ID',
+    );
+
   private readonly assessmentReminderTemplateId =
     this.configService.get<string>('SENDGRID_ASSESSMENT_REMINDER_TEMPLATE_ID');
 
   constructor(
+    private configService: ConfigService,
     private appointmentService: AppointmentService,
     private paymentService: PaymentService,
     private virtualAssessmentService: VirtualAssessmentService,
     private notificationService: NotificationService,
     private emailService: EmailService,
-    private configService: ConfigService,
   ) {}
 
   @Cron(EVERY_15_MINUTES)
@@ -43,6 +53,30 @@ export class CronService {
           virtualAssessment.appointment.id,
           { status: VirtualAssessmentStatus.Finished },
         );
+
+        this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.SignOff,
+          virtualAssessment.appointment.user.id,
+        );
+
+        this.notificationService.createNotification(
+          virtualAssessment.appointment.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.SignOff,
+          virtualAssessment.appointment.caregiverInfo.user.id,
+        );
+
+        this.emailService.sendEmail({
+          to: virtualAssessment.appointment.user.email,
+          templateId: this.seekerVirtualAssessmentDoneTemplateId,
+        });
+
+        this.emailService.sendEmail({
+          to: virtualAssessment.appointment.caregiverInfo.user.email,
+          templateId: this.caregiverVirtualAssessmentDoneTemplateId,
+        });
       }),
     );
   }
