@@ -127,7 +127,10 @@ export class ActivityLogService {
         );
       }
 
-      if (updateActivityLogDto.reason) {
+      if (
+        updateActivityLogDto.reason &&
+        updateActivityLogDto.status === ActivityLogStatus.Rejected
+      ) {
         const admins = await this.adminPanelService.getAllAdmins();
 
         await this.emailService.sendEmail({
