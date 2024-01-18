@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
@@ -12,6 +13,7 @@ import {
   EVERY_15_MINUTES,
   NEXT_DAY_NUMBER,
 } from 'src/modules/cron/cron.constants';
+import { EmailService } from 'src/modules/email/services/email.service';
 
 import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
@@ -19,11 +21,26 @@ import { VirtualAssessmentService } from '../virtual-assessment/virtual-assessme
 
 @Injectable()
 export class CronService {
+  private readonly seekerVirtualAssessmentDoneTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_SEEKER_SUBMIT_CONTRACT_PROPOSAL_TEMPLATE_ID',
+    );
+
+  private readonly caregiverVirtualAssessmentDoneTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_CAREGIVER_SUBMIT_CONTRACT_PROPOSAL_TEMPLATE_ID',
+    );
+
+  private readonly assessmentReminderTemplateId =
+    this.configService.get<string>('SENDGRID_ASSESSMENT_REMINDER_TEMPLATE_ID');
+
   constructor(
+    private configService: ConfigService,
     private appointmentService: AppointmentService,
     private paymentService: PaymentService,
     private virtualAssessmentService: VirtualAssessmentService,
     private notificationService: NotificationService,
+    private emailService: EmailService,
   ) {}
 
   @Cron(EVERY_15_MINUTES)
@@ -37,6 +54,30 @@ export class CronService {
           virtualAssessment.appointment.id,
           { status: VirtualAssessmentStatus.Finished },
         );
+
+        this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.SignOff,
+          virtualAssessment.appointment.user.id,
+        );
+
+        this.notificationService.createNotification(
+          virtualAssessment.appointment.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.SignOff,
+          virtualAssessment.appointment.caregiverInfo.user.id,
+        );
+
+        this.emailService.sendEmail({
+          to: virtualAssessment.appointment.user.email,
+          templateId: this.seekerVirtualAssessmentDoneTemplateId,
+        });
+
+        this.emailService.sendEmail({
+          to: virtualAssessment.appointment.caregiverInfo.user.email,
+          templateId: this.caregiverVirtualAssessmentDoneTemplateId,
+        });
       }),
     );
   }
@@ -177,5 +218,39 @@ export class CronService {
         await this.paymentService.chargeRecurringPaymentTask(appointment.id);
       }
     });
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async sendVirtualAssessmentStartNotification(): Promise<void> {
+    const virtualAssessments =
+      await this.virtualAssessmentService.getAssessmentsStartingInFiveMinutes();
+
+    await Promise.all(
+      virtualAssessments.map(async (virtualAssessment) => {
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.FiveMinBeforeVA,
+          virtualAssessment.appointment.user.id,
+        );
+
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.FiveMinBeforeVA,
+          virtualAssessment.appointment.caregiverInfo.user.id,
+        );
+
+        await this.emailService.sendEmail({
+          to: virtualAssessment.appointment.user.email,
+          templateId: this.assessmentReminderTemplateId,
+        });
+
+        await this.emailService.sendEmail({
+          to: virtualAssessment.appointment.caregiverInfo.user.email,
+          templateId: this.assessmentReminderTemplateId,
+        });
+      }),
+    );
   }
 }
