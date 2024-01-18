@@ -1,14 +1,19 @@
-export const NOTIFICATION_HISTORY_EXAMPLE = [
-  {
-    id: 'd1b7ab47-e880-43df-90f1-41228b586282',
-    status: 'REJECTED_APPOINTMENT',
-    appointmentId: '1354a2d6-76e4-4aea-a312-7fb00c321e4e',
-    user: 'Bob Caregiver',
-  },
-  {
-    id: 'd1b7ab47-e880-43df-90f1-41228b586282',
-    status: 'ACCEPTED_VA',
-    appointmentId: '1354a2d6-76e4-4aea-a312-7fb00c321e4e',
-    user: 'Bob Caregiver',
-  },
-];
+export const NOTIFICATION_PAGINATION_LIMIT = 10;
+
+export const NOTIFICATION_HISTORY_EXAMPLE = {
+  notifications: [
+    {
+      id: '204236a0-4e9b-4418-9502-6e4269e3eda6',
+      appointmentId: '3394df77-379c-46eb-9c8c-781a6173ba39',
+      status: 'FIVE_MIN_BEFORE_VA',
+      user: 'Alex Polofj',
+    },
+    {
+      id: 'b1eb9542-a9a8-4246-a79f-9e2fc9454f6e',
+      appointmentId: '3394df77-379c-46eb-9c8c-781a6173ba39',
+      status: 'FIVE_MIN_BEFORE_VA',
+      user: 'Alex Polofj',
+    },
+  ],
+  count: 2,
+};
