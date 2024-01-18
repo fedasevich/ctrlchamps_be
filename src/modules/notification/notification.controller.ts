@@ -1,4 +1,11 @@
-import { Controller, Get, HttpStatus, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Notification } from 'src/common/entities/notification.entity';
@@ -9,6 +16,7 @@ import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { NOTIFICATION_HISTORY_EXAMPLE } from './constants/notification.constants';
 import { NotificationApiPath } from './enums/notification.api-path.enum';
 import { NotificationService } from './notification.service';
+import { UnreadNotificationsResponse } from './types/notifications.types';
 
 @ApiTags('Notifications')
 @Controller(ApiPath.Notifications)
@@ -33,5 +41,42 @@ export class NotificationController {
     @Param('userId') userId: string,
   ): Promise<Notification[]> {
     return this.notificationService.getNotifications(userId);
+  }
+
+  @ApiOperation({ summary: 'Get all unread notifications' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Notification were sent successfully',
+    schema: {
+      example: { data: NOTIFICATION_HISTORY_EXAMPLE, count: 2 },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.UserIsNotAuthorized,
+  })
+  @Get(NotificationApiPath.Unread)
+  getUnreadNotifications(
+    @Param('userId') userId: string,
+  ): Promise<UnreadNotificationsResponse> {
+    return this.notificationService.getUnreadNotifications(userId);
+  }
+
+  @ApiOperation({ summary: 'Update all notifications to isRead' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Notifications updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: ErrorMessage.UserIsNotAuthorized,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  @Patch(NotificationApiPath.Unread)
+  updateNotificationsToRead(@Param('userId') userId: string): Promise<void> {
+    return this.notificationService.updateNotificationsToRead(userId);
   }
 }
