@@ -5,14 +5,31 @@ import {
   Injectable,
   forwardRef,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { format, getDay, differenceInWeeks } from 'date-fns';
+import {
+  format,
+  getDay,
+  differenceInWeeks,
+  getHours,
+  getMinutes,
+  addWeeks,
+  isSameDay,
+  addDays,
+  addMinutes,
+} from 'date-fns';
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
+import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { NotificationMessage } from 'src/common/enums/notification-message.enum';
+import { AdminPanelService } from 'src/modules/admin-panel/admin-panel.service';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
+import { DebtStatus } from 'src/modules/appointment/enums/debt-status.enum';
+import { EmailService } from 'src/modules/email/services/email.service';
+import { NotificationService } from 'src/modules/notification/notification.service';
 import { EntityManager, Repository } from 'typeorm';
 
 import { ActivityLogStatus } from '../activity-log/enums/activity-log-status.enum';
@@ -22,7 +39,14 @@ import { CaregiverInfoService } from '../caregiver-info/caregiver-info.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UserService } from '../users/user.service';
 
-import { ALREADY_PAID_HOUR, ONE_WEEK } from './constants/payment.constants';
+import {
+  ALREADY_PAID_HOUR,
+  FIVE_MINUTES,
+  ONE_DAY,
+  ONE_WEEK,
+  TWO_DAYS,
+  TWO_WEEKS,
+} from './constants/payment.constants';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionType } from './enums/transaction-type.enum';
 import { getHourDifference } from './helpers/difference-in-hours';
@@ -30,6 +54,21 @@ import { Transaction } from './types/transaction-history.type';
 
 @Injectable()
 export class PaymentService {
+  private readonly seekerPaymentReminderTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_SEEKER_PAYMENT_REMINDER_TEMPLATE_ID',
+    );
+
+  private readonly allAdminsPaymentReminderTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_ALL_ADMINS_PAYMENT_REMINDER_TEMPLATE_ID',
+    );
+
+  private readonly caregiverAppointmentPausedTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_CAREGIVER_APPOINTMENT_PAUSED_TEMPLATE_ID',
+    );
+
   constructor(
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
@@ -41,6 +80,10 @@ export class PaymentService {
     private appointmentService: AppointmentService,
     private readonly userService: UserService,
     private readonly caregiverInfoService: CaregiverInfoService,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
+    private readonly adminPanelService: AdminPanelService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   public async payForHourOfWork(
@@ -102,7 +145,7 @@ export class PaymentService {
   private async payForCompletedOneTimeAppointment(
     appointmentId: string,
     transactionalEntityManager: EntityManager,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       const appointment =
         await this.appointmentService.findOneById(appointmentId);
@@ -131,16 +174,32 @@ export class PaymentService {
       }
 
       const amountToPay =
-        (appointmentDuration + ALREADY_PAID_HOUR) * caregiverInfo.hourlyRate;
+        (appointmentDuration - ALREADY_PAID_HOUR) * caregiverInfo.hourlyRate;
 
       const { userId } = appointment;
       const seeker = await this.userService.findById(userId);
 
       if (seeker.balance < amountToPay) {
-        throw new HttpException(
-          ErrorMessage.InsufficientFunds,
-          HttpStatus.BAD_REQUEST,
+        if (appointment.debtStatus === DebtStatus.Absent) {
+          await this.appointmentService.updateById(appointmentId, {
+            debtStatus: DebtStatus.NotAccrued,
+          });
+        }
+
+        await this.checkSeekerDebt(
+          seeker,
+          amountToPay,
+          endDate,
+          caregiverInfo.user,
+          appointmentId,
+          appointment.name,
+          appointment.debtStatus === DebtStatus.Absent
+            ? DebtStatus.NotAccrued
+            : appointment.debtStatus,
+          transactionalEntityManager,
         );
+
+        return false;
       }
 
       const seekerUpdatedBalance = seeker.balance - amountToPay;
@@ -170,6 +229,8 @@ export class PaymentService {
         transactionalEntityManager,
         appointmentId,
       );
+
+      return true;
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -331,14 +392,22 @@ export class PaymentService {
     try {
       await this.appointmentRepository.manager.transaction(
         async (transactionalEntityManager) => {
-          await this.payForCompletedOneTimeAppointment(
-            appointmentId,
-            transactionalEntityManager,
-          );
-          await this.appointmentRepository.update(
-            { id: appointmentId },
-            { status: AppointmentStatus.Finished },
-          );
+          const isPaymentSuccessful =
+            await this.payForCompletedOneTimeAppointment(
+              appointmentId,
+              transactionalEntityManager,
+            );
+
+          if (isPaymentSuccessful) {
+            await this.appointmentRepository.update(
+              { id: appointmentId },
+              { status: AppointmentStatus.Finished },
+            );
+
+            await this.appointmentService.updateById(appointmentId, {
+              debtStatus: DebtStatus.Absent,
+            });
+          }
         },
       );
     } catch (error) {
@@ -492,6 +561,137 @@ export class PaymentService {
       await this.userService.updateUserInfo(userId, {
         balance: updatedBalance,
       });
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private async checkSeekerDebt(
+    seeker: User,
+    amountToPay: number,
+    endDate: Date,
+    caregiver: User,
+    appointmentId: string,
+    appointmentName: string,
+    debtStatus: DebtStatus,
+    transactionalEntityManager: EntityManager,
+  ): Promise<void> {
+    try {
+      const currentDate = new Date();
+
+      console.log('endDate', endDate);
+      console.log('currentDate', currentDate);
+
+      if (
+        debtStatus === DebtStatus.NotAccrued &&
+        isSameDay(endDate, currentDate)
+      ) {
+        await this.userService.updateWithTransaction(
+          seeker.email,
+          {
+            debt: seeker.debt + amountToPay,
+          },
+          transactionalEntityManager,
+        );
+
+        await this.appointmentService.updateById(appointmentId, {
+          debtStatus: DebtStatus.Accrued,
+        });
+
+        await this.notifySeekerAndAdminsAboutDebt(
+          seeker,
+          caregiver,
+          appointmentId,
+        );
+      }
+
+      if (
+        (isSameDay(addDays(endDate, ONE_DAY), currentDate) ||
+          isSameDay(addWeeks(endDate, ONE_WEEK), currentDate) ||
+          isSameDay(addWeeks(endDate, TWO_WEEKS), currentDate)) &&
+        getHours(endDate) === getHours(currentDate) &&
+        (getMinutes(endDate) === getMinutes(currentDate) ||
+          getMinutes(addMinutes(currentDate, FIVE_MINUTES)) ===
+            getMinutes(endDate))
+      ) {
+        await this.notifySeekerAndAdminsAboutDebt(
+          seeker,
+          caregiver,
+          appointmentId,
+        );
+      }
+
+      if (
+        isSameDay(addDays(endDate, TWO_DAYS), currentDate) &&
+        getHours(endDate) === getHours(currentDate) &&
+        (getMinutes(endDate) === getMinutes(currentDate) ||
+          getMinutes(addMinutes(currentDate, FIVE_MINUTES)) ===
+            getMinutes(endDate))
+      ) {
+        await this.emailService.sendEmail({
+          to: caregiver.email,
+          templateId: this.caregiverAppointmentPausedTemplateId,
+          dynamicTemplateData: {
+            caregiverName: `${caregiver.firstName} ${caregiver.lastName}`,
+            seekerName: `${seeker.firstName} ${seeker.lastName}`,
+            appointmentName,
+          },
+        });
+
+        await this.notificationService.createNotification(
+          caregiver.id,
+          appointmentId,
+          NotificationMessage.PausedAppointment,
+          seeker.id,
+        );
+      }
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private async notifySeekerAndAdminsAboutDebt(
+    seeker: User,
+    caregiver: User,
+    appointmentId: string,
+  ): Promise<void> {
+    try {
+      await this.emailService.sendEmail({
+        to: seeker.email,
+        templateId: this.seekerPaymentReminderTemplateId,
+        dynamicTemplateData: {
+          name: `${seeker.firstName} ${seeker.lastName}`,
+        },
+      });
+
+      await this.notifyAllAdminsAboutDebt(seeker, caregiver, appointmentId);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private async notifyAllAdminsAboutDebt(
+    seeker: User,
+    caregiver: User,
+    appointmentId: string,
+  ): Promise<void> {
+    try {
+      const admins = await this.adminPanelService.getAllAdmins();
+
+      await Promise.all(
+        admins.map(async (admin) => {
+          await this.emailService.sendEmail({
+            to: admin.email,
+            templateId: this.allAdminsPaymentReminderTemplateId,
+            dynamicTemplateData: {
+              seekerName: `${seeker.firstName} ${seeker.lastName}`,
+              seekerId: seeker.id,
+              caregiverName: `${caregiver.firstName} ${caregiver.lastName}`,
+              appointmentId,
+            },
+          });
+        }),
+      );
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

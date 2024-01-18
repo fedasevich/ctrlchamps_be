@@ -4,6 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
+import { AdminPanelModule } from 'src/modules/admin-panel/admin-panel.module';
+import { EmailModule } from 'src/modules/email/email.module';
+import { NotificationModule } from 'src/modules/notification/notification.module';
 
 import { AppointmentModule } from '../appointment/appointment.module';
 import { CaregiverInfoModule } from '../caregiver-info/caregiver-info.module';
@@ -18,6 +21,9 @@ import { PaymentService } from './payment.service';
     forwardRef(() => AppointmentModule),
     forwardRef(() => CaregiverInfoModule),
     UserModule,
+    EmailModule,
+    AdminPanelModule,
+    NotificationModule,
   ],
   controllers: [PaymentController],
   providers: [PaymentService],

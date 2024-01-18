@@ -13,4 +13,5 @@ export enum NotificationMessage {
   ActivityLogReview = 'ACTIVITY_LOG_REVIEW',
   ActivityLogApproved = 'ACTIVITY_LOG_APPROVED',
   ActivityLogRejected = 'ACTIVITY_LOG_REJECTED',
+  PausedAppointment = 'PAUSED_APPOINTMENT',
 }

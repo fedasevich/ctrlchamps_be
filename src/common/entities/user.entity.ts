@@ -151,6 +151,13 @@ export class User {
   balance: number;
 
   @ApiProperty({
+    description: 'User debt',
+    example: '100',
+  })
+  @Column({ default: 0, type: 'float' })
+  debt: number;
+
+  @ApiProperty({
     description: 'Link of user`s avatar',
     example: 'https://images/avatar',
   })

@@ -190,4 +190,17 @@ export class AdminPanelService {
       );
     }
   }
+
+  async getAllAdmins(): Promise<User[]> {
+    try {
+      return await this.userRepository
+        .createQueryBuilder('user')
+        .where('user.role IN (:...roles)', {
+          roles: [UserRole.Admin, UserRole.SuperAdmin],
+        })
+        .getMany();
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
