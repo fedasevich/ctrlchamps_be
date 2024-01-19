@@ -677,17 +677,17 @@ export class AppointmentService {
         .execute();
 
       await this.notificationService.createNotification(
-        appointment.userId,
+        appointment.user.id,
         appointmentId,
-        NotificationMessage.RequestedAppointment,
+        NotificationMessage.InsufficientFirstHourPayment,
         appointment.caregiverInfo.user.id,
       );
 
       await this.notificationService.createNotification(
         appointment.caregiverInfo.user.id,
         appointmentId,
-        NotificationMessage.RequestedAppointment,
-        appointment.userId,
+        NotificationMessage.InsufficientFirstHourPayment,
+        appointment.user.id,
       );
     } catch (error) {
       throw new HttpException(
