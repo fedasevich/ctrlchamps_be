@@ -51,4 +51,7 @@ export enum ErrorMessage {
   DefaultSeekerTaskNotFound = 'Default seeker task not found',
   FailedUpdateDefaultSeekerTask = 'Failed to update default seeker task',
   FailedDeleteDefaultSeekerTask = 'Failed to delete default seeker task',
+  FailedUpdateNotification = 'Failed to update notifications',
+  UnreadNotificationsNotFound = 'Unread notifications not found',
+  FailedFetchUnreadNotifications = 'Failed to fetch unread notifications',
 }
