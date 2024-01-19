@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { format, getDay, differenceInWeeks } from 'date-fns';
+import { differenceInWeeks, format, getDay } from 'date-fns';
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
@@ -24,12 +24,19 @@ import { EmailService } from '../email/services/email.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UserService } from '../users/user.service';
 
-import { ALREADY_PAID_HOUR, ONE_WEEK } from './constants/payment.constants';
+import {
+  ALREADY_PAID_HOUR,
+  ONE_WEEK,
+  TRANSACTION_PAGINATION_LIMIT,
+} from './constants/payment.constants';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionType } from './enums/transaction-type.enum';
 import { getHourDifference } from './helpers/difference-in-hours';
-import { PayForHourOfWorkResponse } from './types/payment-response.type';
-import { Transaction } from './types/transaction-history.type';
+import {
+  TransactionQuery,
+  TransactionsListResponse,
+} from './types/transaction-query.type';
+
 
 @Injectable()
 export class PaymentService {
@@ -397,17 +404,28 @@ export class PaymentService {
     }
   }
 
-  async getTransactionHistory(userId: string): Promise<Transaction[]> {
+  async getTransactionHistory(
+    userId: string,
+    query: TransactionQuery,
+  ): Promise<TransactionsListResponse> {
     try {
-      const transactions = await this.transactionHistoryRepository
+      const limit = query.limit || TRANSACTION_PAGINATION_LIMIT;
+      const offset = query.offset || 0;
+
+      const [result, total] = await this.transactionHistoryRepository
         .createQueryBuilder('transactions')
         .where('userId = :userId', {
           userId,
         })
         .orderBy('transactions.createdAt', 'DESC')
-        .getMany();
+        .take(limit)
+        .skip(offset)
+        .getManyAndCount();
 
-      return transactions;
+      return {
+        data: result,
+        count: total,
+      };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

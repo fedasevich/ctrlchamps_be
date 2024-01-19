@@ -5,6 +5,8 @@ import { Notification } from 'src/common/entities/notification.entity';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { Repository } from 'typeorm';
 
+import { NotificationsListResponse } from './types/notification.type';
+
 @Injectable()
 export class NotificationService {
   constructor(
@@ -12,7 +14,7 @@ export class NotificationService {
     private readonly notificationRepository: Repository<Notification>,
   ) {}
 
-  async getNotifications(userId: string): Promise<Notification[]> {
+  async getNotifications(userId: string): Promise<NotificationsListResponse> {
     try {
       const notifications = await this.notificationRepository
         .createQueryBuilder('notification')
@@ -29,7 +31,7 @@ export class NotificationService {
         .orderBy('notification.createdAt', 'DESC')
         .getRawMany();
 
-      return notifications;
+      return { data: notifications, count: notifications.length };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
