@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { differenceInWeeks, format, getDay } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
@@ -23,6 +24,7 @@ import { CaregiverInfoService } from '../caregiver-info/caregiver-info.service';
 import { EmailService } from '../email/services/email.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UserService } from '../users/user.service';
+import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment.constant';
 
 import {
   ALREADY_PAID_HOUR,
@@ -248,7 +250,7 @@ export class PaymentService {
 
       const { startDate, endDate } = appointment;
 
-      const today = new Date();
+      const today = utcToZonedTime(new Date(), UTC_TIMEZONE);
       const weeksDifference = differenceInWeeks(today, startDate);
       const appointmentDuration = getHourDifference(startDate, endDate);
       let payForCompletedRecurringAppointment: number;
@@ -328,7 +330,9 @@ export class PaymentService {
 
         if (JSON.parse(appointment.weekday).length === activityLogs.length) {
           await this.chargeForRecurringAppointment(appointmentId);
-        } else if (new Date() === appointment.endDate) {
+        } else if (
+          utcToZonedTime(new Date(), UTC_TIMEZONE) === appointment.endDate
+        ) {
           await this.chargeForRecurringAppointment(appointmentId);
           await this.appointmentRepository.update(
             { id: appointmentId },

@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { addHours, isAfter } from 'date-fns';
 
+import { addHours, isAfter } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 import { TODAY_DATE } from 'src/common/constants/date.constants';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
@@ -20,6 +21,7 @@ import { EmailService } from 'src/modules/email/services/email.service';
 
 import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
+import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment.constant';
 import { VirtualAssessmentService } from '../virtual-assessment/virtual-assessment.service';
 
 @Injectable()
@@ -114,7 +116,7 @@ export class CronService {
 
     await Promise.all(
       appointments.map(async (appointment): Promise<void> => {
-        const currentDate = new Date();
+        const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
         const currentDateString = currentDate.toString();
         const startDateString = appointment.startDate.toString();
 

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { format, addMinutes } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 import { Response } from 'express';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
@@ -16,6 +17,7 @@ import { Repository } from 'typeorm';
 import { NotificationService } from '../notification/notification.service';
 
 import {
+  UTC_TIMEZONE,
   FOUR_MINUTES,
   SIX_MINUTES,
   VIRTUAL_ASSESSMENT_DATE_FORMAT,
@@ -363,8 +365,9 @@ export class VirtualAssessmentService {
 
   async getTodaysVirtualAssessmentsByTime(): Promise<VirtualAssessment[]> {
     try {
-      const currentDate = format(new Date(), VIRTUAL_ASSESSMENT_DATE_FORMAT);
-      const currentTime = format(new Date(), VIRTUAL_ASSESSMENT_TIME_FORMAT);
+      const now = utcToZonedTime(new Date(), UTC_TIMEZONE);
+      const currentDate = format(now, VIRTUAL_ASSESSMENT_DATE_FORMAT);
+      const currentTime = format(now, VIRTUAL_ASSESSMENT_TIME_FORMAT);
 
       const virtualAssessments = await this.virtualAssessmentRepository
         .createQueryBuilder('virtualAssessment')

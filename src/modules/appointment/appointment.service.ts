@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { format } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 import { DATE_FORMAT, TODAY_DATE } from 'src/common/constants/date.constants';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
@@ -31,6 +32,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
 import { UserRole } from '../users/enums/user-role.enum';
+import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment.constant';
 
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { AppointmentType as TypeOfAppointment } from './enums/appointment-type.enum';
@@ -568,7 +570,9 @@ export class AppointmentService {
           recurring: TypeOfAppointment.Recurring,
         },
       )
-      .andWhere('appointment.startDate <= :now', { now: new Date() })
+      .andWhere('appointment.startDate <= :now', {
+        now: utcToZonedTime(new Date(), UTC_TIMEZONE),
+      })
       .getMany();
 
     return appointments;
