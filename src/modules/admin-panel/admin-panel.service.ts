@@ -14,9 +14,9 @@ import { AdminCreateDto } from './dto/admin-create.dto';
 import { AdminUpdateDto } from './dto/admin-update.dto';
 import { PasswordUpdateDto } from './dto/password-update.dto';
 import {
+  AdminDetails,
   AdminListResponse,
   UserQuery,
-  AdminDetails,
 } from './types/admin-panel.types';
 
 @Injectable()
@@ -53,6 +53,21 @@ export class AdminPanelService {
         data: result,
         count: total,
       };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getAllAdmins(): Promise<User[]> {
+    try {
+      const admins = await this.userRepository
+        .createQueryBuilder('user')
+        .where('user.role IN (:...roles)', {
+          roles: [UserRole.Admin, UserRole.SuperAdmin],
+        })
+        .getMany();
+
+      return admins;
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

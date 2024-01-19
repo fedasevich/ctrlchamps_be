@@ -22,5 +22,6 @@ import { AdminPanelService } from './admin-panel.service';
   ],
   controllers: [AdminPanelController],
   providers: [AdminPanelService],
+  exports: [AdminPanelService],
 })
 export class AdminPanelModule {}
