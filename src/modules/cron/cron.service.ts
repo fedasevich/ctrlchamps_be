@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { addHours, isAfter } from 'date-fns';
 
+import { TODAY_DATE } from 'src/common/constants/date.constants';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { VirtualAssessmentStatus } from 'src/common/enums/virtual-assessment.enum';
 import { convertWeekdayToNumber } from 'src/common/helpers/convert-weekday-to-number.helper';
@@ -12,6 +14,7 @@ import {
   EVERY_10_MINUTES,
   EVERY_15_MINUTES,
   NEXT_DAY_NUMBER,
+  PAYMENT_APPOINTMENT_DEADLINE,
 } from 'src/modules/cron/cron.constants';
 import { EmailService } from 'src/modules/email/services/email.service';
 
@@ -77,6 +80,26 @@ export class CronService {
           to: virtualAssessment.appointment.caregiverInfo.user.email,
           templateId: this.caregiverVirtualAssessmentDoneTemplateId,
         });
+      }),
+    );
+  }
+
+  @Cron(EVERY_15_MINUTES)
+  async checkUnpaidAppointments(): Promise<void> {
+    const todayUnpaidAppointments =
+      await this.appointmentService.getTodayUnpaidAppointments();
+    const currentTime = TODAY_DATE;
+
+    await Promise.all(
+      todayUnpaidAppointments.map(async (appointment) => {
+        const paymentDeadline = addHours(
+          appointment.startDate,
+          PAYMENT_APPOINTMENT_DEADLINE,
+        );
+
+        if (isAfter(currentTime, paymentDeadline)) {
+          await this.appointmentService.cancelUnpaidAppointment(appointment.id);
+        }
       }),
     );
   }
