@@ -6,7 +6,7 @@ import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { Repository } from 'typeorm';
 
-import { UnreadNotificationsResponse } from './types/notifications.types';
+import { UnreadNotificationsResponse } from './types/notification.type';
 
 @Injectable()
 export class NotificationService {
