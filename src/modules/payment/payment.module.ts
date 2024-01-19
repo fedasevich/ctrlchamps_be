@@ -7,6 +7,7 @@ import { TransactionHistory } from 'src/common/entities/transaction-history.enti
 
 import { AppointmentModule } from '../appointment/appointment.module';
 import { CaregiverInfoModule } from '../caregiver-info/caregiver-info.module';
+import { EmailModule } from '../email/email.module';
 import { UserModule } from '../users/user.module';
 
 import { PaymentController } from './payment.controller';
@@ -16,8 +17,9 @@ import { PaymentService } from './payment.service';
   imports: [
     TypeOrmModule.forFeature([Appointment, ActivityLog, TransactionHistory]),
     forwardRef(() => AppointmentModule),
-    CaregiverInfoModule,
+    forwardRef(() => CaregiverInfoModule),
     UserModule,
+    EmailModule,
   ],
   controllers: [PaymentController],
   providers: [PaymentService],

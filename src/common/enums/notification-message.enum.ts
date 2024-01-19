@@ -6,9 +6,12 @@ export enum NotificationMessage {
   AcceptedVA = 'ACCEPTED_VA',
   RejectedVA = 'REJECTED_VA',
   RescheduleVA = 'RESCHEDULE_VA',
+  RequestedVA = 'REQUESTED_VA',
+  FiveMinBeforeVA = 'FIVE_MIN_BEFORE_VA',
   SignOff = 'SIGN_OFF',
   ActivityLogRequest = 'ACTIVITY_LOG_REQUEST',
   ActivityLogReview = 'ACTIVITY_LOG_REVIEW',
   ActivityLogApproved = 'ACTIVITY_LOG_APPROVED',
   ActivityLogRejected = 'ACTIVITY_LOG_REJECTED',
+  InsufficientFirstHourPayment = 'INSUFFICIENT_FIRST_HOUR_PAYMENT',
 }

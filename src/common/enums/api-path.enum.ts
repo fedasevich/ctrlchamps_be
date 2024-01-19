@@ -11,4 +11,5 @@ export enum ApiPath {
   Transactions = 'transactions',
   Notifications = 'notifications',
   AdminPanel = 'admin-panel',
+  DefaultSeekerTask = 'default-seeker-task',
 }
