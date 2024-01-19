@@ -18,6 +18,7 @@ export type Appointment = {
   timezone: string;
   weekdays?: string[];
   payment?: number;
+  paidForFirstHour?: boolean;
 };
 
 export type AppointmentQuery = {

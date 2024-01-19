@@ -87,6 +87,13 @@ export class Appointment {
   payment: number;
 
   @ApiProperty({
+    description: 'Paid for first hour',
+    example: 'true',
+  })
+  @Column({ default: false })
+  paidForFirstHour: boolean;
+
+  @ApiProperty({
     example: 'Location Address',
     description: 'Location of the appointment',
   })
