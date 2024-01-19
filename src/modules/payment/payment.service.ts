@@ -32,11 +32,11 @@ import {
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionType } from './enums/transaction-type.enum';
 import { getHourDifference } from './helpers/difference-in-hours';
+import { PayForHourOfWorkResponse } from './types/payment-response.type';
 import {
   TransactionQuery,
   TransactionsListResponse,
 } from './types/transaction-query.type';
-
 
 @Injectable()
 export class PaymentService {
