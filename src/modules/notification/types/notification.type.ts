@@ -1,14 +1,16 @@
-import { NotificationMessage } from 'src/common/enums/notification-message.enum';
-
-export interface Notification {
-  id: string;
-  status: NotificationMessage;
-  appointmentId: string;
-  user: string;
-  isRead: boolean;
-}
+import { Notification } from 'src/common/entities/notification.entity';
 
 export interface UnreadNotificationsResponse {
   data: Notification[];
   count: number;
 }
+
+export type NotificationsQuery = {
+  limit?: number;
+  offset?: number;
+};
+
+export type NotificationsListResponse = {
+  data: Notification[];
+  count: number;
+};

@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { Notification } from 'src/common/entities/notification.entity';
 import { ApiPath } from 'src/common/enums/api-path.enum';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
@@ -16,7 +15,7 @@ import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { NOTIFICATION_HISTORY_EXAMPLE } from './constants/notification.constants';
 import { NotificationApiPath } from './enums/notification.api-path.enum';
 import { NotificationService } from './notification.service';
-import { UnreadNotificationsResponse } from './types/notification.type';
+import { UnreadNotificationsResponse, NotificationsListResponse } from './types/notification.type';
 
 @ApiTags('Notifications')
 @Controller(ApiPath.Notifications)
@@ -39,7 +38,7 @@ export class NotificationController {
   @Get(NotificationApiPath.UserId)
   getNotificationsHistory(
     @Param('userId') userId: string,
-  ): Promise<Notification[]> {
+  ): Promise<NotificationsListResponse> {
     return this.notificationService.getNotifications(userId);
   }
 
