@@ -191,11 +191,9 @@ export class CronService {
               appointment.id,
             );
 
-          const VADateString = virtualAssessment.assessmentDate.toString();
-
           if (
             virtualAssessment.status === VirtualAssessmentStatus.Proposed &&
-            currentDateString >= VADateString
+            currentDateString >= startDateString
           ) {
             await this.appointmentService.updateById(appointment.id, {
               status: AppointmentStatus.Rejected,
