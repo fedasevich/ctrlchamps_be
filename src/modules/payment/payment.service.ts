@@ -27,6 +27,7 @@ import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { AdminPanelService } from 'src/modules/admin-panel/admin-panel.service';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
+import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
 import { DebtStatus } from 'src/modules/appointment/enums/debt-status.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
 import { NotificationService } from 'src/modules/notification/notification.service';
@@ -180,22 +181,11 @@ export class PaymentService {
       const seeker = await this.userService.findById(userId);
 
       if (seeker.balance < amountToPay) {
-        if (appointment.debtStatus === DebtStatus.Absent) {
-          await this.appointmentService.updateById(appointmentId, {
-            debtStatus: DebtStatus.NotAccrued,
-          });
-        }
-
         await this.checkSeekerDebt(
           seeker,
-          amountToPay,
           endDate,
           caregiverInfo.user,
-          appointmentId,
-          appointment.name,
-          appointment.debtStatus === DebtStatus.Absent
-            ? DebtStatus.NotAccrued
-            : appointment.debtStatus,
+          appointment,
           transactionalEntityManager,
         );
 
@@ -246,7 +236,7 @@ export class PaymentService {
   private async payForCompletedRecurringAppointment(
     appointmentId: string,
     transactionalEntityManager: EntityManager,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       const appointment =
         await this.appointmentService.findOneById(appointmentId);
@@ -304,6 +294,18 @@ export class PaymentService {
           appointmentDuration;
       }
 
+      if (seeker.balance < payForCompletedRecurringAppointment) {
+        await this.checkSeekerDebt(
+          seeker,
+          endDate,
+          caregiverInfo.user,
+          appointment,
+          transactionalEntityManager,
+        );
+
+        return false;
+      }
+
       const seekerUpdatedBalance =
         seeker.balance - payForCompletedRecurringAppointment;
 
@@ -333,6 +335,8 @@ export class PaymentService {
         transactionalEntityManager,
         appointmentId,
       );
+
+      return true;
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -351,8 +355,18 @@ export class PaymentService {
     try {
       const appointment =
         await this.appointmentService.findOneById(appointmentId);
+      console.log('in chargeRecurringPaymentTask');
+      console.log('new Date()', new Date());
 
       const dayName = format(getDay(new Date()), 'EEEE');
+      console.log('dayName', dayName);
+      console.log('getDay(new Date())', getDay(new Date()));
+
+      console.log(
+        'JSON.parse(appointment.weekday)[0]',
+        JSON.parse(appointment.weekday)[0],
+      );
+
       if (dayName === JSON.parse(appointment.weekday)[0]) {
         const activityLogs = await this.activityLogRepository
           .createQueryBuilder('activityLog')
@@ -363,14 +377,44 @@ export class PaymentService {
             appointmentId,
           })
           .getMany();
+        console.log('activityLogs', activityLogs);
+        console.log(
+          'JSON.parse(appointment.weekday).length',
+          JSON.parse(appointment.weekday).length,
+        );
 
         if (JSON.parse(appointment.weekday).length === activityLogs.length) {
-          await this.chargeForRecurringAppointment(appointmentId);
+          console.log('isPaymentSuccessful тру первый иф рекьюр');
+
+          const isPaymentSuccessful =
+            await this.chargeForRecurringAppointment(appointmentId);
+
+          if (
+            isPaymentSuccessful &&
+            appointment.status === AppointmentStatus.Paused
+          ) {
+            await this.appointmentRepository.update(
+              { id: appointmentId },
+              { status: AppointmentStatus.Active },
+            );
+          }
         } else if (new Date() === appointment.endDate) {
-          await this.chargeForRecurringAppointment(appointmentId);
-          await this.appointmentRepository.update(
-            { id: appointmentId },
-            { status: AppointmentStatus.Finished },
+          const isPaymentSuccessful =
+            await this.chargeForRecurringAppointment(appointmentId);
+          console.log('new Date() === appointment.endDate');
+
+          if (isPaymentSuccessful) {
+            console.log('before  AppointmentStatus.Finished');
+
+            await this.appointmentRepository.update(
+              { id: appointmentId },
+              { status: AppointmentStatus.Finished },
+            );
+          }
+
+          console.log(
+            'isPaymentSuccessful after AppointmentStatus.Finished',
+            isPaymentSuccessful,
           );
         }
       }
@@ -399,14 +443,14 @@ export class PaymentService {
             );
 
           if (isPaymentSuccessful) {
-            await this.appointmentRepository.update(
-              { id: appointmentId },
-              { status: AppointmentStatus.Finished },
+            await this.appointmentService.updateByIdWithTransaction(
+              appointmentId,
+              {
+                status: AppointmentStatus.Finished,
+                debtStatus: DebtStatus.Absent,
+              },
+              transactionalEntityManager,
             );
-
-            await this.appointmentService.updateById(appointmentId, {
-              debtStatus: DebtStatus.Absent,
-            });
           }
         },
       );
@@ -424,20 +468,32 @@ export class PaymentService {
 
   private async chargeForRecurringAppointment(
     appointmentId: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
+      let isPaymentSuccessful: boolean;
+
       await this.appointmentRepository.manager.transaction(
         async (transactionalEntityManager) => {
-          await this.payForCompletedRecurringAppointment(
+          isPaymentSuccessful = await this.payForCompletedRecurringAppointment(
             appointmentId,
             transactionalEntityManager,
           );
-          await this.activityLogRepository.update(
-            { appointmentId, status: ActivityLogStatus.Approved },
-            { status: ActivityLogStatus.Closed },
-          );
+          console.log('isPaymentSuccessful before changing ActivityLogStatus');
+
+          if (isPaymentSuccessful) {
+            console.log('isPaymentSuccessful', true);
+
+            await this.activityLogRepository.update(
+              { appointmentId, status: ActivityLogStatus.Approved },
+              { status: ActivityLogStatus.Closed },
+            );
+
+            console.log('after activityLogRepository.update');
+          }
         },
       );
+
+      return isPaymentSuccessful;
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -568,40 +624,40 @@ export class PaymentService {
 
   private async checkSeekerDebt(
     seeker: User,
-    amountToPay: number,
     endDate: Date,
     caregiver: User,
-    appointmentId: string,
-    appointmentName: string,
-    debtStatus: DebtStatus,
+    appointment: Appointment,
     transactionalEntityManager: EntityManager,
   ): Promise<void> {
     try {
       const currentDate = new Date();
+      const actualDebtStatus =
+        appointment.debtStatus === DebtStatus.Absent
+          ? DebtStatus.NotAccrued
+          : appointment.debtStatus;
 
-      console.log('endDate', endDate);
-      console.log('currentDate', currentDate);
-
-      if (
-        debtStatus === DebtStatus.NotAccrued &&
-        isSameDay(endDate, currentDate)
-      ) {
-        await this.userService.updateWithTransaction(
-          seeker.email,
-          {
-            debt: seeker.debt + amountToPay,
-          },
+      if (appointment.debtStatus === DebtStatus.Absent) {
+        await this.appointmentService.updateByIdWithTransaction(
+          appointment.id,
+          { debtStatus: DebtStatus.NotAccrued },
           transactionalEntityManager,
         );
+      }
 
-        await this.appointmentService.updateById(appointmentId, {
-          debtStatus: DebtStatus.Accrued,
-        });
+      if (
+        actualDebtStatus === DebtStatus.NotAccrued &&
+        isSameDay(endDate, currentDate)
+      ) {
+        await this.appointmentService.updateByIdWithTransaction(
+          appointment.id,
+          { debtStatus: DebtStatus.Accrued },
+          transactionalEntityManager,
+        );
 
         await this.notifySeekerAndAdminsAboutDebt(
           seeker,
           caregiver,
-          appointmentId,
+          appointment.id,
         );
       }
 
@@ -617,7 +673,7 @@ export class PaymentService {
         await this.notifySeekerAndAdminsAboutDebt(
           seeker,
           caregiver,
-          appointmentId,
+          appointment.id,
         );
       }
 
@@ -628,19 +684,27 @@ export class PaymentService {
           getMinutes(addMinutes(currentDate, FIVE_MINUTES)) ===
             getMinutes(endDate))
       ) {
+        if (appointment.type === AppointmentType.Recurring) {
+          await this.appointmentService.updateByIdWithTransaction(
+            appointment.id,
+            { status: AppointmentStatus.Paused },
+            transactionalEntityManager,
+          );
+        }
+
         await this.emailService.sendEmail({
           to: caregiver.email,
           templateId: this.caregiverAppointmentPausedTemplateId,
           dynamicTemplateData: {
             caregiverName: `${caregiver.firstName} ${caregiver.lastName}`,
             seekerName: `${seeker.firstName} ${seeker.lastName}`,
-            appointmentName,
+            appointmentName: appointment.name,
           },
         });
 
         await this.notificationService.createNotification(
           caregiver.id,
-          appointmentId,
+          appointment.id,
           NotificationMessage.PausedAppointment,
           seeker.id,
         );
@@ -660,38 +724,23 @@ export class PaymentService {
         to: seeker.email,
         templateId: this.seekerPaymentReminderTemplateId,
         dynamicTemplateData: {
-          name: `${seeker.firstName} ${seeker.lastName}`,
+          seekerName: `${seeker.firstName} ${seeker.lastName}`,
+          caregiverName: `${caregiver.firstName} ${caregiver.lastName}`,
         },
       });
 
-      await this.notifyAllAdminsAboutDebt(seeker, caregiver, appointmentId);
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
+      // const admins = await this.adminPanelService.getAllAdmins();
 
-  private async notifyAllAdminsAboutDebt(
-    seeker: User,
-    caregiver: User,
-    appointmentId: string,
-  ): Promise<void> {
-    try {
-      const admins = await this.adminPanelService.getAllAdmins();
-
-      await Promise.all(
-        admins.map(async (admin) => {
-          await this.emailService.sendEmail({
-            to: admin.email,
-            templateId: this.allAdminsPaymentReminderTemplateId,
-            dynamicTemplateData: {
-              seekerName: `${seeker.firstName} ${seeker.lastName}`,
-              seekerId: seeker.id,
-              caregiverName: `${caregiver.firstName} ${caregiver.lastName}`,
-              appointmentId,
-            },
-          });
-        }),
-      );
+      // await this.emailService.sendEmail({
+      //   to: admins.map((admin) => admin.email),
+      //   templateId: this.allAdminsPaymentReminderTemplateId,
+      //   dynamicTemplateData: {
+      //     seekerName: `${seeker.firstName} ${seeker.lastName}`,
+      //     seekerId: seeker.id,
+      //     caregiverName: `${caregiver.firstName} ${caregiver.lastName}`,
+      //     appointmentId,
+      //   },
+      // });
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

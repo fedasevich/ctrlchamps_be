@@ -1,5 +1,5 @@
 export const ONE_WEEK = 1;
-export const TWO_WEEKS = 7;
+export const TWO_WEEKS = 2;
 
 export const ALREADY_PAID_HOUR = 1;
 

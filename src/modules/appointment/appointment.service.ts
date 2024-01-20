@@ -214,11 +214,11 @@ export class AppointmentService {
             appointmentId,
           );
 
-          await this.sendAppointmentConfirmationEmails(
-            userId,
-            createAppointment.caregiverInfoId,
-            appointmentId,
-          );
+          // await this.sendAppointmentConfirmationEmails(
+          //   userId,
+          //   createAppointment.caregiverInfoId,
+          //   appointmentId,
+          // );
         },
       );
     } catch (error) {
@@ -468,6 +468,10 @@ export class AppointmentService {
           recurring: TypeOfAppointment.Recurring,
         },
       )
+      .orWhere('appointment.status = :paused AND appointment.endDate >= :now', {
+        paused: AppointmentStatus.Paused,
+        now: new Date(),
+      })
       .andWhere('appointment.startDate <= :now', { now: new Date() })
       .getMany();
 
@@ -645,6 +649,25 @@ export class AppointmentService {
         break;
       default:
         return '';
+    }
+  }
+
+  async updateByIdWithTransaction(
+    appointmentId: string,
+    appointment: Partial<Appointment>,
+    transactionalEntityManager: EntityManager,
+  ): Promise<void> {
+    try {
+      await transactionalEntityManager
+        .createQueryBuilder()
+        .update(Appointment)
+        .set(appointment)
+        .where('appointment.id = :appointmentId', {
+          appointmentId,
+        })
+        .execute();
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

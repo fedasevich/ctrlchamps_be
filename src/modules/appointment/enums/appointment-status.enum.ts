@@ -6,6 +6,7 @@ export enum AppointmentStatus {
   SignedCaregiver = 'Signed by caregiver',
   SignedSeeker = 'Signed by seeker',
   Active = 'Active',
+  Paused = 'Paused',
   Ongoing = 'Ongoing',
   Completed = 'Completed',
   Finished = 'Finished',

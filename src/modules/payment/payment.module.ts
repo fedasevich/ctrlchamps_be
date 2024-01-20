@@ -22,7 +22,7 @@ import { PaymentService } from './payment.service';
     forwardRef(() => CaregiverInfoModule),
     UserModule,
     EmailModule,
-    AdminPanelModule,
+    forwardRef(() => AdminPanelModule),
     NotificationModule,
   ],
   controllers: [PaymentController],
