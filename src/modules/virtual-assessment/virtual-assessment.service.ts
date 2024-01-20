@@ -189,6 +189,20 @@ export class VirtualAssessmentService {
         );
       }
 
+      const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
+      const currentDateString = currentDate.toString();
+      const VADateString = virtualAssessment.assessmentDate.toString();
+
+      if (
+        updateStatusDto.status === VirtualAssessmentStatus.Accepted &&
+        VADateString >= currentDateString
+      ) {
+        throw new HttpException(
+          ErrorMessage.AssessmentDate,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
       virtualAssessment.status = updateStatusDto.status;
 
       await this.virtualAssessmentRepository.save(virtualAssessment);
