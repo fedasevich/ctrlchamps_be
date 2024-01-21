@@ -38,6 +38,13 @@ export class Notification {
   createdAt: Date;
 
   @ApiProperty({
+    description: 'Identifies whether the user has read the notification',
+    example: 'false',
+  })
+  @Column({ default: false })
+  isRead: boolean;
+
+  @ApiProperty({
     description: 'Link to the associated appointment',
     type: () => User,
   })

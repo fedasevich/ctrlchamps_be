@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
+<<<<<<< HEAD
 import {
   format,
   differenceInWeeks,
@@ -20,6 +21,10 @@ import {
   subWeeks,
   isSameMinute,
 } from 'date-fns';
+=======
+import { differenceInWeeks, format, getDay } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
+>>>>>>> develop
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
@@ -38,23 +43,35 @@ import { ActivityLogStatus } from '../activity-log/enums/activity-log-status.enu
 import { MINIMUM_BALANCE } from '../appointment/appointment.constants';
 import { AppointmentStatus } from '../appointment/enums/appointment-status.enum';
 import { CaregiverInfoService } from '../caregiver-info/caregiver-info.service';
+import { EmailService } from '../email/services/email.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UserService } from '../users/user.service';
+import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment.constant';
 
 import {
   ALREADY_PAID_HOUR,
+<<<<<<< HEAD
   ONE_DAY,
   ONE_WEEK,
   TWO_DAYS,
   TWO_WEEKS,
+=======
+  ONE_WEEK,
+  TRANSACTION_PAGINATION_LIMIT,
+>>>>>>> develop
 } from './constants/payment.constants';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionType } from './enums/transaction-type.enum';
 import { getHourDifference } from './helpers/difference-in-hours';
-import { Transaction } from './types/transaction-history.type';
+import { PayForHourOfWorkResponse } from './types/payment-response.type';
+import {
+  TransactionQuery,
+  TransactionsListResponse,
+} from './types/transaction-query.type';
 
 @Injectable()
 export class PaymentService {
+<<<<<<< HEAD
   private readonly seekerPaymentReminderTemplateId =
     this.configService.get<string>(
       'SENDGRID_SEEKER_PAYMENT_REMINDER_TEMPLATE_ID',
@@ -69,6 +86,11 @@ export class PaymentService {
     this.configService.get<string>(
       'SENDGRID_CAREGIVER_APPOINTMENT_PAUSED_TEMPLATE_ID',
     );
+=======
+  private readonly seekerBalanceLowTemplateId = this.configService.get<string>(
+    'SENDGRID_INSUFFICIENT_APPOINTMENT_CREATION_BALANCE_TEMPLATE_ID',
+  );
+>>>>>>> develop
 
   constructor(
     @InjectRepository(Appointment)
@@ -81,10 +103,15 @@ export class PaymentService {
     private appointmentService: AppointmentService,
     private readonly userService: UserService,
     private readonly caregiverInfoService: CaregiverInfoService,
+<<<<<<< HEAD
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly adminPanelService: AdminPanelService,
     private readonly notificationService: NotificationService,
+=======
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
+>>>>>>> develop
   ) {}
 
   public async payForHourOfWork(
@@ -92,7 +119,7 @@ export class PaymentService {
     caregiverInfoId: string,
     transactionalEntityManager: EntityManager,
     payBack = false,
-  ): Promise<number> {
+  ): Promise<PayForHourOfWorkResponse> {
     try {
       const { balance, email } = await this.userService.findById(userId);
 
@@ -108,6 +135,8 @@ export class PaymentService {
         );
       }
 
+      const isSufficientCost = balance >= caregiverInfo.hourlyRate;
+
       if (payBack) {
         const updatedSeekerBalance = balance + caregiverInfo.hourlyRate;
 
@@ -117,7 +146,7 @@ export class PaymentService {
           transactionalEntityManager,
         );
 
-        return caregiverInfo.hourlyRate;
+        return { hourlyRate: caregiverInfo.hourlyRate, isSufficientCost };
       }
 
       const updatedSeekerBalance = balance - caregiverInfo.hourlyRate;
@@ -128,9 +157,14 @@ export class PaymentService {
           { balance: updatedSeekerBalance },
           transactionalEntityManager,
         );
+      } else {
+        await this.emailService.sendEmail({
+          to: email,
+          templateId: this.seekerBalanceLowTemplateId,
+        });
       }
 
-      return caregiverInfo.hourlyRate;
+      return { hourlyRate: caregiverInfo.hourlyRate, isSufficientCost };
     } catch (error) {
       if (
         error instanceof HttpException &&
@@ -275,7 +309,7 @@ export class PaymentService {
 
       const { startDate, endDate } = appointment;
 
-      const today = new Date();
+      const today = utcToZonedTime(new Date(), UTC_TIMEZONE);
       const weeksDifference = differenceInWeeks(today, startDate);
       const appointmentDuration = getHourDifference(startDate, endDate);
       let payForCompletedRecurringAppointment: number;
@@ -377,6 +411,7 @@ export class PaymentService {
         if (JSON.parse(appointment.weekday).length === activityLogs.length) {
           await this.chargeForRecurringAppointment(appointmentId);
         } else if (
+<<<<<<< HEAD
           isSameDay(new Date(), appointment.endDate) &&
           isSameMinute(new Date(), appointment.endDate)
         ) {
@@ -392,6 +427,15 @@ export class PaymentService {
               },
             );
           }
+=======
+          utcToZonedTime(new Date(), UTC_TIMEZONE) === appointment.endDate
+        ) {
+          await this.chargeForRecurringAppointment(appointmentId);
+          await this.appointmentRepository.update(
+            { id: appointmentId },
+            { status: AppointmentStatus.Finished },
+          );
+>>>>>>> develop
         }
       }
     } catch (error) {
@@ -475,17 +519,28 @@ export class PaymentService {
     }
   }
 
-  async getTransactionHistory(userId: string): Promise<Transaction[]> {
+  async getTransactionHistory(
+    userId: string,
+    query: TransactionQuery,
+  ): Promise<TransactionsListResponse> {
     try {
-      const transactions = await this.transactionHistoryRepository
+      const limit = query.limit || TRANSACTION_PAGINATION_LIMIT;
+      const offset = query.offset || 0;
+
+      const [result, total] = await this.transactionHistoryRepository
         .createQueryBuilder('transactions')
         .where('userId = :userId', {
           userId,
         })
         .orderBy('transactions.createdAt', 'DESC')
-        .getMany();
+        .take(limit)
+        .skip(offset)
+        .getManyAndCount();
 
-      return transactions;
+      return {
+        data: result,
+        count: total,
+      };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -569,6 +624,7 @@ export class PaymentService {
   ): Promise<void> {
     try {
       const user = await this.userService.findById(userId);
+
       if (user) {
         await this.createTransaction({
           userId,
@@ -583,8 +639,33 @@ export class PaymentService {
         });
       }
 
+      const notPaidAppointments =
+        await this.appointmentService.getAllUnpaidAppointments(userId);
+
+      if (!notPaidAppointments.length) {
+        await this.userService.updateUserInfo(userId, {
+          balance: updatedBalance,
+        });
+
+        return;
+      }
+
+      let newlyUpdatedBalance = updatedBalance;
+
+      for (const appointment of notPaidAppointments) {
+        if (appointment.payment <= newlyUpdatedBalance) {
+          await this.appointmentService.updateById(appointment.id, {
+            paidForFirstHour: true,
+          });
+
+          newlyUpdatedBalance -= appointment.payment;
+        } else {
+          continue;
+        }
+      }
+
       await this.userService.updateUserInfo(userId, {
-        balance: updatedBalance,
+        balance: newlyUpdatedBalance,
       });
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);

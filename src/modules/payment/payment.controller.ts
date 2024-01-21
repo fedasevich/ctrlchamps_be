@@ -1,13 +1,14 @@
 import {
+  Body,
   Controller,
   Get,
-  Body,
-  Param,
-  UseGuards,
   HttpStatus,
+  Param,
   Patch,
+  Query,
   Req,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -20,7 +21,10 @@ import { AuthenticatedRequest } from '../auth/types/user.request.type';
 import { TRANSACTIONS_HISTORY_EXAMPLE } from './constants/transaction-history.constants';
 import { TransactionApiPath } from './enums/transaction-api-path.enum';
 import { PaymentService } from './payment.service';
-import { Transaction } from './types/transaction-history.type';
+import {
+  TransactionQuery,
+  TransactionsListResponse,
+} from './types/transaction-query.type';
 
 @ApiTags('Transactions')
 @Controller(ApiPath.Transactions)
@@ -46,9 +50,10 @@ export class PaymentController {
   })
   @Get(TransactionApiPath.UserId)
   async getTransactionHistory(
+    @Query() query: TransactionQuery,
     @Param('userId') userId: string,
-  ): Promise<Transaction[]> {
-    return this.paymentService.getTransactionHistory(userId);
+  ): Promise<TransactionsListResponse> {
+    return this.paymentService.getTransactionHistory(userId, query);
   }
 
   @ApiOperation({ summary: 'Top-up / Withdraw balance' })

@@ -8,6 +8,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { format } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
+import { DATE_FORMAT, TODAY_DATE } from 'src/common/constants/date.constants';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
@@ -30,6 +33,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
 import { UserRole } from '../users/enums/user-role.enum';
+import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment.constant';
 
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { AppointmentType as TypeOfAppointment } from './enums/appointment-type.enum';
@@ -140,15 +144,16 @@ export class AppointmentService {
             ...appointment
           } = createAppointment;
 
-          const payment = await this.paymentService.payForHourOfWork(
-            userId,
-            createAppointment.caregiverInfoId,
-            transactionalEntityManager,
-          );
+          const { hourlyRate: payment, isSufficientCost: paidForFirstHour } =
+            await this.paymentService.payForHourOfWork(
+              userId,
+              createAppointment.caregiverInfoId,
+              transactionalEntityManager,
+            );
 
           const appointmentId = await this.registerNewAppointment(
             transactionalEntityManager,
-            { ...appointment, payment },
+            { ...appointment, payment, paidForFirstHour },
             userId,
           );
 
@@ -428,6 +433,8 @@ export class AppointmentService {
         );
       }
 
+      const currentDate = format(TODAY_DATE, DATE_FORMAT);
+
       const appointments = await this.appointmentRepository
         .createQueryBuilder('appointment')
 
@@ -437,17 +444,112 @@ export class AppointmentService {
         .innerJoin('appointment.user', 'user')
         .addSelect(['user.id', 'user.lastName', 'user.firstName'])
 
-        .where('caregiverInfo.userId = :userId', { userId })
+        .leftJoin('appointment.virtualAssessment', 'virtualAssessment')
+        .addSelect([
+          'virtualAssessment.id',
+          'virtualAssessment.status',
+          'virtualAssessment.startTime',
+          'virtualAssessment.assessmentDate',
+        ])
 
-        .andWhere('DATE(appointment.startDate) <= :date', {
-          date,
+        .andWhere('(appointment.status  NOT IN (:...statuses)', {
+          statuses: [
+            AppointmentStatus.Virtual,
+            AppointmentStatus.SignedSeeker,
+            AppointmentStatus.SignedCaregiver,
+            AppointmentStatus.Pending,
+          ],
         })
-        .andWhere('DATE(appointment.endDate) >= :date', {
-          date,
+        .andWhere('DATE(appointment.startDate) <= :date', { date })
+        .andWhere('DATE(appointment.endDate) >= :date', { date })
+
+        .orWhere('appointment.status IN (:...statuses)', {
+          statuses: [
+            AppointmentStatus.Virtual,
+            AppointmentStatus.SignedSeeker,
+            AppointmentStatus.SignedCaregiver,
+          ],
         })
+        .andWhere('DATE(virtualAssessment.assessmentDate) = :date', { date })
+
+        .orWhere('appointment.status = :status', {
+          status: AppointmentStatus.Pending,
+        })
+        .andWhere(':date = :currentDate)', {
+          date,
+          currentDate,
+        })
+
+        .andWhere('caregiverInfo.userId = :userId', { userId })
+
+        .orderBy(
+          `CASE
+              WHEN appointment.status = "${AppointmentStatus.Active}" THEN 1
+              WHEN appointment.status IN ("${AppointmentStatus.Virtual}", "${AppointmentStatus.SignedSeeker}", "${AppointmentStatus.SignedCaregiver}") THEN 2
+              WHEN appointment.status = "${AppointmentStatus.Pending}" THEN 3
+              WHEN appointment.status = "${AppointmentStatus.Paused}" THEN 4
+              WHEN appointment.status = "${AppointmentStatus.Rejected}" THEN 6
+              ELSE 5
+            END`,
+          SortOrder.ASC,
+        )
+
         .getMany();
 
       return appointments;
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getTodayUnpaidAppointments(): Promise<Appointment[]> {
+    try {
+      const currentDate = format(TODAY_DATE, DATE_FORMAT);
+
+      const todayAppointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .leftJoinAndSelect('appointment.user', 'user')
+        .leftJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .leftJoinAndSelect('caregiverInfo.user', 'caregiverUser')
+        .where('DATE(appointment.startDate) = :startDate', {
+          startDate: currentDate,
+        })
+        .andWhere('appointment.paidForFirstHour = :paidForFirstHour', {
+          paidForFirstHour: false,
+        })
+        .andWhere('appointment.status != :rejectedStatus', {
+          rejectedStatus: 'Rejected',
+        })
+        .select([
+          'appointment',
+          'user.id',
+          'caregiverInfo.id',
+          'caregiverUser.id as caregiverUserId',
+        ])
+        .getMany();
+
+      return todayAppointments;
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getAllUnpaidAppointments(userId: string): Promise<Appointment[]> {
+    try {
+      return await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where('appointment.userId = :userId', { userId })
+        .andWhere('appointment.paidForFirstHour = :paidForFirstHour', {
+          paidForFirstHour: false,
+        })
+        .orderBy('appointment.createdAt', SortOrder.ASC)
+        .getMany();
     } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,
@@ -469,7 +571,9 @@ export class AppointmentService {
           recurring: TypeOfAppointment.Recurring,
         },
       )
-      .andWhere('appointment.startDate <= :now', { now: new Date() })
+      .andWhere('appointment.startDate <= :now', {
+        now: utcToZonedTime(new Date(), UTC_TIMEZONE),
+      })
       .getMany();
 
     return appointments;
@@ -611,6 +715,47 @@ export class AppointmentService {
           appointmentLink: this.seekerAppointmentRedirectLink,
         },
       });
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedUpdateAppointment,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async cancelUnpaidAppointment(appointmentId: string): Promise<void> {
+    try {
+      const appointment = await this.findOneById(appointmentId);
+
+      if (!appointment) {
+        throw new HttpException(
+          ErrorMessage.AppointmentNotFound,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      await this.appointmentRepository
+        .createQueryBuilder()
+        .update(Appointment)
+        .set({ status: AppointmentStatus.Rejected })
+        .where('appointment.id = :appointmentId', {
+          appointmentId,
+        })
+        .execute();
+
+      await this.notificationService.createNotification(
+        appointment.user.id,
+        appointmentId,
+        NotificationMessage.InsufficientFirstHourPayment,
+        appointment.caregiverInfo.user.id,
+      );
+
+      await this.notificationService.createNotification(
+        appointment.caregiverInfo.user.id,
+        appointmentId,
+        NotificationMessage.InsufficientFirstHourPayment,
+        appointment.user.id,
+      );
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedUpdateAppointment,
