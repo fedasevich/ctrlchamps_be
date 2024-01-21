@@ -183,6 +183,19 @@ export class CronService {
     });
   }
 
+  // @Cron(EVERY_15_MINUTES)
+  @Cron(CronExpression.EVERY_MINUTE)
+  async checkRecurringAppointmentDebt(): Promise<void> {
+    const appointments =
+      await this.appointmentService.checkRecurringAppointmentToBePaid();
+
+    await Promise.all(
+      appointments.map(async (appointment) => {
+        await this.paymentService.chargeSeekerRecurringDebt(appointment.id);
+      }),
+    );
+  }
+
   @Cron(CronExpression.EVERY_5_MINUTES)
   async sendVirtualAssessmentStartNotification(): Promise<void> {
     const virtualAssessments =

@@ -165,6 +165,16 @@ export class Appointment {
   debtStatus: DebtStatus;
 
   @ApiProperty({
+    example: 50,
+    description: 'Seeker debt for the appointment',
+  })
+  @Column({
+    type: 'float',
+    default: 0,
+  })
+  seekerDebt: number;
+
+  @ApiProperty({
     example: '2023-11-28T15:30:00.000Z',
     description: 'Date of the appointment creation',
   })

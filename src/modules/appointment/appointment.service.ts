@@ -468,14 +468,32 @@ export class AppointmentService {
           recurring: TypeOfAppointment.Recurring,
         },
       )
-      .orWhere('appointment.status = :paused AND appointment.endDate >= :now', {
-        paused: AppointmentStatus.Paused,
-        now: new Date(),
-      })
       .andWhere('appointment.startDate <= :now', { now: new Date() })
       .getMany();
 
     return appointments;
+  }
+
+  async checkRecurringAppointmentToBePaid(): Promise<Appointment[]> {
+    return this.appointmentRepository
+      .createQueryBuilder('appointment')
+      .where('appointment.status = :completed', {
+        completed: AppointmentStatus.Completed,
+      })
+      .orWhere('(appointment.status = :active', {
+        active: AppointmentStatus.Active,
+      })
+      .orWhere('appointment.status = :paused', {
+        paused: AppointmentStatus.Paused,
+      })
+      .andWhere('appointment.type = :recurring', {
+        recurring: TypeOfAppointment.Recurring,
+      })
+      .andWhere('appointment.seekerDebt > :seekerDebt', {
+        seekerDebt: 0,
+      })
+      .andWhere('appointment.startDate <= :now', { now: new Date() })
+      .getMany();
   }
 
   async updateById(

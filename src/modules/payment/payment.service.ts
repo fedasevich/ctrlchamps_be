@@ -18,6 +18,8 @@ import {
   isSameDay,
   addDays,
   addMinutes,
+  subDays,
+  subWeeks,
 } from 'date-fns';
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
@@ -52,6 +54,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionType } from './enums/transaction-type.enum';
 import { getHourDifference } from './helpers/difference-in-hours';
 import { Transaction } from './types/transaction-history.type';
+import { isMoreAppointmentDays } from 'src/common/helpers/is-more-appointments-days';
 
 @Injectable()
 export class PaymentService {
@@ -181,9 +184,8 @@ export class PaymentService {
       const seeker = await this.userService.findById(userId);
 
       if (seeker.balance < amountToPay) {
-        await this.checkSeekerDebt(
+        await this.checkSeekerOneTimeDebt(
           seeker,
-          endDate,
           caregiverInfo.user,
           appointment,
           transactionalEntityManager,
@@ -295,13 +297,19 @@ export class PaymentService {
       }
 
       if (seeker.balance < payForCompletedRecurringAppointment) {
-        await this.checkSeekerDebt(
-          seeker,
-          endDate,
-          caregiverInfo.user,
-          appointment,
-          transactionalEntityManager,
-        );
+        if (appointment.seekerDebt === 0) {
+          await this.appointmentService.updateByIdWithTransaction(
+            appointmentId,
+            { seekerDebt: payForCompletedRecurringAppointment },
+            transactionalEntityManager,
+          );
+
+          await this.notifySeekerAndAdminsAboutDebt(
+            seeker,
+            caregiverInfo.user,
+            appointment.id,
+          );
+        }
 
         return false;
       }
@@ -355,12 +363,9 @@ export class PaymentService {
     try {
       const appointment =
         await this.appointmentService.findOneById(appointmentId);
-      console.log('in chargeRecurringPaymentTask');
-      console.log('new Date()', new Date());
 
-      const dayName = format(getDay(new Date()), 'EEEE');
+      const dayName = format(new Date(), 'EEEE');
       console.log('dayName', dayName);
-      console.log('getDay(new Date())', getDay(new Date()));
 
       console.log(
         'JSON.parse(appointment.weekday)[0]',
@@ -378,37 +383,32 @@ export class PaymentService {
           })
           .getMany();
         console.log('activityLogs', activityLogs);
-        console.log(
-          'JSON.parse(appointment.weekday).length',
-          JSON.parse(appointment.weekday).length,
-        );
 
         if (JSON.parse(appointment.weekday).length === activityLogs.length) {
-          console.log('isPaymentSuccessful тру первый иф рекьюр');
-
-          const isPaymentSuccessful =
-            await this.chargeForRecurringAppointment(appointmentId);
-
-          if (
-            isPaymentSuccessful &&
-            appointment.status === AppointmentStatus.Paused
-          ) {
-            await this.appointmentRepository.update(
-              { id: appointmentId },
-              { status: AppointmentStatus.Active },
-            );
-          }
+          console.log(
+            'JSON.parse(appointment.weekday).length === activityLogs.length',
+            JSON.parse(appointment.weekday).length === activityLogs.length,
+          );
+          await this.chargeForRecurringAppointment(appointmentId);
         } else if (new Date() === appointment.endDate) {
           const isPaymentSuccessful =
             await this.chargeForRecurringAppointment(appointmentId);
-          console.log('new Date() === appointment.endDate');
+
+          console.log(
+            'new Date() === appointment.endDate',
+            new Date(),
+            appointment.endDate,
+          );
 
           if (isPaymentSuccessful) {
             console.log('before  AppointmentStatus.Finished');
 
             await this.appointmentRepository.update(
               { id: appointmentId },
-              { status: AppointmentStatus.Finished },
+              {
+                status: AppointmentStatus.Finished,
+                debtStatus: DebtStatus.Absent,
+              },
             );
           }
 
@@ -478,18 +478,12 @@ export class PaymentService {
             appointmentId,
             transactionalEntityManager,
           );
-          console.log('isPaymentSuccessful before changing ActivityLogStatus');
+          await this.activityLogRepository.update(
+            { appointmentId, status: ActivityLogStatus.Approved },
+            { status: ActivityLogStatus.Closed },
+          );
 
-          if (isPaymentSuccessful) {
-            console.log('isPaymentSuccessful', true);
-
-            await this.activityLogRepository.update(
-              { appointmentId, status: ActivityLogStatus.Approved },
-              { status: ActivityLogStatus.Closed },
-            );
-
-            console.log('after activityLogRepository.update');
-          }
+          console.log('after activityLogRepository.update');
         },
       );
 
@@ -622,31 +616,18 @@ export class PaymentService {
     }
   }
 
-  private async checkSeekerDebt(
+  private async checkSeekerOneTimeDebt(
     seeker: User,
-    endDate: Date,
     caregiver: User,
     appointment: Appointment,
     transactionalEntityManager: EntityManager,
   ): Promise<void> {
     try {
       const currentDate = new Date();
-      const actualDebtStatus =
-        appointment.debtStatus === DebtStatus.Absent
-          ? DebtStatus.NotAccrued
-          : appointment.debtStatus;
-
-      if (appointment.debtStatus === DebtStatus.Absent) {
-        await this.appointmentService.updateByIdWithTransaction(
-          appointment.id,
-          { debtStatus: DebtStatus.NotAccrued },
-          transactionalEntityManager,
-        );
-      }
 
       if (
-        actualDebtStatus === DebtStatus.NotAccrued &&
-        isSameDay(endDate, currentDate)
+        appointment.debtStatus === DebtStatus.Absent &&
+        isSameDay(appointment.endDate, currentDate)
       ) {
         await this.appointmentService.updateByIdWithTransaction(
           appointment.id,
@@ -662,13 +643,13 @@ export class PaymentService {
       }
 
       if (
-        (isSameDay(addDays(endDate, ONE_DAY), currentDate) ||
-          isSameDay(addWeeks(endDate, ONE_WEEK), currentDate) ||
-          isSameDay(addWeeks(endDate, TWO_WEEKS), currentDate)) &&
-        getHours(endDate) === getHours(currentDate) &&
-        (getMinutes(endDate) === getMinutes(currentDate) ||
+        (isSameDay(addDays(appointment.endDate, ONE_DAY), currentDate) ||
+          isSameDay(addWeeks(appointment.endDate, ONE_WEEK), currentDate) ||
+          isSameDay(addWeeks(appointment.endDate, TWO_WEEKS), currentDate)) &&
+        getHours(appointment.endDate) === getHours(currentDate) &&
+        (getMinutes(appointment.endDate) === getMinutes(currentDate) ||
           getMinutes(addMinutes(currentDate, FIVE_MINUTES)) ===
-            getMinutes(endDate))
+            getMinutes(appointment.endDate))
       ) {
         await this.notifySeekerAndAdminsAboutDebt(
           seeker,
@@ -678,19 +659,17 @@ export class PaymentService {
       }
 
       if (
-        isSameDay(addDays(endDate, TWO_DAYS), currentDate) &&
-        getHours(endDate) === getHours(currentDate) &&
-        (getMinutes(endDate) === getMinutes(currentDate) ||
+        isSameDay(addDays(appointment.endDate, TWO_DAYS), currentDate) &&
+        getHours(appointment.endDate) === getHours(currentDate) &&
+        (getMinutes(appointment.endDate) === getMinutes(currentDate) ||
           getMinutes(addMinutes(currentDate, FIVE_MINUTES)) ===
-            getMinutes(endDate))
+            getMinutes(appointment.endDate))
       ) {
-        if (appointment.type === AppointmentType.Recurring) {
-          await this.appointmentService.updateByIdWithTransaction(
-            appointment.id,
-            { status: AppointmentStatus.Paused },
-            transactionalEntityManager,
-          );
-        }
+        await this.appointmentService.updateByIdWithTransaction(
+          appointment.id,
+          { debtStatus: DebtStatus.NotAccrued },
+          transactionalEntityManager,
+        );
 
         await this.emailService.sendEmail({
           to: caregiver.email,
@@ -741,6 +720,128 @@ export class PaymentService {
       //     appointmentId,
       //   },
       // });
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async chargeSeekerRecurringDebt(appointmentId: string): Promise<void> {
+    try {
+      const appointment =
+        await this.appointmentService.findOneById(appointmentId);
+
+      const seeker = await this.userService.findById(appointment.userId);
+
+      const caregiverInfo =
+        await this.caregiverInfoService.findUserByCaregiverInfoId(
+          appointment.caregiverInfoId,
+        );
+
+      const currentDate = new Date();
+
+      await this.appointmentRepository.manager.transaction(
+        async (transactionalEntityManager) => {
+          if (seeker.balance >= appointment.seekerDebt) {
+            const seekerUpdatedBalance =
+              seeker.balance - appointment.seekerDebt;
+
+            await this.userService.updateWithTransaction(
+              seeker.email,
+              { balance: seekerUpdatedBalance },
+              transactionalEntityManager,
+            );
+
+            const caregiverUpdatedBalance =
+              caregiverInfo.user.balance + appointment.seekerDebt;
+
+            await this.userService.updateWithTransaction(
+              caregiverInfo.user.email,
+              { balance: caregiverUpdatedBalance },
+              transactionalEntityManager,
+            );
+
+            await this.createSeekerCaregiverTransactions(
+              seeker.id,
+              caregiverInfo.user.id,
+              appointment.seekerDebt,
+              transactionalEntityManager,
+              appointment.id,
+            );
+
+            await this.appointmentService.updateByIdWithTransaction(
+              appointment.id,
+              { seekerDebt: 0, debtStatus: DebtStatus.Absent },
+              transactionalEntityManager,
+            );
+
+            const isAppointmentHasOneMoreDay = isMoreAppointmentDays(
+              appointment.endDate,
+              appointment.weekday,
+              currentDate,
+            );
+
+            if (
+              appointment.status === AppointmentStatus.Paused &&
+              isAppointmentHasOneMoreDay
+            ) {
+              await this.appointmentService.updateByIdWithTransaction(
+                appointment.id,
+                { status: AppointmentStatus.Active },
+                transactionalEntityManager,
+              );
+            }
+          } else if (seeker.balance < appointment.seekerDebt) {
+            if (
+              JSON.parse(appointment.weekday)[0] ===
+                format(subDays(currentDate, TWO_DAYS), 'EEEE') &&
+              appointment.status === AppointmentStatus.Active
+            ) {
+              await this.appointmentService.updateByIdWithTransaction(
+                appointment.id,
+                {
+                  status: AppointmentStatus.Paused,
+                  debtStatus: DebtStatus.NotAccrued,
+                },
+                transactionalEntityManager,
+              );
+
+              await this.emailService.sendEmail({
+                to: caregiverInfo.user.email,
+                templateId: this.caregiverAppointmentPausedTemplateId,
+                dynamicTemplateData: {
+                  caregiverName: `${caregiverInfo.user.firstName} ${caregiverInfo.user.lastName}`,
+                  seekerName: `${seeker.firstName} ${seeker.lastName}`,
+                  appointmentName: appointment.name,
+                },
+              });
+
+              await this.notificationService.createNotification(
+                caregiverInfo.user.id,
+                appointment.id,
+                NotificationMessage.PausedAppointment,
+                seeker.id,
+              );
+            }
+
+            if (
+              (JSON.parse(appointment.weekday)[0] ===
+                format(subDays(currentDate, ONE_DAY), 'EEEE') ||
+                JSON.parse(appointment.weekday)[0] ===
+                  format(subWeeks(currentDate, ONE_WEEK), 'EEEE') ||
+                JSON.parse(appointment.weekday)[0] ===
+                  format(subWeeks(currentDate, TWO_WEEKS), 'EEEE')) &&
+              getHours(appointment.endDate) === getHours(currentDate) &&
+              getMinutes(appointment.endDate) === getMinutes(currentDate)
+            ) {
+              await this.notifySeekerAndAdminsAboutDebt(
+                seeker,
+                caregiverInfo.user,
+                appointment.id,
+              );
+            }
+          }
+        },
+      );
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
