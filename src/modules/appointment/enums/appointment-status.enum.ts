@@ -10,5 +10,4 @@ export enum AppointmentStatus {
   Ongoing = 'Ongoing',
   Completed = 'Completed',
   Finished = 'Finished',
-  Paused = 'Paused',
 }

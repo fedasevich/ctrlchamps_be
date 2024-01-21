@@ -8,7 +8,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-<<<<<<< HEAD
 import {
   format,
   differenceInWeeks,
@@ -21,10 +20,7 @@ import {
   subWeeks,
   isSameMinute,
 } from 'date-fns';
-=======
-import { differenceInWeeks, format, getDay } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
->>>>>>> develop
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
@@ -43,22 +39,17 @@ import { ActivityLogStatus } from '../activity-log/enums/activity-log-status.enu
 import { MINIMUM_BALANCE } from '../appointment/appointment.constants';
 import { AppointmentStatus } from '../appointment/enums/appointment-status.enum';
 import { CaregiverInfoService } from '../caregiver-info/caregiver-info.service';
-import { EmailService } from '../email/services/email.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UserService } from '../users/user.service';
 import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment.constant';
 
 import {
   ALREADY_PAID_HOUR,
-<<<<<<< HEAD
   ONE_DAY,
-  ONE_WEEK,
   TWO_DAYS,
   TWO_WEEKS,
-=======
   ONE_WEEK,
   TRANSACTION_PAGINATION_LIMIT,
->>>>>>> develop
 } from './constants/payment.constants';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionType } from './enums/transaction-type.enum';
@@ -71,7 +62,6 @@ import {
 
 @Injectable()
 export class PaymentService {
-<<<<<<< HEAD
   private readonly seekerPaymentReminderTemplateId =
     this.configService.get<string>(
       'SENDGRID_SEEKER_PAYMENT_REMINDER_TEMPLATE_ID',
@@ -86,11 +76,10 @@ export class PaymentService {
     this.configService.get<string>(
       'SENDGRID_CAREGIVER_APPOINTMENT_PAUSED_TEMPLATE_ID',
     );
-=======
+
   private readonly seekerBalanceLowTemplateId = this.configService.get<string>(
     'SENDGRID_INSUFFICIENT_APPOINTMENT_CREATION_BALANCE_TEMPLATE_ID',
   );
->>>>>>> develop
 
   constructor(
     @InjectRepository(Appointment)
@@ -103,15 +92,10 @@ export class PaymentService {
     private appointmentService: AppointmentService,
     private readonly userService: UserService,
     private readonly caregiverInfoService: CaregiverInfoService,
-<<<<<<< HEAD
-    private readonly emailService: EmailService,
-    private readonly configService: ConfigService,
     private readonly adminPanelService: AdminPanelService,
     private readonly notificationService: NotificationService,
-=======
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
->>>>>>> develop
   ) {}
 
   public async payForHourOfWork(
@@ -411,7 +395,6 @@ export class PaymentService {
         if (JSON.parse(appointment.weekday).length === activityLogs.length) {
           await this.chargeForRecurringAppointment(appointmentId);
         } else if (
-<<<<<<< HEAD
           isSameDay(new Date(), appointment.endDate) &&
           isSameMinute(new Date(), appointment.endDate)
         ) {
@@ -427,15 +410,6 @@ export class PaymentService {
               },
             );
           }
-=======
-          utcToZonedTime(new Date(), UTC_TIMEZONE) === appointment.endDate
-        ) {
-          await this.chargeForRecurringAppointment(appointmentId);
-          await this.appointmentRepository.update(
-            { id: appointmentId },
-            { status: AppointmentStatus.Finished },
-          );
->>>>>>> develop
         }
       }
     } catch (error) {
