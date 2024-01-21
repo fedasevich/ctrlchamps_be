@@ -477,14 +477,12 @@ export class AppointmentService {
   async checkRecurringAppointmentToBePaid(): Promise<Appointment[]> {
     return this.appointmentRepository
       .createQueryBuilder('appointment')
-      .where('appointment.status = :completed', {
-        completed: AppointmentStatus.Completed,
-      })
-      .orWhere('(appointment.status = :active', {
-        active: AppointmentStatus.Active,
-      })
-      .orWhere('appointment.status = :paused', {
-        paused: AppointmentStatus.Paused,
+      .where('appointment.status IN (:...statuses)', {
+        statuses: [
+          AppointmentStatus.Completed,
+          AppointmentStatus.Active,
+          AppointmentStatus.Paused,
+        ],
       })
       .andWhere('appointment.type = :recurring', {
         recurring: TypeOfAppointment.Recurring,
@@ -492,7 +490,6 @@ export class AppointmentService {
       .andWhere('appointment.seekerDebt > :seekerDebt', {
         seekerDebt: 0,
       })
-      .andWhere('appointment.startDate <= :now', { now: new Date() })
       .getMany();
   }
 

@@ -10,7 +10,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import {
   format,
-  getDay,
   differenceInWeeks,
   getHours,
   getMinutes,
@@ -20,6 +19,9 @@ import {
   addMinutes,
   subDays,
   subWeeks,
+  subMinutes,
+  isEqual,
+  isSameMinute,
 } from 'date-fns';
 import { ActivityLog } from 'src/common/entities/activity-log.entity';
 import { Appointment } from 'src/common/entities/appointment.entity';
@@ -27,6 +29,7 @@ import { TransactionHistory } from 'src/common/entities/transaction-history.enti
 import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
+import { isMoreAppointmentDays } from 'src/common/helpers/is-more-appointments-days';
 import { AdminPanelService } from 'src/modules/admin-panel/admin-panel.service';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
@@ -54,7 +57,6 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionType } from './enums/transaction-type.enum';
 import { getHourDifference } from './helpers/difference-in-hours';
 import { Transaction } from './types/transaction-history.type';
-import { isMoreAppointmentDays } from 'src/common/helpers/is-more-appointments-days';
 
 @Injectable()
 export class PaymentService {
@@ -361,15 +363,16 @@ export class PaymentService {
     appointmentId: string,
   ): Promise<void> {
     try {
+      console.log('in chargeRecurringPaymentTask');
+
       const appointment =
         await this.appointmentService.findOneById(appointmentId);
 
       const dayName = format(new Date(), 'EEEE');
-      console.log('dayName', dayName);
 
       console.log(
-        'JSON.parse(appointment.weekday)[0]',
-        JSON.parse(appointment.weekday)[0],
+        isSameDay(new Date(), appointment.endDate),
+        isSameMinute(new Date(), appointment.endDate),
       );
 
       if (dayName === JSON.parse(appointment.weekday)[0]) {
@@ -390,14 +393,29 @@ export class PaymentService {
             JSON.parse(appointment.weekday).length === activityLogs.length,
           );
           await this.chargeForRecurringAppointment(appointmentId);
-        } else if (new Date() === appointment.endDate) {
+        } else if (
+          (isSameDay(new Date(), appointment.endDate) &&
+            isSameMinute(new Date(), appointment.endDate)) ||
+          (isSameDay(
+            subMinutes(new Date(), FIVE_MINUTES),
+            appointment.endDate,
+          ) &&
+            isSameMinute(
+              subMinutes(new Date(), FIVE_MINUTES),
+              appointment.endDate,
+            ))
+        ) {
+          console.log(
+            'recc new Date() === appointment.endDate',
+            isEqual(new Date(), appointment.endDate),
+          );
+
           const isPaymentSuccessful =
             await this.chargeForRecurringAppointment(appointmentId);
 
           console.log(
-            'new Date() === appointment.endDate',
-            new Date(),
-            appointment.endDate,
+            'isPaymentSuccessful before AppointmentStatus.Finished',
+            isPaymentSuccessful,
           );
 
           if (isPaymentSuccessful) {
@@ -471,6 +489,7 @@ export class PaymentService {
   ): Promise<boolean> {
     try {
       let isPaymentSuccessful: boolean;
+      console.log('before appointmentRepository.manager.transaction');
 
       await this.appointmentRepository.manager.transaction(
         async (transactionalEntityManager) => {
@@ -478,6 +497,8 @@ export class PaymentService {
             appointmentId,
             transactionalEntityManager,
           );
+          console.log('before activityLogRepository.update');
+
           await this.activityLogRepository.update(
             { appointmentId, status: ActivityLogStatus.Approved },
             { status: ActivityLogStatus.Closed },
@@ -727,6 +748,8 @@ export class PaymentService {
 
   async chargeSeekerRecurringDebt(appointmentId: string): Promise<void> {
     try {
+      console.log(1);
+
       const appointment =
         await this.appointmentService.findOneById(appointmentId);
 
@@ -742,6 +765,11 @@ export class PaymentService {
       await this.appointmentRepository.manager.transaction(
         async (transactionalEntityManager) => {
           if (seeker.balance >= appointment.seekerDebt) {
+            console.log(
+              'seeker.balance >= appointment.seekerDebt',
+              seeker.balance >= appointment.seekerDebt,
+            );
+
             const seekerUpdatedBalance =
               seeker.balance - appointment.seekerDebt;
 
@@ -791,9 +819,25 @@ export class PaymentService {
               );
             }
           } else if (seeker.balance < appointment.seekerDebt) {
+            console.log(
+              'seeker.balance < appointment.seekerDebt',
+              seeker.balance < appointment.seekerDebt,
+            );
+
+            const firstSelectedWeekday = JSON.parse(appointment.weekday)[0];
+            console.log(
+              isSameDay(appointment.endDate, subDays(currentDate, TWO_DAYS)),
+            );
+
+            console.log(appointment.endDate, subDays(currentDate, TWO_DAYS));
+
             if (
-              JSON.parse(appointment.weekday)[0] ===
-                format(subDays(currentDate, TWO_DAYS), 'EEEE') &&
+              (firstSelectedWeekday ===
+                format(subDays(currentDate, TWO_DAYS), 'EEEE') ||
+                isSameDay(
+                  appointment.endDate,
+                  subDays(currentDate, TWO_DAYS),
+                )) &&
               appointment.status === AppointmentStatus.Active
             ) {
               await this.appointmentService.updateByIdWithTransaction(
@@ -814,21 +858,27 @@ export class PaymentService {
                   appointmentName: appointment.name,
                 },
               });
+              console.log('before createNotificationWithTransaction');
 
-              await this.notificationService.createNotification(
+              await this.notificationService.createNotificationWithTransaction(
                 caregiverInfo.user.id,
                 appointment.id,
                 NotificationMessage.PausedAppointment,
                 seeker.id,
+                transactionalEntityManager,
               );
+
+              console.log('after createNotificationWithTransaction');
+
+              return;
             }
 
             if (
-              (JSON.parse(appointment.weekday)[0] ===
+              (firstSelectedWeekday ===
                 format(subDays(currentDate, ONE_DAY), 'EEEE') ||
-                JSON.parse(appointment.weekday)[0] ===
+                firstSelectedWeekday ===
                   format(subWeeks(currentDate, ONE_WEEK), 'EEEE') ||
-                JSON.parse(appointment.weekday)[0] ===
+                firstSelectedWeekday ===
                   format(subWeeks(currentDate, TWO_WEEKS), 'EEEE')) &&
               getHours(appointment.endDate) === getHours(currentDate) &&
               getMinutes(appointment.endDate) === getMinutes(currentDate)

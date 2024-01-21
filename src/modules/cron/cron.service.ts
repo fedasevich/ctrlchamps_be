@@ -169,6 +169,7 @@ export class CronService {
   }
 
   // @Cron(EVERY_10_MINUTES)
+  // @Cron('*/2 * * * *')
   @Cron(CronExpression.EVERY_MINUTE)
   async checkAppointmentStatusAndCharge(): Promise<void> {
     const appointments =
@@ -183,7 +184,6 @@ export class CronService {
     });
   }
 
-  // @Cron(EVERY_15_MINUTES)
   @Cron(CronExpression.EVERY_MINUTE)
   async checkRecurringAppointmentDebt(): Promise<void> {
     const appointments =
