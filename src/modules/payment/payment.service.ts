@@ -81,6 +81,11 @@ export class PaymentService {
     'SENDGRID_INSUFFICIENT_APPOINTMENT_CREATION_BALANCE_TEMPLATE_ID',
   );
 
+  private readonly caregiverResumeAppointmentTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_CAREGIVER_RESUME_APPOINTMENT_TEMPLATE_ID',
+    );
+
   constructor(
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
@@ -820,6 +825,24 @@ export class PaymentService {
               await this.appointmentService.updateByIdWithTransaction(
                 appointment.id,
                 { status: AppointmentStatus.Active },
+                transactionalEntityManager,
+              );
+
+              await this.emailService.sendEmail({
+                to: caregiverInfo.user.email,
+                templateId: this.caregiverResumeAppointmentTemplateId,
+                dynamicTemplateData: {
+                  caregiverName: `${caregiverInfo.user.firstName} ${caregiverInfo.user.lastName}`,
+                  seekerName: `${seeker.firstName} ${seeker.lastName}`,
+                  appointmentName: appointment.name,
+                },
+              });
+
+              await this.notificationService.createNotificationWithTransaction(
+                caregiverInfo.user.id,
+                appointment.id,
+                NotificationMessage.ResumeAppointment,
+                seeker.id,
                 transactionalEntityManager,
               );
             }

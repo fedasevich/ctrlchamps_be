@@ -15,4 +15,5 @@ export enum NotificationMessage {
   ActivityLogRejected = 'ACTIVITY_LOG_REJECTED',
   PausedAppointment = 'PAUSED_APPOINTMENT',
   InsufficientFirstHourPayment = 'INSUFFICIENT_FIRST_HOUR_PAYMENT',
+  ResumeAppointment = 'RESUME_APPOINTMENT',
 }
