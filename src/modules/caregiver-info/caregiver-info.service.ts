@@ -7,8 +7,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { format, isWithinInterval, parseISO } from 'date-fns';
 import { AppointmentService } from 'modules/appointment/appointment.service';
 import { UserRole } from 'modules/users/enums/user-role.enum';
+import { DATE_FORMAT } from 'src/common/constants/date.constants';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
@@ -102,16 +104,73 @@ export class CaregiverInfoService {
         );
       }
 
+      const dayOfWeek = format(startTime, 'EEEE');
+      const startTimeISO = parseISO(startTime.toISOString());
+      const endTimeISO = parseISO(endTime.toISOString());
+
+      if (showOnlyAvailableCaregivers) {
+        queryBuilder.andWhere('caregiverInfo.availability LIKE :availability', {
+          availability: `%"day": "${dayOfWeek}"%`,
+        });
+      }
+
       queryBuilder.select([
         'user.id',
         'user.firstName',
         'user.lastName',
         'caregiverInfo.hourlyRate',
+        'caregiverInfo.availability',
       ]);
 
-      const filteredCaregivers = await queryBuilder.getMany();
+      const caregivers = await queryBuilder.getMany();
 
-      return filteredCaregivers.map((user) => ({
+      if (showOnlyAvailableCaregivers) {
+        const filteredCaregivers = caregivers.filter((caregiver) => {
+          const { availability } = caregiver.caregiverInfo;
+
+          if (availability) {
+            const dayAvailability = availability.find(
+              (slot) => slot.day === dayOfWeek,
+            );
+
+            if (dayAvailability) {
+              const slotStartDate = parseISO(
+                `${format(startTimeISO, DATE_FORMAT)}T${
+                  dayAvailability.startTime
+                }:00.000Z`,
+              );
+
+              const slotEndDate = parseISO(
+                `${format(endTimeISO, DATE_FORMAT)}T${
+                  dayAvailability.endTime
+                }:00.000Z`,
+              );
+
+              return (
+                isWithinInterval(startTimeISO, {
+                  start: slotStartDate,
+                  end: slotEndDate,
+                }) &&
+                isWithinInterval(endTimeISO, {
+                  start: slotStartDate,
+                  end: slotEndDate,
+                })
+              );
+            }
+          }
+
+          return false;
+        });
+
+        return filteredCaregivers.map((user) => ({
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          hourlyRate: user.caregiverInfo.hourlyRate,
+        }));
+      }
+
+      return caregivers.map((user) => ({
         id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,

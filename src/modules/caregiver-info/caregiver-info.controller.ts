@@ -65,7 +65,6 @@ export class CaregiverInfoController {
   ): Promise<FiltredCaregiver[]> {
     const startTime = new Date(queryParams.startTime);
     const endTime = new Date(queryParams.endTime);
-    console.log(startTime, endTime);
 
     return this.caregiverInfoService.filterAll(
       isOpenToSeekerHomeLiving,
