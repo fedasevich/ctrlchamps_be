@@ -13,6 +13,7 @@ import {
   Res,
   Query,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 
 import { Response } from 'express';
@@ -37,6 +38,7 @@ import { VirtualAssessmentService } from './virtual-assessment.service';
 export class VirtualAssessmentController {
   constructor(
     private readonly virtualAssessmentService: VirtualAssessmentService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get(VirtualAssessmentApiPath.SingleVirtualAssessment)
@@ -191,10 +193,10 @@ export class VirtualAssessmentController {
     @Query('status') status: VirtualAssessmentStatus,
     @Res() res: Response,
   ): Promise<void> {
-    return this.virtualAssessmentService.updateReschedulingStatus(
+    res.redirect(this.configService.get('CORS_ORIGIN'));
+    await this.virtualAssessmentService.updateReschedulingStatus(
       appointmentId,
       status,
-      res,
     );
   }
 }

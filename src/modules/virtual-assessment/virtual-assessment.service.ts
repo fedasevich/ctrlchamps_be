@@ -2,9 +2,8 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { format, addMinutes } from 'date-fns';
+import { addMinutes, format } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
-import { Response } from 'express';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
@@ -17,9 +16,9 @@ import { Repository } from 'typeorm';
 import { NotificationService } from '../notification/notification.service';
 
 import {
-  UTC_TIMEZONE,
   FOUR_MINUTES,
   SIX_MINUTES,
+  UTC_TIMEZONE,
   VIRTUAL_ASSESSMENT_DATE_FORMAT,
   VIRTUAL_ASSESSMENT_TIME_FORMAT,
 } from './constants/virtual-assessment.constant';
@@ -189,6 +188,20 @@ export class VirtualAssessmentService {
         );
       }
 
+      const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
+      const currentDateString = currentDate.toString();
+      const VADateString = virtualAssessment.assessmentDate.toString();
+
+      if (
+        updateStatusDto.status === VirtualAssessmentStatus.Accepted &&
+        VADateString >= currentDateString
+      ) {
+        throw new HttpException(
+          ErrorMessage.AssessmentDate,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
       virtualAssessment.status = updateStatusDto.status;
 
       await this.virtualAssessmentRepository.save(virtualAssessment);
@@ -312,11 +325,8 @@ export class VirtualAssessmentService {
   async updateReschedulingStatus(
     appointmentId: string,
     status: VirtualAssessmentStatus,
-    res: Response,
   ): Promise<void> {
     try {
-      res.redirect(this.configService.get<string>('CORS_ORIGIN'));
-
       const virtualAssessment =
         await this.findVirtualAssessmentById(appointmentId);
 

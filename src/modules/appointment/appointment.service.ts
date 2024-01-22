@@ -108,6 +108,9 @@ export class AppointmentService {
         .leftJoin('caregiverInfo.user', 'caregiver')
         .addSelect(['caregiver.firstName', 'caregiver.lastName'])
 
+        .leftJoin('appointment.activityLog', 'activityLog')
+        .addSelect('activityLog.status')
+
         .where(`(appointment.name LIKE :name )`, {
           name: `%${name}%`,
         })

@@ -188,6 +188,20 @@ export class CronService {
               status: AppointmentStatus.Ongoing,
             });
           }
+        } else if (appointment.status === AppointmentStatus.Virtual) {
+          const virtualAssessment =
+            await this.virtualAssessmentService.findVirtualAssessmentById(
+              appointment.id,
+            );
+
+          if (
+            virtualAssessment.status === VirtualAssessmentStatus.Proposed &&
+            currentDateString >= startDateString
+          ) {
+            await this.appointmentService.updateById(appointment.id, {
+              status: AppointmentStatus.Rejected,
+            });
+          }
         }
       }),
     );
