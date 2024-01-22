@@ -379,7 +379,9 @@ export class PaymentService {
       const appointment =
         await this.appointmentService.findOneById(appointmentId);
 
-      const dayName = format(new Date(), 'EEEE');
+      const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
+
+      const dayName = format(currentDate, 'EEEE');
 
       if (dayName === JSON.parse(appointment.weekday)[0]) {
         const activityLogs = await this.activityLogRepository
@@ -395,8 +397,8 @@ export class PaymentService {
         if (JSON.parse(appointment.weekday).length === activityLogs.length) {
           await this.chargeForRecurringAppointment(appointmentId);
         } else if (
-          isSameDay(new Date(), appointment.endDate) &&
-          isSameMinute(new Date(), appointment.endDate)
+          isSameDay(currentDate, appointment.endDate) &&
+          isSameMinute(currentDate, appointment.endDate)
         ) {
           const isPaymentSuccessful =
             await this.chargeForRecurringAppointment(appointmentId);
@@ -653,7 +655,7 @@ export class PaymentService {
     transactionalEntityManager: EntityManager,
   ): Promise<void> {
     try {
-      const currentDate = new Date();
+      const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
 
       if (
         appointment.debtStatus === DebtStatus.Absent &&
@@ -768,7 +770,7 @@ export class PaymentService {
           appointment.caregiverInfoId,
         );
 
-      const currentDate = new Date();
+      const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
 
       await this.appointmentRepository.manager.transaction(
         async (transactionalEntityManager) => {
