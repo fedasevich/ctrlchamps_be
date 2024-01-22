@@ -46,6 +46,9 @@ export class CaregiverInfoService {
 
   async filterAll(
     isOpenToSeekerHomeLiving: boolean,
+    showOnlyAvailableCaregivers: boolean,
+    startTime: Date,
+    endTime: Date,
     services?: string[],
   ): Promise<FiltredCaregiver[]> {
     const formattedServices = services
@@ -77,6 +80,26 @@ export class CaregiverInfoService {
         queryBuilder.andWhere('caregiverInfo.services LIKE :services', {
           services: formattedServices,
         });
+      }
+
+      if (showOnlyAvailableCaregivers) {
+        const caregiversWithAppointments =
+          await this.appointmentService.findAppointmentsByTimeRange(
+            startTime,
+            endTime,
+            ['Monday', 'Wednesday', 'Friday'],
+          );
+
+        const caregiverIdsWithAppointments = caregiversWithAppointments.map(
+          (appointment) => appointment.caregiverInfoId,
+        );
+
+        queryBuilder.andWhere(
+          'caregiverInfo.id NOT IN (:...caregiverIdsWithAppointments)',
+          {
+            caregiverIdsWithAppointments,
+          },
+        );
       }
 
       queryBuilder.select([

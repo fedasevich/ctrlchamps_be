@@ -79,4 +79,18 @@ export class FilterQueryDto {
   @IsString({ each: true })
   @Transform(({ value }) => (Array.isArray(value) ? value : Array(value)))
   services?: string[];
+
+  @ApiProperty({
+    description: 'Start time',
+    example: '2021-06-01T00:00:00.000Z',
+  })
+  @IsString()
+  startTime: string;
+
+  @ApiProperty({
+    description: 'End time',
+    example: '2021-06-01T00:00:00.000Z',
+  })
+  @IsString()
+  endTime: string;
 }
