@@ -12,7 +12,6 @@ import { AppointmentService } from 'src/modules/appointment/appointment.service'
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
 import {
-  EVERY_10_MINUTES,
   EVERY_15_MINUTES,
   NEXT_DAY_NUMBER,
   PAYMENT_APPOINTMENT_DEADLINE,
@@ -241,7 +240,7 @@ export class CronService {
     return false;
   }
 
-  @Cron(EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async checkAppointmentStatusAndCharge(): Promise<void> {
     const appointments =
       await this.appointmentService.checkAppointmentToBePaid();
@@ -253,6 +252,18 @@ export class CronService {
         await this.paymentService.chargeRecurringPaymentTask(appointment.id);
       }
     });
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async checkRecurringAppointmentDebt(): Promise<void> {
+    const appointments =
+      await this.appointmentService.checkRecurringAppointmentToBePaid();
+
+    await Promise.all(
+      appointments.map(async (appointment) => {
+        await this.paymentService.chargeSeekerRecurringDebt(appointment.id);
+      }),
+    );
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)

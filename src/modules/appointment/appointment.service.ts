@@ -574,6 +574,25 @@ export class AppointmentService {
     return appointments;
   }
 
+  async checkRecurringAppointmentToBePaid(): Promise<Appointment[]> {
+    return this.appointmentRepository
+      .createQueryBuilder('appointment')
+      .where('appointment.status IN (:...statuses)', {
+        statuses: [
+          AppointmentStatus.Completed,
+          AppointmentStatus.Active,
+          AppointmentStatus.Paused,
+        ],
+      })
+      .andWhere('appointment.type = :recurring', {
+        recurring: TypeOfAppointment.Recurring,
+      })
+      .andWhere('appointment.seekerDebt > :seekerDebt', {
+        seekerDebt: 0,
+      })
+      .getMany();
+  }
+
   async updateById(
     appointmentId: string,
     appointment: Partial<Appointment>,
@@ -786,6 +805,25 @@ export class AppointmentService {
         break;
       default:
         return '';
+    }
+  }
+
+  async updateByIdWithTransaction(
+    appointmentId: string,
+    appointment: Partial<Appointment>,
+    transactionalEntityManager: EntityManager,
+  ): Promise<void> {
+    try {
+      await transactionalEntityManager
+        .createQueryBuilder()
+        .update(Appointment)
+        .set(appointment)
+        .where('appointment.id = :appointmentId', {
+          appointmentId,
+        })
+        .execute();
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
