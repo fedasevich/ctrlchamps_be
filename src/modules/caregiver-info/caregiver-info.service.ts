@@ -48,7 +48,7 @@ export class CaregiverInfoService {
 
   async filterAll(
     isOpenToSeekerHomeLiving: boolean,
-    showOnlyAvailableCaregivers: boolean,
+    isShowAvailableCaregivers: boolean,
     services?: string[],
     startTime?: Date,
     endTime?: Date,
@@ -85,7 +85,7 @@ export class CaregiverInfoService {
         });
       }
 
-      if (showOnlyAvailableCaregivers) {
+      if (isShowAvailableCaregivers) {
         const caregiversWithAppointments =
           await this.appointmentService.findAppointmentsByTimeRange(
             startTime,
@@ -109,7 +109,7 @@ export class CaregiverInfoService {
       const startTimeISO = parseISO(startTime.toISOString());
       const endTimeISO = parseISO(endTime.toISOString());
 
-      if (showOnlyAvailableCaregivers) {
+      if (isShowAvailableCaregivers) {
         queryBuilder.andWhere('caregiverInfo.availability LIKE :availability', {
           availability: `%"day": "${dayOfWeek}"%`,
         });
@@ -125,7 +125,7 @@ export class CaregiverInfoService {
 
       const caregivers = await queryBuilder.getMany();
 
-      if (showOnlyAvailableCaregivers) {
+      if (isShowAvailableCaregivers) {
         const filteredCaregivers = caregivers.filter((caregiver) => {
           const { availability } = caregiver.caregiverInfo;
 

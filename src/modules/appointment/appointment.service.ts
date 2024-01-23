@@ -8,7 +8,16 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { format } from 'date-fns';
+import {
+  addDays,
+  format,
+  getHours,
+  getMinutes,
+  isWithinInterval,
+  setHours,
+  setMinutes,
+  startOfDay,
+} from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
 import { DATE_FORMAT, TODAY_DATE } from 'src/common/constants/date.constants';
 import { Appointment } from 'src/common/entities/appointment.entity';
@@ -28,14 +37,7 @@ import { SeekerCapabilityService } from 'src/modules/seeker-capability/seeker-ca
 import { SeekerDiagnosisService } from 'src/modules/seeker-diagnosis/seeker-diagnosis.service';
 import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
 import { UserService } from 'src/modules/users/user.service';
-import {
-  Between,
-  EntityManager,
-  In,
-  LessThanOrEqual,
-  MoreThanOrEqual,
-  Repository,
-} from 'typeorm';
+import { Between, EntityManager, Repository } from 'typeorm';
 
 import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
@@ -815,21 +817,76 @@ export class AppointmentService {
         },
       });
 
-      const recurringAppointments = await this.appointmentRepository.find({
-        where: {
+      const recurringAppointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where('appointment.type = :type', {
           type: TypeOfAppointment.Recurring,
-          weekday: In(weekdays),
-          startDate: MoreThanOrEqual(startTime),
-          endDate: LessThanOrEqual(endTime),
-        },
-      });
+        })
+        .andWhere(
+          '(appointment.startDate >= :startTime OR appointment.endDate <= :endTime)',
+          {
+            startTime,
+            endTime,
+          },
+        )
+        .getMany();
 
-      return [...oneTimeAppointments, ...recurringAppointments];
+      const filteredRecurringAppointments = recurringAppointments.filter(
+        (appointment) =>
+          this.isRecurringAppointmentInTimeRange(
+            appointment,
+            startTime,
+            endTime,
+            weekdays,
+          ),
+      );
+
+      return [...oneTimeAppointments, ...filteredRecurringAppointments];
     } catch (error) {
       throw new HttpException(
         ErrorMessage.AppointmentNotFound,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  private isRecurringAppointmentInTimeRange(
+    appointment: Appointment,
+    startTime: Date,
+    endTime: Date,
+    weekdays: string[],
+  ): boolean {
+    const { startDate, endDate, weekday } = appointment;
+    console.log('Дата начала аппоинтмента - ', startDate);
+    console.log('Дата конца аппоинтмента - ', endDate);
+    console.log('Дата начала поиска - ', startTime);
+    console.log('Дата конца поиска - ', endTime);
+    console.log('--------------------------------------');
+
+    const hasIntersection = JSON.parse(weekday).some((day: string) =>
+      weekdays.includes(day),
+    );
+
+    if (!hasIntersection) {
+      return false;
+    }
+
+    const startTimeHours = getHours(startTime);
+    const startTimeMinutes = getMinutes(startTime);
+    const endTimeHours = getHours(endTime);
+    const endTimeMinutes = getMinutes(endTime);
+
+    const appointmentStartTime = setHours(
+      setMinutes(startDate, startTimeMinutes),
+      startTimeHours,
+    );
+
+    const isTimeInRange = isWithinInterval(appointmentStartTime, {
+      start: startTime,
+      end: endTime,
+    });
+    console.log(isTimeInRange);
+
+    return isTimeInRange;
   }
 }
