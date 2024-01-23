@@ -118,6 +118,10 @@ export class CronService {
         const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
         const currentDateString = currentDate.toString();
         const startDateString = appointment.startDate.toString();
+        const startDateUTC = utcToZonedTime(
+          appointment.startDate,
+          UTC_TIMEZONE,
+        );
 
         if (
           appointment.type === AppointmentType.OneTime &&
@@ -192,7 +196,7 @@ export class CronService {
 
           if (
             virtualAssessment.status === VirtualAssessmentStatus.Proposed &&
-            currentDateString >= startDateString
+            currentDate >= startDateUTC
           ) {
             await this.appointmentService.updateById(appointment.id, {
               status: AppointmentStatus.Rejected,
