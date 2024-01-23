@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { format, getDay, isWithinInterval } from 'date-fns';
+import { format } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
 import { DATE_FORMAT, TODAY_DATE } from 'src/common/constants/date.constants';
 import { Appointment } from 'src/common/entities/appointment.entity';
@@ -28,7 +28,14 @@ import { SeekerCapabilityService } from 'src/modules/seeker-capability/seeker-ca
 import { SeekerDiagnosisService } from 'src/modules/seeker-diagnosis/seeker-diagnosis.service';
 import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
 import { UserService } from 'src/modules/users/user.service';
-import { EntityManager, Repository } from 'typeorm';
+import {
+  Between,
+  EntityManager,
+  In,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 
 import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
@@ -794,72 +801,30 @@ export class AppointmentService {
     }
   }
 
-  // async findAppointmentsByTimeRange(
-  //   startTime: Date,
-  //   endTime: Date,
-  // ): Promise<Appointment[]> {
-  //   try {
-  //     const appointments = await this.appointmentRepository.find({
-  //       where: {
-  //         startDate: Between(startTime, endTime),
-  //         endDate: Between(startTime, endTime),
-  //       },
-  //     });
-  //     console.log(appointments);
-
-  //     return appointments;
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       ErrorMessage.AppointmentNotFound,
-  //       HttpStatus.INTERNAL_SERVER_ERROR,
-  //     );
-  //   }
-  // }
-
   async findAppointmentsByTimeRange(
     startTime: Date,
     endTime: Date,
     weekdays: string[],
   ): Promise<Appointment[]> {
     try {
-      const appointments = await this.appointmentRepository.find();
-
-      const filteredAppointments = appointments.filter((appointment) => {
-        if (appointment.type === TypeOfAppointment.OneTime) {
-          return (
-            isWithinInterval(appointment.startDate, {
-              start: startTime,
-              end: endTime,
-            }) ||
-            isWithinInterval(appointment.endDate, {
-              start: startTime,
-              end: endTime,
-            })
-          );
-        }
-
-        const isMatchingWeekday = weekdays.includes(appointment.weekday.trim());
-
-        // Проверяем, что время встречи входит в заданный временной диапазон
-        const isMatchingTime =
-          isWithinInterval(appointment.startDate, {
-            start: startTime,
-            end: endTime,
-          }) ||
-          isWithinInterval(appointment.endDate, {
-            start: startTime,
-            end: endTime,
-          });
-
-        // Проверяем, что день недели встречи соответствует дням недели в заданных
-        const isMatchingDay =
-          isMatchingWeekday &&
-          getDay(appointment.startDate) === getDay(startTime);
-
-        return isMatchingTime && isMatchingDay;
+      const oneTimeAppointments = await this.appointmentRepository.find({
+        where: {
+          type: TypeOfAppointment.OneTime,
+          startDate: Between(startTime, endTime),
+          endDate: Between(startTime, endTime),
+        },
       });
 
-      return filteredAppointments;
+      const recurringAppointments = await this.appointmentRepository.find({
+        where: {
+          type: TypeOfAppointment.Recurring,
+          weekday: In(weekdays),
+          startDate: MoreThanOrEqual(startTime),
+          endDate: LessThanOrEqual(endTime),
+        },
+      });
+
+      return [...oneTimeAppointments, ...recurringAppointments];
     } catch (error) {
       throw new HttpException(
         ErrorMessage.AppointmentNotFound,
