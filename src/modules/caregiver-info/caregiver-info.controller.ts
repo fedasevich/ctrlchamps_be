@@ -63,15 +63,15 @@ export class CaregiverInfoController {
     showOnlyAvailableCaregivers: boolean,
     @Query() queryParams: FilterQueryDto,
   ): Promise<FiltredCaregiver[]> {
-    const startTime = new Date(queryParams.startTime);
-    const endTime = new Date(queryParams.endTime);
+    const { services, startDate, endDate, weekdays } = queryParams;
 
     return this.caregiverInfoService.filterAll(
       isOpenToSeekerHomeLiving,
       showOnlyAvailableCaregivers,
-      startTime,
-      endTime,
-      queryParams.services,
+      services,
+      startDate,
+      endDate,
+      weekdays,
     );
   }
 

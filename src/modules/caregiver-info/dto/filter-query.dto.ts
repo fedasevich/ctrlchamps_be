@@ -1,7 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsDate,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { Weekday } from 'src/modules/appointment/enums/weekday.enum';
 
 export class FilterQueryDto {
   @ApiProperty({
@@ -81,16 +90,31 @@ export class FilterQueryDto {
   services?: string[];
 
   @ApiProperty({
-    description: 'Start time',
-    example: '2021-06-01T00:00:00.000Z',
+    example: '2023-11-28T15:30:00.000Z',
+    description: 'Start date of the appointment',
   })
-  @IsString()
-  startTime: string;
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  startDate: Date;
 
   @ApiProperty({
-    description: 'End time',
-    example: '2021-06-01T00:00:00.000Z',
+    example: '2023-11-28T15:30:00.000Z',
+    description: 'End date of the appointment',
   })
-  @IsString()
-  endTime: string;
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  endDate: Date;
+
+  @ApiProperty({
+    example: ['Monday', 'Wednesday'],
+    description: 'Weekdays of the appointment seeker has chosen',
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsEnum(Weekday, { each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : Array(value)))
+  weekdays?: string[];
 }

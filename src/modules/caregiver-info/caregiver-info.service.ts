@@ -49,9 +49,10 @@ export class CaregiverInfoService {
   async filterAll(
     isOpenToSeekerHomeLiving: boolean,
     showOnlyAvailableCaregivers: boolean,
-    startTime: Date,
-    endTime: Date,
     services?: string[],
+    startTime?: Date,
+    endTime?: Date,
+    weekdays?: string[],
   ): Promise<FiltredCaregiver[]> {
     const formattedServices = services
       ? services.map((service) => `%${service}%`).join(',')
@@ -89,7 +90,7 @@ export class CaregiverInfoService {
           await this.appointmentService.findAppointmentsByTimeRange(
             startTime,
             endTime,
-            ['Monday', 'Wednesday', 'Friday'],
+            weekdays,
           );
 
         const caregiverIdsWithAppointments = caregiversWithAppointments.map(
