@@ -15,7 +15,10 @@ import { TokenGuard } from 'src/modules/auth/middleware/auth.middleware';
 import { NOTIFICATION_HISTORY_EXAMPLE } from './constants/notification.constants';
 import { NotificationApiPath } from './enums/notification.api-path.enum';
 import { NotificationService } from './notification.service';
-import { UnreadNotificationsResponse, NotificationsListResponse } from './types/notification.type';
+import {
+  UnreadNotificationsResponse,
+  NotificationsListResponse,
+} from './types/notification.type';
 
 @ApiTags('Notifications')
 @Controller(ApiPath.Notifications)

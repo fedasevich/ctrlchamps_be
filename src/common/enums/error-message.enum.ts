@@ -55,4 +55,9 @@ export enum ErrorMessage {
   UnreadNotificationsNotFound = 'Unread notifications not found',
   FailedFetchUnreadNotifications = 'Failed to fetch unread notifications',
   AssessmentDate = 'Virtual assessment date has already passed',
+  FailedCreateSeekerReview = 'Failed to create seeker review',
+  SeekerReviewNotFound = 'Seeker review not found',
+  FailedUpdateSeekerReview = 'Failed to update seeker review',
+  FailedDeleteSeekerReview = 'Failed to delete seeker review',
+  UserNotHaveAppointmentWithCaregiverInfo = 'User does not have an appointment with this caregiver',
 }
