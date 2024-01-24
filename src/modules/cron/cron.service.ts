@@ -38,6 +38,11 @@ export class CronService {
   private readonly assessmentReminderTemplateId =
     this.configService.get<string>('SENDGRID_ASSESSMENT_REMINDER_TEMPLATE_ID');
 
+  private readonly seekerReviewReminderTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_SEEKER_REVIEW_REMINDER_TEMPLATE_ID',
+    );
+
   constructor(
     private configService: ConfigService,
     private appointmentService: AppointmentService,
@@ -302,5 +307,21 @@ export class CronService {
         });
       }),
     );
+  }
+
+  @Cron(EVERY_15_MINUTES)
+  async handleSeekerReviewReminderCron(): Promise<void> {
+    const yesterdayAppointments =
+      await this.appointmentService.getAllAppointmentsOneDayAfterEndDate();
+
+    yesterdayAppointments.forEach((appointment) => {
+      // this.emailService.sendEmail({
+      //   to: appointment.user.email,
+      //   templateId: this.seekerReviewReminderTemplateId,
+      //   dynamicTemplateData: {
+      //     appointmentName: appointment.name,
+      //   },
+      // });
+    });
   }
 }
