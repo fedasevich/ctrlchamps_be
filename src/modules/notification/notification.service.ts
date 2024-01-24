@@ -4,9 +4,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from 'src/common/entities/notification.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
-import { UnreadNotificationsResponse, NotificationsListResponse } from './types/notification.type';
+import {
+  UnreadNotificationsResponse,
+  NotificationsListResponse,
+} from './types/notification.type';
 
 @Injectable()
 export class NotificationService {
@@ -62,6 +65,27 @@ export class NotificationService {
         error.message || 'Failed to create notification',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  public async createNotificationWithTransaction(
+    userId: string,
+    appointmentId: string,
+    message: NotificationMessage,
+    initiatorUserId: string,
+    transactionalEntityManager: EntityManager,
+  ): Promise<void> {
+    try {
+      const newNotification = transactionalEntityManager.create(Notification, {
+        message,
+        sender: { id: initiatorUserId },
+        receiver: { id: userId },
+        appointment: { id: appointmentId },
+      });
+
+      await transactionalEntityManager.save(newNotification);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
