@@ -189,12 +189,14 @@ export class VirtualAssessmentService {
       }
 
       const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
-      const currentDateString = currentDate.toString();
-      const VADateString = virtualAssessment.assessmentDate.toString();
+      const virtualAssessmentDate = utcToZonedTime(
+        `${virtualAssessment.assessmentDate} ${virtualAssessment.startTime}`,
+        UTC_TIMEZONE,
+      );
 
       if (
         updateStatusDto.status === VirtualAssessmentStatus.Accepted &&
-        VADateString >= currentDateString
+        virtualAssessmentDate >= currentDate
       ) {
         throw new HttpException(
           ErrorMessage.AssessmentDate,
