@@ -60,25 +60,21 @@ export class CaregiverInfoService {
 
     try {
       const queryBuilder = this.userRepository.createQueryBuilder('user');
-
       queryBuilder.innerJoin('user.caregiverInfo', 'caregiverInfo');
 
-      queryBuilder.andWhere('user.role = :role', {
-        role: UserRole.Caregiver,
-      });
-
+      queryBuilder.where('user.role = :role', { role: UserRole.Caregiver });
       queryBuilder.andWhere('caregiverInfo.services IS NOT NULL');
       queryBuilder.andWhere('caregiverInfo.availability IS NOT NULL');
       queryBuilder.andWhere('caregiverInfo.timeZone IS NOT NULL');
       queryBuilder.andWhere('caregiverInfo.hourlyRate IS NOT NULL');
       queryBuilder.andWhere('caregiverInfo.description IS NOT NULL');
-
       queryBuilder.andWhere(
         'user.isOpenToSeekerHomeLiving = :isOpenToSeekerHomeLiving',
         {
           isOpenToSeekerHomeLiving,
         },
       );
+
       if (formattedServices) {
         queryBuilder.andWhere('caregiverInfo.services LIKE :services', {
           services: formattedServices,
@@ -97,41 +93,53 @@ export class CaregiverInfoService {
           (appointment) => appointment.caregiverInfoId,
         );
 
-        queryBuilder.andWhere(
-          'caregiverInfo.id NOT IN (:...caregiverIdsWithAppointments)',
-          {
-            caregiverIdsWithAppointments,
-          },
-        );
-      }
+        if (caregiverIdsWithAppointments.length) {
+          queryBuilder.andWhere(
+            'caregiverInfo.id NOT IN (:...caregiverIdsWithAppointments)',
+            {
+              caregiverIdsWithAppointments,
+            },
+          );
+        }
 
-      const dayOfWeek = format(startTime, 'EEEE');
-      const startTimeISO = parseISO(startTime.toISOString());
-      const endTimeISO = parseISO(endTime.toISOString());
+        let dayOfWeek: string;
+        const startTimeISO = parseISO(startTime!.toISOString());
+        const endTimeISO = parseISO(endTime!.toISOString());
 
-      if (isShowAvailableCaregivers) {
-        queryBuilder.andWhere('caregiverInfo.availability LIKE :availability', {
-          availability: `%"day": "${dayOfWeek}"%`,
-        });
-      }
+        if (weekdays && weekdays.length) {
+          weekdays.forEach((day) => {
+            queryBuilder.andWhere(`caregiverInfo.availability LIKE :${day}`, {
+              [day]: `%"day": "${day}"%`,
+            });
+          });
 
-      queryBuilder.select([
-        'user.id',
-        'user.firstName',
-        'user.lastName',
-        'caregiverInfo.hourlyRate',
-        'caregiverInfo.availability',
-      ]);
+          dayOfWeek = weekdays[0].toString();
+        } else {
+          dayOfWeek = format(startTime, 'EEEE');
+          queryBuilder.andWhere(
+            'caregiverInfo.availability LIKE :availability',
+            {
+              availability: `%"day": "${dayOfWeek}"%`,
+            },
+          );
+        }
 
-      const caregivers = await queryBuilder.getMany();
+        queryBuilder.select([
+          'user.id',
+          'user.firstName',
+          'user.lastName',
+          'caregiverInfo.hourlyRate',
+          'caregiverInfo.availability',
+        ]);
 
-      if (isShowAvailableCaregivers) {
+        const caregivers = await queryBuilder.getMany();
+
         const filteredCaregivers = caregivers.filter((caregiver) => {
           const { availability } = caregiver.caregiverInfo;
 
           if (availability) {
             const dayAvailability = availability.find(
-              (slot) => slot.day === dayOfWeek,
+              (slot) => weekdays?.includes(slot.day) ?? dayOfWeek === slot.day,
             );
 
             if (dayAvailability) {
@@ -170,6 +178,15 @@ export class CaregiverInfoService {
           hourlyRate: user.caregiverInfo.hourlyRate,
         }));
       }
+
+      queryBuilder.select([
+        'user.id',
+        'user.firstName',
+        'user.lastName',
+        'caregiverInfo.hourlyRate',
+      ]);
+
+      const caregivers = await queryBuilder.getMany();
 
       return caregivers.map((user) => ({
         id: user.id,
