@@ -9,7 +9,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { AppointmentService } from 'modules/appointment/appointment.service';
 import { UserRole } from 'modules/users/enums/user-role.enum';
+import { ZERO } from 'src/common/constants/date.constants';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
+import { SeekerReview } from 'src/common/entities/seeker-reviews.entity';
 import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { Repository } from 'typeorm';
@@ -24,6 +26,8 @@ export class CaregiverInfoService {
     private readonly caregiverInfoRepository: Repository<CaregiverInfo>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(SeekerReview)
+    private readonly seekerReviewRepository: Repository<SeekerReview>,
     @Inject(forwardRef(() => AppointmentService))
     private appointmentService: AppointmentService,
   ) {}
@@ -79,20 +83,28 @@ export class CaregiverInfoService {
         });
       }
 
-      queryBuilder.select([
-        'user.id',
-        'user.firstName',
-        'user.lastName',
-        'caregiverInfo.hourlyRate',
-      ]);
+      queryBuilder.leftJoin('caregiverInfo.seekerReviews', 'seekerReviews');
+      queryBuilder
+        .select([
+          'user.id',
+          'user.firstName',
+          'user.lastName',
+          'caregiverInfo.hourlyRate',
+        ])
+        .addSelect('COALESCE(AVG(seekerReviews.rating), 0)', 'averageRating')
+        .groupBy('user.id')
+        .addGroupBy('user.firstName')
+        .addGroupBy('user.lastName')
+        .addGroupBy('caregiverInfo.hourlyRate');
 
-      const filteredCaregivers = await queryBuilder.getMany();
+      const filteredCaregivers = await queryBuilder.getRawMany();
 
       return filteredCaregivers.map((user) => ({
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        hourlyRate: user.caregiverInfo.hourlyRate,
+        id: user.user_id,
+        firstName: user.user_firstName,
+        lastName: user.user_lastName,
+        hourlyRate: user.caregiverInfo_hourlyRate,
+        averageRating: parseFloat(user.averageRating).toFixed(1),
       }));
     } catch (error) {
       if (error instanceof HttpException) {
@@ -118,11 +130,19 @@ export class CaregiverInfoService {
         ])
         .innerJoinAndSelect('caregiverInfo.workExperiences', 'workExperiences')
         .innerJoinAndSelect('caregiverInfo.certificates', 'certificates')
+        .leftJoinAndSelect('caregiverInfo.seekerReviews', 'seekerReviews')
         .where('user.id = :userId', { userId })
         .getOne();
 
       const count = await this.appointmentService.findAppointmentsCountById(
         userInfo.caregiverInfo.id,
+      );
+
+      const averageRating = await this.seekerReviewRepository.average(
+        'rating',
+        {
+          caregiverInfoId: userInfo.caregiverInfo.id,
+        },
       );
 
       const { workExperiences, certificates, ...caregiverInfo } =
@@ -137,6 +157,10 @@ export class CaregiverInfoService {
         caregiverInfo,
         workExperiences,
         qualifications: certificates,
+        seekerReviews: userInfo.caregiverInfo.seekerReviews,
+        averageRating: averageRating
+          ? averageRating.toFixed(1)
+          : ZERO.toFixed(1),
       };
 
       return detailedCaregiverInfo;
