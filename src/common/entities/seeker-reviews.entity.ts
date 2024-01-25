@@ -25,9 +25,9 @@ export class SeekerReview {
   @Column({ type: 'integer' })
   rating: number;
 
-  @ApiProperty({ description: 'The text of the review.' })
-  @Column({ type: 'varchar', length: 350 })
-  review: string;
+  @ApiProperty({ description: 'The text of the review.', required: false })
+  @Column({ type: 'varchar', length: 350, nullable: true })
+  review?: string;
 
   @ApiProperty({ description: 'The date the review was created.' })
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

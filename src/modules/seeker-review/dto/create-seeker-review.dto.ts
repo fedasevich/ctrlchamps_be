@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   Max,
   MaxLength,
@@ -28,7 +29,7 @@ export class CreateSeekerReviewDto {
   rating: number;
 
   @ApiProperty({ description: 'The text of the review.' })
-  @IsNotEmpty()
+  @IsOptional();
   @MaxLength(MAX_REVIEW_LENGTH)
   @IsString()
   review: string;
