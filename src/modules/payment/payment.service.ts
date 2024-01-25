@@ -638,17 +638,15 @@ export class PaymentService {
 
       let newlyUpdatedBalance = updatedBalance;
 
-      for (const appointment of notPaidAppointments) {
+      notPaidAppointments.forEach(async (appointment) => {
         if (appointment.payment <= newlyUpdatedBalance) {
           await this.appointmentService.updateById(appointment.id, {
             paidForFirstHour: true,
           });
 
           newlyUpdatedBalance -= appointment.payment;
-        } else {
-          continue;
         }
-      }
+      });
 
       await this.userService.updateUserInfo(userId, {
         balance: newlyUpdatedBalance,
