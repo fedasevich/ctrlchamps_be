@@ -21,7 +21,7 @@ import { CreateSeekerReviewDto } from './dto/create-seeker-review.dto';
 @Injectable()
 export class SeekerReviewService {
   private readonly caregiverNewReviewTemplateId =
-    this.configService.get<string>('SENDGRID_NEW_REVIEW_TEMPLATE_ID');
+    this.configService.get<string>('SENDGRID_NEW_SEEKER_REVIEW_TEMPLATE_ID');
 
   constructor(
     @InjectRepository(SeekerReview)
@@ -62,6 +62,9 @@ export class SeekerReviewService {
             recurring: TypeOfAppointment.Recurring,
           },
         )
+        .innerJoinAndSelect('appointment.user', 'appointmentUser')
+        .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .innerJoinAndSelect('caregiverInfo.user', 'caregiverInfoUser')
         .getMany();
 
       if (!userAppointmentsWithCaregiverInfo.length) {
@@ -83,16 +86,18 @@ export class SeekerReviewService {
         })
         .execute();
 
-      // await this.emailService.sendEmail({
-      //   to: appointment.caregiverInfo.user.email,
-      //   templateId: this.caregiverNewReviewTemplateId,
-      //   dynamicTemplateData: {
-      //     seekerName: `${appointment.user.firstName} ${appointment.user.lastName}`,
-      //     appointmentName: appointment.name,
-      //     rating: createSeekerReviewDto.rating,
-      //     review: createSeekerReviewDto.review,
-      //   },
-      // });
+      const selectedAppointment = userAppointmentsWithCaregiverInfo[ZERO];
+
+      await this.emailService.sendEmail({
+        to: selectedAppointment.caregiverInfo.user.email,
+        templateId: this.caregiverNewReviewTemplateId,
+        dynamicTemplateData: {
+          caregiverName: `${selectedAppointment.caregiverInfo.user.firstName} ${selectedAppointment.caregiverInfo.user.lastName}`,
+          seekerName: `${selectedAppointment.user.firstName} ${selectedAppointment.user.lastName}`,
+          seekerReview: createSeekerReviewDto.review,
+          seekerRating: createSeekerReviewDto.rating,
+        },
+      });
     } catch (error) {
       throw new HttpException(
         ErrorMessage.FailedCreateSeekerReview,
