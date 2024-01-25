@@ -54,6 +54,7 @@ import {
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionType } from './enums/transaction-type.enum';
 import { getHourDifference } from './helpers/difference-in-hours';
+import { findNextDay } from './helpers/find-closest-day-to-date';
 import { PayForHourOfWorkResponse } from './types/payment-response.type';
 import {
   TransactionQuery,
@@ -387,8 +388,12 @@ export class PaymentService {
       const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
 
       const dayName = format(currentDate, 'EEEE');
+      const firstSelectedWeekday = findNextDay(
+        appointment.startDate,
+        JSON.parse(appointment.weekday),
+      );
 
-      if (dayName === JSON.parse(appointment.weekday)[0]) {
+      if (dayName === firstSelectedWeekday) {
         const activityLogs = await this.activityLogRepository
           .createQueryBuilder('activityLog')
           .where('activityLog.status IN (:...statuses)', {
@@ -847,7 +852,10 @@ export class PaymentService {
               );
             }
           } else if (seeker.balance < appointment.seekerDebt) {
-            const firstSelectedWeekday = JSON.parse(appointment.weekday)[0];
+            const firstSelectedWeekday = findNextDay(
+              appointment.startDate,
+              JSON.parse(appointment.weekday),
+            );
 
             if (
               (firstSelectedWeekday ===

@@ -16,6 +16,8 @@ import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { Repository } from 'typeorm';
 
+import { findNextDay } from '../payment/helpers/find-closest-day-to-date';
+
 import { DetailedCaregiverInfo } from './types/detailed-caregiver-info.type';
 import { FiltredCaregiver } from './types/filtred-caregiver.type';
 
@@ -113,7 +115,7 @@ export class CaregiverInfoService {
             });
           });
 
-          dayOfWeek = weekdays[0].toString();
+          dayOfWeek = findNextDay(startTime, weekdays);
         } else {
           dayOfWeek = format(startTime, 'EEEE');
           queryBuilder.andWhere(
