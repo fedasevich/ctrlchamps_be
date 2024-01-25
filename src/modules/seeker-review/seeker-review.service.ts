@@ -8,13 +8,12 @@ import { ZERO } from 'src/common/constants/date.constants';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { SeekerReview } from 'src/common/entities/seeker-reviews.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
+import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType as TypeOfAppointment } from 'src/modules/appointment/enums/appointment-type.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
 import { NotificationService } from 'src/modules/notification/notification.service';
 import { Repository } from 'typeorm';
-
-import { AppointmentService } from '../appointment/appointment.service';
 
 import { CreateSeekerReviewDto } from './dto/create-seeker-review.dto';
 
