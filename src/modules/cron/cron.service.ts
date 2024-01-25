@@ -12,7 +12,6 @@ import { AppointmentService } from 'src/modules/appointment/appointment.service'
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
 import {
-  EVERY_10_MINUTES,
   EVERY_15_MINUTES,
   NEXT_DAY_NUMBER,
   PAYMENT_APPOINTMENT_DEADLINE,
@@ -122,6 +121,10 @@ export class CronService {
         const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
         const currentDateString = currentDate.toString();
         const startDateString = appointment.startDate.toString();
+        const startDateUTC = utcToZonedTime(
+          appointment.startDate,
+          UTC_TIMEZONE,
+        );
 
         if (
           appointment.type === AppointmentType.OneTime &&
@@ -196,7 +199,7 @@ export class CronService {
 
           if (
             virtualAssessment.status === VirtualAssessmentStatus.Proposed &&
-            currentDateString >= startDateString
+            currentDate >= startDateUTC
           ) {
             await this.appointmentService.updateById(appointment.id, {
               status: AppointmentStatus.Rejected,
@@ -244,7 +247,7 @@ export class CronService {
     return false;
   }
 
-  @Cron(EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async checkAppointmentStatusAndCharge(): Promise<void> {
     console.log('checkAppointmentStatusAndCharge CRON', new Date());
     const appointments =
@@ -257,6 +260,18 @@ export class CronService {
         await this.paymentService.chargeRecurringPaymentTask(appointment.id);
       }
     });
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async checkRecurringAppointmentDebt(): Promise<void> {
+    const appointments =
+      await this.appointmentService.checkRecurringAppointmentToBePaid();
+
+    await Promise.all(
+      appointments.map(async (appointment) => {
+        await this.paymentService.chargeSeekerRecurringDebt(appointment.id);
+      }),
+    );
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)

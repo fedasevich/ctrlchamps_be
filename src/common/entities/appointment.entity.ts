@@ -12,6 +12,7 @@ import { User } from 'src/common/entities/user.entity';
 import { VirtualAssessment } from 'src/common/entities/virtual-assessment.entity';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType } from 'src/modules/appointment/enums/appointment-type.enum';
+import { DebtStatus } from 'src/modules/appointment/enums/debt-status.enum';
 import {
   Column,
   Entity,
@@ -158,6 +159,27 @@ export class Appointment {
   })
   @Column({ type: 'timestamp', nullable: true })
   signingDate: Date;
+
+  @ApiProperty({
+    enum: DebtStatus,
+    description: 'Current status of the debt',
+  })
+  @Column({
+    type: 'enum',
+    enum: DebtStatus,
+    default: DebtStatus.Absent,
+  })
+  debtStatus: DebtStatus;
+
+  @ApiProperty({
+    example: 50,
+    description: 'Seeker debt for the appointment',
+  })
+  @Column({
+    type: 'float',
+    default: 0,
+  })
+  seekerDebt: number;
 
   @ApiProperty({
     example: '2023-11-28T15:30:00.000Z',
