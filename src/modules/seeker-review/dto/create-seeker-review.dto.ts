@@ -29,7 +29,7 @@ export class CreateSeekerReviewDto {
   rating: number;
 
   @ApiProperty({ description: 'The text of the review.' })
-  @IsOptional();
+  @IsOptional()
   @MaxLength(MAX_REVIEW_LENGTH)
   @IsString()
   review: string;
