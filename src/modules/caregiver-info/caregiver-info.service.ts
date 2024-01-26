@@ -7,9 +7,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { format, isWithinInterval, parseISO } from 'date-fns';
 import { AppointmentService } from 'modules/appointment/appointment.service';
 import { UserRole } from 'modules/users/enums/user-role.enum';
-import { ZERO } from 'src/common/constants/date.constants';
+import { DATE_FORMAT, ZERO } from 'src/common/constants/date.constants';
 import { CaregiverInfo } from 'src/common/entities/caregiver.profile.entity';
 import { SeekerReview } from 'src/common/entities/seeker-reviews.entity';
 import { User } from 'src/common/entities/user.entity';
@@ -50,7 +51,11 @@ export class CaregiverInfoService {
 
   async filterAll(
     isOpenToSeekerHomeLiving: boolean,
+    isShowAvailableCaregivers: boolean,
     services?: string[],
+    startTime?: Date,
+    endTime?: Date,
+    weekdays?: string[],
   ): Promise<FiltredCaregiver[]> {
     const formattedServices = services
       ? services.map((service) => `%${service}%`).join(',')
@@ -58,25 +63,21 @@ export class CaregiverInfoService {
 
     try {
       const queryBuilder = this.userRepository.createQueryBuilder('user');
-
       queryBuilder.innerJoin('user.caregiverInfo', 'caregiverInfo');
 
-      queryBuilder.andWhere('user.role = :role', {
-        role: UserRole.Caregiver,
-      });
-
+      queryBuilder.where('user.role = :role', { role: UserRole.Caregiver });
       queryBuilder.andWhere('caregiverInfo.services IS NOT NULL');
       queryBuilder.andWhere('caregiverInfo.availability IS NOT NULL');
       queryBuilder.andWhere('caregiverInfo.timeZone IS NOT NULL');
       queryBuilder.andWhere('caregiverInfo.hourlyRate IS NOT NULL');
       queryBuilder.andWhere('caregiverInfo.description IS NOT NULL');
-
       queryBuilder.andWhere(
         'user.isOpenToSeekerHomeLiving = :isOpenToSeekerHomeLiving',
         {
           isOpenToSeekerHomeLiving,
         },
       );
+
       if (formattedServices) {
         queryBuilder.andWhere('caregiverInfo.services LIKE :services', {
           services: formattedServices,
@@ -90,6 +91,7 @@ export class CaregiverInfoService {
           'user.firstName',
           'user.lastName',
           'caregiverInfo.hourlyRate',
+          'caregiverInfo.availability',
         ])
         .addSelect('COALESCE(AVG(seekerReviews.rating), 0)', 'averageRating')
         .groupBy('user.id')
@@ -97,9 +99,100 @@ export class CaregiverInfoService {
         .addGroupBy('user.lastName')
         .addGroupBy('caregiverInfo.hourlyRate');
 
-      const filteredCaregivers = await queryBuilder.getRawMany();
+      if (isShowAvailableCaregivers) {
+        const caregiversWithAppointments =
+          await this.appointmentService.findAppointmentsByTimeRange(
+            startTime,
+            endTime,
+            weekdays,
+          );
 
-      return filteredCaregivers.map((user) => ({
+        const caregiverIdsWithAppointments = caregiversWithAppointments.map(
+          (appointment) => appointment.caregiverInfoId,
+        );
+
+        if (caregiverIdsWithAppointments.length) {
+          queryBuilder.andWhere(
+            'caregiverInfo.id NOT IN (:...caregiverIdsWithAppointments)',
+            {
+              caregiverIdsWithAppointments,
+            },
+          );
+        }
+
+        let dayOfWeek: string;
+        const startTimeISO = parseISO(startTime!.toISOString());
+        const endTimeISO = parseISO(endTime!.toISOString());
+
+        if (weekdays && weekdays.length) {
+          weekdays.forEach((day) => {
+            queryBuilder.andWhere(`caregiverInfo.availability LIKE :${day}`, {
+              [day]: `%"day": "${day}"%`,
+            });
+          });
+
+          dayOfWeek = weekdays[0].toString();
+        } else {
+          dayOfWeek = format(startTime, 'EEEE');
+          queryBuilder.andWhere(
+            'caregiverInfo.availability LIKE :availability',
+            {
+              availability: `%"day": "${dayOfWeek}"%`,
+            },
+          );
+        }
+
+        const caregivers = await queryBuilder.getRawMany();
+
+        const filteredCaregivers = caregivers.filter((caregiver) => {
+          const { caregiverInfo_availability: availability } = caregiver;
+
+          if (availability) {
+            const dayAvailability = availability.find(
+              (slot) => weekdays?.includes(slot.day) ?? dayOfWeek === slot.day,
+            );
+
+            if (dayAvailability) {
+              const slotStartDate = parseISO(
+                `${format(startTimeISO, DATE_FORMAT)}T${
+                  dayAvailability.startTime
+                }:00.000Z`,
+              );
+
+              const slotEndDate = parseISO(
+                `${format(endTimeISO, DATE_FORMAT)}T${
+                  dayAvailability.endTime
+                }:00.000Z`,
+              );
+
+              return (
+                isWithinInterval(startTimeISO, {
+                  start: slotStartDate,
+                  end: slotEndDate,
+                }) &&
+                isWithinInterval(endTimeISO, {
+                  start: slotStartDate,
+                  end: slotEndDate,
+                })
+              );
+            }
+          }
+
+          return false;
+        });
+
+        return filteredCaregivers.map((user) => ({
+          id: user.user_id,
+          firstName: user.user_firstName,
+          lastName: user.user_lastName,
+          hourlyRate: user.caregiverInfo_hourlyRate,
+          averageRating: parseFloat(user.averageRating).toFixed(1),
+        }));
+      }
+
+      const caregivers = await queryBuilder.getRawMany();
+
+      return caregivers.map((user) => ({
         id: user.user_id,
         firstName: user.user_firstName,
         lastName: user.user_lastName,

@@ -32,7 +32,7 @@ import { SeekerCapabilityService } from 'src/modules/seeker-capability/seeker-ca
 import { SeekerDiagnosisService } from 'src/modules/seeker-diagnosis/seeker-diagnosis.service';
 import { SeekerTaskService } from 'src/modules/seeker-task/seeker-task.service';
 import { UserService } from 'src/modules/users/user.service';
-import { EntityManager, Repository } from 'typeorm';
+import { Between, EntityManager, Repository } from 'typeorm';
 
 import { NotificationService } from '../notification/notification.service';
 import { PaymentService } from '../payment/payment.service';
@@ -864,6 +864,46 @@ export class AppointmentService {
     } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findAppointmentsByTimeRange(
+    startTime: Date,
+    endTime: Date,
+    weekdays: string[],
+  ): Promise<Appointment[]> {
+    try {
+      const oneTimeAppointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where({
+          type: TypeOfAppointment.OneTime,
+          startDate: Between(startTime, endTime),
+          endDate: Between(startTime, endTime),
+        })
+        .getMany();
+
+      const recurringAppointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where({
+          type: TypeOfAppointment.Recurring,
+          startDate: Between(startTime, endTime),
+          endDate: Between(startTime, endTime),
+        })
+        .getMany();
+
+      const filteredRecurringAppointments = recurringAppointments.filter(
+        (appointment) =>
+          JSON.parse(appointment.weekday).some((day: string) =>
+            weekdays.includes(day),
+          ),
+      );
+
+      return [...oneTimeAppointments, ...filteredRecurringAppointments];
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.AppointmentNotFound,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
