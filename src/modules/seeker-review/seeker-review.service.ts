@@ -8,10 +8,8 @@ import { ZERO } from 'src/common/constants/date.constants';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { SeekerReview } from 'src/common/entities/seeker-reviews.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
-import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
-import { NotificationService } from 'src/modules/notification/notification.service';
 import { Repository } from 'typeorm';
 
 import { CreateSeekerReviewDto } from './dto/create-seeker-review.dto';
@@ -26,8 +24,6 @@ export class SeekerReviewService {
     private readonly seekerReviewRepository: Repository<SeekerReview>,
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
-    private readonly appointmentService: AppointmentService,
-    private readonly notificationService: NotificationService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
   ) {}
