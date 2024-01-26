@@ -56,6 +56,7 @@ export class CaregiverInfoService {
     startTime?: Date,
     endTime?: Date,
     weekdays?: string[],
+    ratings?: number[],
   ): Promise<FiltredCaregiver[]> {
     const formattedServices = services
       ? services.map((service) => `%${service}%`).join(',')
@@ -97,7 +98,11 @@ export class CaregiverInfoService {
         .groupBy('user.id')
         .addGroupBy('user.firstName')
         .addGroupBy('user.lastName')
-        .addGroupBy('caregiverInfo.hourlyRate');
+        .addGroupBy('caregiverInfo.hourlyRate')
+        .having(ratings ? 'FLOOR(averageRating) IN (:...ratings)' : '1=1', {
+          ratings,
+        })
+        .orderBy('averageRating', 'DESC');
 
       if (isShowAvailableCaregivers) {
         const caregiversWithAppointments =
