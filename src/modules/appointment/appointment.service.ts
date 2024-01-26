@@ -849,12 +849,10 @@ export class AppointmentService {
           'reviewUser.id IS NULL OR reviewUser.id != appointment.userId',
         )
         .andWhere(
-          '(appointment.status = :finished AND appointment.type = :oneTime) OR (appointment.status = :completed AND appointment.type = :recurring)',
+          'appointment.status = :finished OR appointment.status = :completed',
           {
             finished: AppointmentStatus.Finished,
-            oneTime: TypeOfAppointment.OneTime,
             completed: AppointmentStatus.Completed,
-            recurring: TypeOfAppointment.Recurring,
           },
         )
         .innerJoinAndSelect('appointment.user', 'appointmentUser')
