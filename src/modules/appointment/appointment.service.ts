@@ -30,6 +30,7 @@ import { UserService } from 'src/modules/users/user.service';
 import { Between, EntityManager, Repository } from 'typeorm';
 
 import { NotificationService } from '../notification/notification.service';
+import { TransactionType } from '../payment/enums/transaction-type.enum';
 import { PaymentService } from '../payment/payment.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment.constant';
@@ -37,7 +38,6 @@ import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { AppointmentType as TypeOfAppointment } from './enums/appointment-type.enum';
 import { SortOrder } from './enums/sort-query.enum';
-import { TransactionType } from '../payment/enums/transaction-type.enum';
 
 @Injectable()
 export class AppointmentService {
