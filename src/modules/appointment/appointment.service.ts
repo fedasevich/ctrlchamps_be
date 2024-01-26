@@ -37,6 +37,7 @@ import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment
 import { AppointmentStatus } from './enums/appointment-status.enum';
 import { AppointmentType as TypeOfAppointment } from './enums/appointment-type.enum';
 import { SortOrder } from './enums/sort-query.enum';
+import { TransactionType } from '../payment/enums/transaction-type.enum';
 
 @Injectable()
 export class AppointmentService {
@@ -207,12 +208,14 @@ export class AppointmentService {
               createAppointment.caregiverInfoId,
             );
 
-          await this.paymentService.createSeekerCaregiverTransactions(
-            userId,
-            caregiverInfo.user.id,
-            caregiverInfo.hourlyRate,
+          await this.paymentService.createTransaction(
+            {
+              userId,
+              type: TransactionType.Outcome,
+              amount: caregiverInfo.hourlyRate,
+              appointmentId,
+            },
             transactionalEntityManager,
-            appointmentId,
           );
 
           await this.sendAppointmentConfirmationEmails(
