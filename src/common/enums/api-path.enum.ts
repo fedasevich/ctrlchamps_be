@@ -12,4 +12,5 @@ export enum ApiPath {
   Notifications = 'notifications',
   AdminPanel = 'admin-panel',
   DefaultSeekerTask = 'default-seeker-task',
+  SeekerReview = 'seeker-review',
 }

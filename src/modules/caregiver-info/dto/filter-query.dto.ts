@@ -117,4 +117,16 @@ export class FilterQueryDto {
   @IsEnum(Weekday, { each: true })
   @Transform(({ value }) => (Array.isArray(value) ? value : Array(value)))
   weekdays?: string[];
+
+  @ApiProperty({
+    description: 'Ratings',
+    example: [1, 2, 3, 4],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) =>
+    Array.isArray(value) ? value.map(Number) : [Number(value)],
+  )
+  ratings?: number[];
 }

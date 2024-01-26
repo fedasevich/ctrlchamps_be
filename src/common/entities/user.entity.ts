@@ -8,14 +8,16 @@ import { Notification } from 'src/common/entities/notification.entity';
 import { TransactionHistory } from 'src/common/entities/transaction-history.entity';
 import { UserStatus } from 'src/modules/users/enums/user-status.enum';
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
-  OneToOne,
-  OneToMany,
   CreateDateColumn,
+  Entity,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { SeekerReview } from './seeker-reviews.entity';
 
 @Entity()
 export class User {
@@ -203,4 +205,7 @@ export class User {
 
   @OneToMany(() => Notification, (notification) => notification.receiver)
   receivedNotifications: Notification[];
+
+  @OneToMany(() => SeekerReview, (reviews) => reviews.user)
+  seekerReviews: SeekerReview[];
 }
