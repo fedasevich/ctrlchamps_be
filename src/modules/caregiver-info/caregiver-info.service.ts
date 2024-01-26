@@ -128,9 +128,19 @@ export class CaregiverInfoService {
           'caregiverInfo.services',
           'caregiverInfo.availability',
         ])
+
         .innerJoinAndSelect('caregiverInfo.workExperiences', 'workExperiences')
         .innerJoinAndSelect('caregiverInfo.certificates', 'certificates')
+
         .leftJoinAndSelect('caregiverInfo.seekerReviews', 'seekerReviews')
+        .leftJoin('seekerReviews.user', 'seekerReviewUser')
+        .addSelect([
+          'seekerReviewUser.id',
+          'seekerReviewUser.lastName',
+          'seekerReviewUser.firstName',
+          'seekerReviewUser.avatar',
+        ])
+
         .where('user.id = :userId', { userId })
         .getOne();
 
