@@ -2,18 +2,19 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { Appointment } from 'src/common/entities/appointment.entity';
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
-  OneToOne,
+  Entity,
   JoinColumn,
   OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { PreferredDay } from '../enums/preferred-time.enum';
 import { Qualification } from '../enums/qualification.enum';
 
 import { Certificate } from './certificate.entity';
+import { SeekerReview } from './seeker-reviews.entity';
 import { User } from './user.entity';
 import { WorkExperience } from './work-experience.entity';
 
@@ -118,4 +119,7 @@ export class CaregiverInfo {
 
   @OneToMany(() => Appointment, (appointment) => appointment.caregiverInfo)
   appointment: Appointment[];
+
+  @OneToMany(() => SeekerReview, (reviews) => reviews.caregiverInfo)
+  seekerReviews: SeekerReview[];
 }

@@ -8,9 +8,14 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
-import { DATE_FORMAT, TODAY_DATE } from 'src/common/constants/date.constants';
+import { ONE_DAY } from 'src/common/constants/constants';
+import {
+  DATE_FORMAT,
+  TODAY_DATE,
+  ZERO,
+} from 'src/common/constants/date.constants';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
@@ -824,6 +829,41 @@ export class AppointmentService {
         .execute();
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getAllAppointmentsOneDayAfterEndDate(): Promise<Appointment[]> {
+    try {
+      const oneDayAgo = subDays(new Date(), ONE_DAY);
+
+      oneDayAgo.setMilliseconds(ZERO);
+      oneDayAgo.setSeconds(ZERO);
+
+      const appointments = await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where('appointment.endDate = :oneDayAgo', { oneDayAgo })
+        .innerJoin('appointment.caregiverInfo', 'caregiverInfo')
+        .leftJoin('caregiverInfo.seekerReviews', 'seekerReviews')
+        .leftJoinAndSelect('seekerReviews.user', 'reviewUser')
+        .andWhere(
+          'reviewUser.id IS NULL OR reviewUser.id != appointment.userId',
+        )
+        .andWhere(
+          'appointment.status = :finished OR appointment.status = :completed',
+          {
+            finished: AppointmentStatus.Finished,
+            completed: AppointmentStatus.Completed,
+          },
+        )
+        .innerJoinAndSelect('appointment.user', 'appointmentUser')
+        .getMany();
+
+      return appointments;
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
