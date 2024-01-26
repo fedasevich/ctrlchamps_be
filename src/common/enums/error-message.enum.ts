@@ -54,7 +54,6 @@ export enum ErrorMessage {
   FailedUpdateNotification = 'Failed to update notifications',
   UnreadNotificationsNotFound = 'Unread notifications not found',
   FailedFetchUnreadNotifications = 'Failed to fetch unread notifications',
-  AssessmentDate = 'Virtual assessment date has already passed',
   FailedCreateSeekerReview = 'Failed to create seeker review',
   SeekerReviewNotFound = 'Seeker review not found',
   FailedUpdateSeekerReview = 'Failed to update seeker review',
