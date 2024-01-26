@@ -193,20 +193,13 @@ export class CronService {
               status: AppointmentStatus.Ongoing,
             });
           }
-        } else if (appointment.status === AppointmentStatus.Virtual) {
-          const virtualAssessment =
-            await this.virtualAssessmentService.findVirtualAssessmentById(
-              appointment.id,
-            );
-
-          if (
-            virtualAssessment.status === VirtualAssessmentStatus.Proposed &&
-            currentDate >= startDateUTC
-          ) {
-            await this.appointmentService.updateById(appointment.id, {
-              status: AppointmentStatus.Rejected,
-            });
-          }
+        } else if (
+          appointment.status === AppointmentStatus.Virtual &&
+          currentDate >= startDateUTC
+        ) {
+          await this.appointmentService.updateById(appointment.id, {
+            status: AppointmentStatus.Rejected,
+          });
         }
       }),
     );
