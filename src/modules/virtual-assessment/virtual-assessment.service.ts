@@ -193,10 +193,15 @@ export class VirtualAssessmentService {
         `${virtualAssessment.assessmentDate} ${virtualAssessment.startTime}`,
         UTC_TIMEZONE,
       );
+      const appointmentStartDate = utcToZonedTime(
+        virtualAssessment.appointment.startDate,
+        UTC_TIMEZONE,
+      );
 
       if (
         updateStatusDto.status === VirtualAssessmentStatus.Accepted &&
-        virtualAssessmentDate >= currentDate
+        (virtualAssessmentDate <= currentDate ||
+          virtualAssessmentDate >= appointmentStartDate)
       ) {
         throw new HttpException(
           ErrorMessage.AssessmentDate,
