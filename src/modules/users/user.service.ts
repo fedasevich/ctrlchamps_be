@@ -327,4 +327,21 @@ export class UserService {
       );
     }
   }
+
+  async findCaregiverInfoByUserId(userId: string): Promise<User> {
+    try {
+      return await this.userRepository
+        .createQueryBuilder('user')
+        .where('user.id = :userId', {
+          userId,
+        })
+        .innerJoinAndSelect('user.caregiverInfo', 'caregiverInfo')
+        .getOne();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.CaregiverNotExist,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

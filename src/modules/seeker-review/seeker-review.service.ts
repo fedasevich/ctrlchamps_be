@@ -7,7 +7,6 @@ import { ONE_DAY } from 'src/common/constants/constants';
 import { ZERO } from 'src/common/constants/date.constants';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { SeekerReview } from 'src/common/entities/seeker-reviews.entity';
-import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
@@ -17,6 +16,7 @@ import {
 } from 'src/modules/seeker-review/seeker-review.constants';
 import { ReviewQuery } from 'src/modules/seeker-review/types/review-query.type';
 import { ReviewsByUserId } from 'src/modules/seeker-review/types/reviews-by-user-id.type';
+import { UserService } from 'src/modules/users/user.service';
 import { Repository } from 'typeorm';
 
 import { CreateSeekerReviewDto } from './dto/create-seeker-review.dto';
@@ -33,8 +33,7 @@ export class SeekerReviewService {
     private readonly appointmentRepository: Repository<Appointment>,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userService: UserService,
   ) {}
 
   async create(
@@ -172,22 +171,24 @@ export class SeekerReviewService {
   async getAllByUserId(
     { limit = DEFAULT_PAGINATION_LIMIT, offset = DEFAULT_OFFSET }: ReviewQuery,
     userId: string,
-  ): Promise<any> {
+  ): Promise<ReviewsByUserId> {
     try {
-      return await this.userRepository
-        .createQueryBuilder('user')
-        .where('user.id = :userId', { userId })
-        .innerJoin('user.caregiverInfo', 'caregiverInfo')
-        .innerJoin('caregiverInfo.seekerReviews', 'seekerReviews')
+      const { caregiverInfo } =
+        await this.userService.findCaregiverInfoByUserId(userId);
+
+      const [data, count] = await this.seekerReviewRepository
+        .createQueryBuilder('seekerReviews')
+        .where('seekerReviews.caregiverInfoId = :caregiverInfoId', {
+          caregiverInfoId: caregiverInfo.id,
+        })
         .select([
-          'user.id',
-          'caregiverInfo.id',
           'seekerReviews.id',
           'seekerReviews.rating',
           'seekerReviews.review',
           'seekerReviews.createdAt',
+          'seekerReviews.caregiverInfoId',
         ])
-        .leftJoin('seekerReviews.user', 'seekerReviewUser')
+        .innerJoin('seekerReviews.user', 'seekerReviewUser')
         .addSelect([
           'seekerReviewUser.id',
           'seekerReviewUser.lastName',
@@ -197,10 +198,15 @@ export class SeekerReviewService {
         .take(limit)
         .skip(offset)
         .orderBy('seekerReviews.createdAt', 'DESC')
-        .getOne();
+        .getManyAndCount();
+
+      return {
+        data,
+        count,
+      };
     } catch (error) {
       throw new HttpException(
-        ErrorMessage.FailedFetchUsers,
+        ErrorMessage.FailedFetchReviews,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

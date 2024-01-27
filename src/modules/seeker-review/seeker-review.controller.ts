@@ -78,7 +78,7 @@ export class SeekerReviewController {
   }
 
   @Get(SeekerReviewApiPath.Id)
-  // @AllowedRoles(UserRole.SuperAdmin, UserRole.Admin)
+  @AllowedRoles(UserRole.SuperAdmin, UserRole.Admin)
   @ApiOperation({ summary: 'Get reviews by user id' })
   @ApiQuery({
     name: 'limit',
