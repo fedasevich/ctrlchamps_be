@@ -60,4 +60,5 @@ export enum ErrorMessage {
   FailedDeleteSeekerReview = 'Failed to delete seeker review',
   UserNotHaveAppointmentWithCaregiverInfo = 'User does not have an appointment with this caregiver',
   AssessmentDate = 'Virtual assessment or appointment date has already passed',
+  FailedFetchReviews = 'Failed to fetch reviews',
 }

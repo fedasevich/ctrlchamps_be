@@ -7,12 +7,19 @@ import { ONE_DAY } from 'src/common/constants/constants';
 import { ZERO } from 'src/common/constants/date.constants';
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { SeekerReview } from 'src/common/entities/seeker-reviews.entity';
+import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { AppointmentType as TypeOfAppointment } from 'src/modules/appointment/enums/appointment-type.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
 import { NotificationService } from 'src/modules/notification/notification.service';
+import {
+  DEFAULT_OFFSET,
+  DEFAULT_PAGINATION_LIMIT,
+} from 'src/modules/seeker-review/seeker-review.constants';
+import { ReviewQuery } from 'src/modules/seeker-review/types/review-query.type';
+import { ReviewsByUserId } from 'src/modules/seeker-review/types/reviews-by-user-id.type';
 import { Repository } from 'typeorm';
 
 import { CreateSeekerReviewDto } from './dto/create-seeker-review.dto';
@@ -31,6 +38,8 @@ export class SeekerReviewService {
     private readonly notificationService: NotificationService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async create(
@@ -165,5 +174,42 @@ export class SeekerReviewService {
     });
 
     return average;
+  }
+
+  async getAllByUserId(
+    { limit = DEFAULT_PAGINATION_LIMIT, offset = DEFAULT_OFFSET }: ReviewQuery,
+    userId: string,
+  ): Promise<any> {
+    try {
+      return await this.userRepository
+        .createQueryBuilder('user')
+        .where('user.id = :userId', { userId })
+        .innerJoin('user.caregiverInfo', 'caregiverInfo')
+        .innerJoin('caregiverInfo.seekerReviews', 'seekerReviews')
+        .select([
+          'user.id',
+          'caregiverInfo.id',
+          'seekerReviews.id',
+          'seekerReviews.rating',
+          'seekerReviews.review',
+          'seekerReviews.createdAt',
+        ])
+        .leftJoin('seekerReviews.user', 'seekerReviewUser')
+        .addSelect([
+          'seekerReviewUser.id',
+          'seekerReviewUser.lastName',
+          'seekerReviewUser.firstName',
+          'seekerReviewUser.avatar',
+        ])
+        .take(limit)
+        .skip(offset)
+        .orderBy('seekerReviews.createdAt', 'DESC')
+        .getOne();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedFetchUsers,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
