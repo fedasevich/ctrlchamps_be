@@ -1,4 +1,4 @@
 export enum SeekerReviewApiPath {
   Root = '',
-  Id = ':id',
+  Id = '/:id',
 }
