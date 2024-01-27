@@ -9,11 +9,8 @@ import { Appointment } from 'src/common/entities/appointment.entity';
 import { SeekerReview } from 'src/common/entities/seeker-reviews.entity';
 import { User } from 'src/common/entities/user.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
-import { AppointmentService } from 'src/modules/appointment/appointment.service';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
-import { AppointmentType as TypeOfAppointment } from 'src/modules/appointment/enums/appointment-type.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
-import { NotificationService } from 'src/modules/notification/notification.service';
 import {
   DEFAULT_OFFSET,
   DEFAULT_PAGINATION_LIMIT,
@@ -34,8 +31,6 @@ export class SeekerReviewService {
     private readonly seekerReviewRepository: Repository<SeekerReview>,
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
-    private readonly appointmentService: AppointmentService,
-    private readonly notificationService: NotificationService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
     @InjectRepository(User)
@@ -62,12 +57,10 @@ export class SeekerReviewService {
           caregiverInfoId,
         })
         .andWhere(
-          '(appointment.status = :finished AND appointment.type = :oneTime) OR (appointment.status = :completed AND appointment.type = :recurring)',
+          'appointment.status = :finished OR appointment.status = :completed',
           {
             finished: AppointmentStatus.Finished,
-            oneTime: TypeOfAppointment.OneTime,
             completed: AppointmentStatus.Completed,
-            recurring: TypeOfAppointment.Recurring,
           },
         )
         .innerJoinAndSelect('appointment.user', 'appointmentUser')
