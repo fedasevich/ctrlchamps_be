@@ -368,9 +368,6 @@ export class VirtualAssessmentService {
         await this.emailService.sendEmail({
           to: virtualAssessment.appointment.caregiverInfo.user.email,
           templateId: this.seekerAcceptedRescheduledVirtualAssessmentTemplateId,
-          dynamicTemplateData: {
-            name: virtualAssessment.appointment.caregiverInfo.user.firstName,
-          },
         });
       }
 
@@ -395,6 +392,9 @@ export class VirtualAssessmentService {
         await this.emailService.sendEmail({
           to: virtualAssessment.appointment.caregiverInfo.user.email,
           templateId: this.seekerRejectedAppointmentTemplateId,
+          dynamicTemplateData: {
+            name: virtualAssessment.appointment.caregiverInfo.user.firstName,
+          },
         });
       }
     } catch (error) {
