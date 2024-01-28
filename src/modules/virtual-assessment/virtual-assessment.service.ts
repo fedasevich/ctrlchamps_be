@@ -344,9 +344,14 @@ export class VirtualAssessmentService {
         );
       }
 
-      if (status === VirtualAssessmentStatus.Accepted) {
+      if (
+        status === VirtualAssessmentStatus.Accepted &&
+        virtualAssessment.status !== VirtualAssessmentStatus.Accepted
+      ) {
         virtualAssessment.reschedulingAccepted = true;
         virtualAssessment.status = VirtualAssessmentStatus.Accepted;
+
+        await this.virtualAssessmentRepository.save(virtualAssessment);
 
         await this.notificationService.createNotification(
           virtualAssessment.appointment.caregiverInfo.user.id,
@@ -365,9 +370,8 @@ export class VirtualAssessmentService {
         virtualAssessment.reschedulingAccepted = false;
         virtualAssessment.appointment.status = AppointmentStatus.Rejected;
         await this.appointmentRepository.save(virtualAssessment.appointment);
+        await this.virtualAssessmentRepository.save(virtualAssessment);
       }
-
-      await this.virtualAssessmentRepository.save(virtualAssessment);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
