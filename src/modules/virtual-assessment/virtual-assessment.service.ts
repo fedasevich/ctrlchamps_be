@@ -66,6 +66,11 @@ export class VirtualAssessmentService {
       'SENDGRID_SEEKER_ACCEPTED_RESCHEDULED_VIRTUAL_ASSESSMENT_TEMPLATE_ID',
     );
 
+  private readonly seekerRejectedAppointmentTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_APPOINTMENT_REJECT_BY_CLIENT_TEMPLATE_ID',
+    );
+
   constructor(
     @InjectRepository(VirtualAssessment)
     private readonly virtualAssessmentRepository: Repository<VirtualAssessment>,
@@ -363,6 +368,9 @@ export class VirtualAssessmentService {
         await this.emailService.sendEmail({
           to: virtualAssessment.appointment.caregiverInfo.user.email,
           templateId: this.seekerAcceptedRescheduledVirtualAssessmentTemplateId,
+          dynamicTemplateData: {
+            name: virtualAssessment.appointment.caregiverInfo.user.firstName,
+          },
         });
       }
 
@@ -383,6 +391,11 @@ export class VirtualAssessmentService {
           NotificationMessage.RejectedVA,
           virtualAssessment.appointment.userId,
         );
+
+        await this.emailService.sendEmail({
+          to: virtualAssessment.appointment.caregiverInfo.user.email,
+          templateId: this.seekerRejectedAppointmentTemplateId,
+        });
       }
     } catch (error) {
       if (error instanceof HttpException) {
