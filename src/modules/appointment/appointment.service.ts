@@ -19,6 +19,7 @@ import {
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
+import { isAppointmentDate } from 'src/common/helpers/is-appointment-date.helper';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import {
   AppointmentListResponse,
@@ -496,7 +497,13 @@ export class AppointmentService {
 
         .getMany();
 
-      return appointments;
+      const filteredAppointments = appointments.filter((appointment) =>
+        appointment.type === TypeOfAppointment.Recurring
+          ? isAppointmentDate(appointment.weekday, new Date(date))
+          : true,
+      );
+
+      return filteredAppointments;
     } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,
