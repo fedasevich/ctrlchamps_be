@@ -304,10 +304,10 @@ export class VirtualAssessmentService {
         .execute();
 
       await this.notificationService.createNotification(
-        virtualAssessment.appointment.caregiverInfo.user.id,
+        virtualAssessment.appointment.userId,
         virtualAssessment.appointment.id,
         NotificationMessage.RescheduleVA,
-        virtualAssessment.appointment.userId,
+        virtualAssessment.appointment.caregiverInfo.user.id,
       );
 
       await this.emailService.sendEmail({
