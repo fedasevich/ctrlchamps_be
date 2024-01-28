@@ -366,11 +366,23 @@ export class VirtualAssessmentService {
         });
       }
 
-      if (status === VirtualAssessmentStatus.Rejected) {
+      if (
+        status === VirtualAssessmentStatus.Rejected &&
+        virtualAssessment.status !== VirtualAssessmentStatus.Rejected
+      ) {
         virtualAssessment.reschedulingAccepted = false;
+        virtualAssessment.status = VirtualAssessmentStatus.Rejected;
         virtualAssessment.appointment.status = AppointmentStatus.Rejected;
+
         await this.appointmentRepository.save(virtualAssessment.appointment);
         await this.virtualAssessmentRepository.save(virtualAssessment);
+
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.RejectedVA,
+          virtualAssessment.appointment.userId,
+        );
       }
     } catch (error) {
       if (error instanceof HttpException) {
