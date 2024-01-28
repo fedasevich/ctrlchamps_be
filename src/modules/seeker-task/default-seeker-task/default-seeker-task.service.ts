@@ -51,6 +51,7 @@ export class DefaultSeekerTaskService {
         })
         .take(limit)
         .skip(offset)
+        .orderBy('defaultSeekerTask.createdAt', 'DESC')
         .getManyAndCount();
 
       return {

@@ -17,4 +17,11 @@ export class DefaultSeekerTask {
   })
   @Column()
   name: string;
+
+  @ApiProperty({
+    description: 'Timestamp for when the task was created',
+    example: '2023-01-05T12:30:45.000Z',
+  })
+  @Column({ default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
 }
