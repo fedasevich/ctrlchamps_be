@@ -460,8 +460,6 @@ export class AppointmentService {
             AppointmentStatus.Pending,
           ],
         })
-        .andWhere('DATE(appointment.startDate) <= :date', { date })
-        .andWhere('DATE(appointment.endDate) >= :date', { date })
 
         .orWhere('appointment.status IN (:...statuses)', {
           statuses: [
@@ -496,7 +494,28 @@ export class AppointmentService {
 
         .getMany();
 
-      return appointments;
+      const filteredAppointments = appointments.filter((appointment) => {
+        const { startDate, endDate, timezone } = appointment;
+
+        const startDateInUserTimezone = new Date(
+          startDate.toLocaleString('en-US', { timeZone: timezone }),
+        );
+        const endDateInUserTimezone = new Date(
+          endDate.toLocaleString('en-US', { timeZone: timezone }),
+        );
+        const targetDate = new Date(date);
+
+        const isWithinDateRange =
+          targetDate.getUTCFullYear() ===
+            startDateInUserTimezone.getUTCFullYear() &&
+          targetDate.getUTCMonth() === startDateInUserTimezone.getUTCMonth() &&
+          targetDate.getUTCDate() >= startDateInUserTimezone.getUTCDate() &&
+          targetDate.getUTCDate() <= endDateInUserTimezone.getUTCDate();
+
+        return isWithinDateRange;
+      });
+
+      return filteredAppointments;
     } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,
