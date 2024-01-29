@@ -35,6 +35,7 @@ import { UserService } from 'src/modules/users/user.service';
 import { Between, EntityManager, Repository } from 'typeorm';
 
 import { NotificationService } from '../notification/notification.service';
+import { TransactionType } from '../payment/enums/transaction-type.enum';
 import { PaymentService } from '../payment/payment.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment.constant';
@@ -113,8 +114,7 @@ export class AppointmentService {
         .leftJoin('caregiverInfo.user', 'caregiver')
         .addSelect(['caregiver.firstName', 'caregiver.lastName'])
 
-        .leftJoin('appointment.activityLog', 'activityLog')
-        .addSelect('activityLog.status')
+        .leftJoinAndSelect('appointment.activityLog', 'activityLog')
 
         .where(`(appointment.name LIKE :name )`, {
           name: `%${name}%`,
@@ -212,12 +212,14 @@ export class AppointmentService {
               createAppointment.caregiverInfoId,
             );
 
-          await this.paymentService.createSeekerCaregiverTransactions(
-            userId,
-            caregiverInfo.user.id,
-            caregiverInfo.hourlyRate,
+          await this.paymentService.createTransaction(
+            {
+              userId,
+              type: TransactionType.Outcome,
+              amount: caregiverInfo.hourlyRate,
+              appointmentId,
+            },
             transactionalEntityManager,
-            appointmentId,
           );
 
           await this.sendAppointmentConfirmationEmails(

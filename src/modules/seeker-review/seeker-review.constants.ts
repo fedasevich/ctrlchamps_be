@@ -7,10 +7,15 @@ export const DEFAULT_PAGINATION_LIMIT = 4;
 export const DEFAULT_OFFSET = 0;
 
 export const REVIEW_EXAMPLE = {
-  id: '33ce9722-05e0-4492-ad72-3f5ec592ea8c',
-  rating: 4,
+  id: '6b899f69-b618-492f-a65b-ff4167015d61',
+  rating: 2,
   review: 'cool',
-  createdAt: '2024-01-26 16:48:52',
+  createdAt: '2024-01-26T13:24:10.000Z',
   caregiverInfoId: '227ee80d-217a-4b1d-9cb5-44d9660f88ad',
-  userId: '4a6264dd-9280-4884-bc5d-fc0b9ddf9640',
+  user: {
+    id: '7851fa3c-4611-46cb-9173-0278d08066cc',
+    firstName: 'Ivan',
+    lastName: 'Gopo',
+    avatar: null,
+  },
 };
