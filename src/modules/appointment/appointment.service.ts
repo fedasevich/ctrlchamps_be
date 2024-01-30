@@ -19,6 +19,7 @@ import {
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
+import { isAppointmentDate } from 'src/common/helpers/is-appointment-date.helper';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import {
   AppointmentListResponse,
@@ -35,6 +36,7 @@ import { UserService } from 'src/modules/users/user.service';
 import { Between, EntityManager, Repository } from 'typeorm';
 
 import { NotificationService } from '../notification/notification.service';
+import { TransactionType } from '../payment/enums/transaction-type.enum';
 import { PaymentService } from '../payment/payment.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UTC_TIMEZONE } from '../virtual-assessment/constants/virtual-assessment.constant';
@@ -113,8 +115,7 @@ export class AppointmentService {
         .leftJoin('caregiverInfo.user', 'caregiver')
         .addSelect(['caregiver.firstName', 'caregiver.lastName'])
 
-        .leftJoin('appointment.activityLog', 'activityLog')
-        .addSelect('activityLog.status')
+        .leftJoinAndSelect('appointment.activityLog', 'activityLog')
 
         .where(`(appointment.name LIKE :name )`, {
           name: `%${name}%`,
@@ -212,12 +213,14 @@ export class AppointmentService {
               createAppointment.caregiverInfoId,
             );
 
-          await this.paymentService.createSeekerCaregiverTransactions(
-            userId,
-            caregiverInfo.user.id,
-            caregiverInfo.hourlyRate,
+          await this.paymentService.createTransaction(
+            {
+              userId,
+              type: TransactionType.Outcome,
+              amount: caregiverInfo.hourlyRate,
+              appointmentId,
+            },
             transactionalEntityManager,
-            appointmentId,
           );
 
           await this.sendAppointmentConfirmationEmails(
@@ -496,7 +499,13 @@ export class AppointmentService {
 
         .getMany();
 
-      return appointments;
+      const filteredAppointments = appointments.filter((appointment) =>
+        appointment.type === TypeOfAppointment.Recurring
+          ? isAppointmentDate(appointment.weekday, new Date(date))
+          : true,
+      );
+
+      return filteredAppointments;
     } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,

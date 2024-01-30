@@ -6,6 +6,7 @@ import { SeekerReview } from 'src/common/entities/seeker-reviews.entity';
 import { AppointmentModule } from 'src/modules/appointment/appointment.module';
 import { EmailModule } from 'src/modules/email/email.module';
 import { NotificationModule } from 'src/modules/notification/notification.module';
+import { UserModule } from 'src/modules/users/user.module';
 
 import { SeekerReviewController } from './seeker-review.controller';
 import { SeekerReviewService } from './seeker-review.service';
@@ -16,6 +17,7 @@ import { SeekerReviewService } from './seeker-review.service';
     NotificationModule,
     EmailModule,
     AppointmentModule,
+    UserModule,
   ],
   controllers: [SeekerReviewController],
   providers: [SeekerReviewService],

@@ -66,6 +66,11 @@ export class VirtualAssessmentService {
       'SENDGRID_SEEKER_ACCEPTED_RESCHEDULED_VIRTUAL_ASSESSMENT_TEMPLATE_ID',
     );
 
+  private readonly seekerRejectedAppointmentTemplateId =
+    this.configService.get<string>(
+      'SENDGRID_APPOINTMENT_REJECT_BY_CLIENT_TEMPLATE_ID',
+    );
+
   constructor(
     @InjectRepository(VirtualAssessment)
     private readonly virtualAssessmentRepository: Repository<VirtualAssessment>,
@@ -299,10 +304,10 @@ export class VirtualAssessmentService {
         .execute();
 
       await this.notificationService.createNotification(
-        virtualAssessment.appointment.caregiverInfo.user.id,
+        virtualAssessment.appointment.userId,
         virtualAssessment.appointment.id,
         NotificationMessage.RescheduleVA,
-        virtualAssessment.appointment.userId,
+        virtualAssessment.appointment.caregiverInfo.user.id,
       );
 
       await this.emailService.sendEmail({
@@ -344,9 +349,14 @@ export class VirtualAssessmentService {
         );
       }
 
-      if (status === VirtualAssessmentStatus.Accepted) {
+      if (
+        status === VirtualAssessmentStatus.Accepted &&
+        virtualAssessment.status !== VirtualAssessmentStatus.Accepted
+      ) {
         virtualAssessment.reschedulingAccepted = true;
         virtualAssessment.status = VirtualAssessmentStatus.Accepted;
+
+        await this.virtualAssessmentRepository.save(virtualAssessment);
 
         await this.notificationService.createNotification(
           virtualAssessment.appointment.caregiverInfo.user.id,
@@ -361,13 +371,32 @@ export class VirtualAssessmentService {
         });
       }
 
-      if (status === VirtualAssessmentStatus.Rejected) {
+      if (
+        status === VirtualAssessmentStatus.Rejected &&
+        virtualAssessment.status !== VirtualAssessmentStatus.Rejected
+      ) {
         virtualAssessment.reschedulingAccepted = false;
+        virtualAssessment.status = VirtualAssessmentStatus.Rejected;
         virtualAssessment.appointment.status = AppointmentStatus.Rejected;
-        await this.appointmentRepository.save(virtualAssessment.appointment);
-      }
 
-      await this.virtualAssessmentRepository.save(virtualAssessment);
+        await this.appointmentRepository.save(virtualAssessment.appointment);
+        await this.virtualAssessmentRepository.save(virtualAssessment);
+
+        await this.notificationService.createNotification(
+          virtualAssessment.appointment.caregiverInfo.user.id,
+          virtualAssessment.appointment.id,
+          NotificationMessage.RejectedVA,
+          virtualAssessment.appointment.userId,
+        );
+
+        await this.emailService.sendEmail({
+          to: virtualAssessment.appointment.caregiverInfo.user.email,
+          templateId: this.seekerRejectedAppointmentTemplateId,
+          dynamicTemplateData: {
+            name: virtualAssessment.appointment.caregiverInfo.user.firstName,
+          },
+        });
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

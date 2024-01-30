@@ -10,6 +10,13 @@ import { SeekerReview } from 'src/common/entities/seeker-reviews.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { AppointmentStatus } from 'src/modules/appointment/enums/appointment-status.enum';
 import { EmailService } from 'src/modules/email/services/email.service';
+import {
+  DEFAULT_OFFSET,
+  DEFAULT_PAGINATION_LIMIT,
+} from 'src/modules/seeker-review/seeker-review.constants';
+import { ReviewQuery } from 'src/modules/seeker-review/types/review-query.type';
+import { ReviewsByUserId } from 'src/modules/seeker-review/types/reviews-by-user-id.type';
+import { UserService } from 'src/modules/users/user.service';
 import { Repository } from 'typeorm';
 
 import { CreateSeekerReviewDto } from './dto/create-seeker-review.dto';
@@ -26,6 +33,7 @@ export class SeekerReviewService {
     private readonly appointmentRepository: Repository<Appointment>,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly userService: UserService,
   ) {}
 
   async create(
@@ -158,5 +166,49 @@ export class SeekerReviewService {
     });
 
     return average;
+  }
+
+  async getAllByUserId(
+    { limit = DEFAULT_PAGINATION_LIMIT, offset = DEFAULT_OFFSET }: ReviewQuery,
+    userId: string,
+  ): Promise<ReviewsByUserId> {
+    try {
+      const { caregiverInfo } =
+        await this.userService.findCaregiverInfoByUserId(userId);
+
+      const [data, count] = await this.seekerReviewRepository
+        .createQueryBuilder('seekerReviews')
+        .where('seekerReviews.caregiverInfoId = :caregiverInfoId', {
+          caregiverInfoId: caregiverInfo.id,
+        })
+        .select([
+          'seekerReviews.id',
+          'seekerReviews.rating',
+          'seekerReviews.review',
+          'seekerReviews.createdAt',
+          'seekerReviews.caregiverInfoId',
+        ])
+        .innerJoin('seekerReviews.user', 'seekerReviewUser')
+        .addSelect([
+          'seekerReviewUser.id',
+          'seekerReviewUser.lastName',
+          'seekerReviewUser.firstName',
+          'seekerReviewUser.avatar',
+        ])
+        .take(limit)
+        .skip(offset)
+        .orderBy('seekerReviews.createdAt', 'DESC')
+        .getManyAndCount();
+
+      return {
+        data,
+        count,
+      };
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.FailedFetchReviews,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
