@@ -19,6 +19,7 @@ import {
 import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
+import { isAppointmentDate } from 'src/common/helpers/is-appointment-date.helper';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
 import {
   AppointmentListResponse,
@@ -496,7 +497,7 @@ export class AppointmentService {
 
         .getMany();
 
-      const filteredAppointments = appointments.filter((appointment) => {
+      const dateAppointments = appointments.filter((appointment) => {
         const { startDate, endDate, timezone } = appointment;
 
         const startDateInUserTimezone = new Date(
@@ -516,6 +517,12 @@ export class AppointmentService {
 
         return isWithinDateRange;
       });
+
+      const filteredAppointments = dateAppointments.filter((appointment) =>
+        appointment.type === TypeOfAppointment.Recurring
+          ? isAppointmentDate(appointment.weekday, new Date(date))
+          : true,
+      );
 
       return filteredAppointments;
     } catch (error) {
