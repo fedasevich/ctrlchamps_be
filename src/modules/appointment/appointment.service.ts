@@ -498,7 +498,7 @@ export class AppointmentService {
         .getMany();
 
       const dateAppointments = appointments.filter((appointment) => {
-        const { startDate, endDate, timezone } = appointment;
+        const { startDate, endDate, timezone, type, weekday } = appointment;
 
         const startDateInUserTimezone = new Date(
           startDate.toLocaleString('en-US', { timeZone: timezone }),
@@ -509,22 +509,20 @@ export class AppointmentService {
         const targetDate = new Date(date);
 
         const isWithinDateRange =
-          targetDate.getUTCFullYear() ===
-            startDateInUserTimezone.getUTCFullYear() &&
-          targetDate.getUTCMonth() === startDateInUserTimezone.getUTCMonth() &&
-          targetDate.getUTCDate() >= startDateInUserTimezone.getUTCDate() &&
-          targetDate.getUTCDate() <= endDateInUserTimezone.getUTCDate();
+          targetDate.getTime() >= startDateInUserTimezone.getTime() &&
+          targetDate.getTime() <= endDateInUserTimezone.getTime();
 
-        return isWithinDateRange;
+        const isRecurringMatch =
+          type === TypeOfAppointment.Recurring &&
+          isAppointmentDate(weekday, targetDate);
+
+        return (
+          isWithinDateRange &&
+          (type !== TypeOfAppointment.Recurring || isRecurringMatch)
+        );
       });
 
-      const filteredAppointments = dateAppointments.filter((appointment) =>
-        appointment.type === TypeOfAppointment.Recurring
-          ? isAppointmentDate(appointment.weekday, new Date(date))
-          : true,
-      );
-
-      return filteredAppointments;
+      return dateAppointments;
     } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,
