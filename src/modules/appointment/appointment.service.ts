@@ -71,11 +71,9 @@ export class AppointmentService {
       'SENDGRID_APPOINTMENT_REQUEST_REJECT_TEMPLATE_ID',
     );
 
-  private readonly seekerAppointmentRedirectLink =
-    this.configService.get<string>('SEEKER_APPOINTMENT_REDIRECT_LINK');
-
-  private readonly caregiverAppointmentRedirectLink =
-    this.configService.get<string>('CAREGIVER_APPOINTMENT_REDIRECT_LINK');
+  private readonly appointmentsRedirectLink = this.configService.get<string>(
+    'APPOINTMENTS_REDIRECT_LINK',
+  );
 
   constructor(
     @InjectRepository(Appointment)
@@ -308,7 +306,7 @@ export class AppointmentService {
         templateId: this.seekerAppointmentTemplateId,
         dynamicTemplateData: {
           name: firstName,
-          link: this.seekerAppointmentRedirectLink,
+          link: this.appointmentsRedirectLink,
         },
       });
 
@@ -316,7 +314,7 @@ export class AppointmentService {
         to: caregiverInfo.user.email,
         templateId: this.caregiverAppointmentTemplateId,
         dynamicTemplateData: {
-          link: this.caregiverAppointmentRedirectLink,
+          link: this.appointmentsRedirectLink,
         },
       });
 
@@ -738,7 +736,7 @@ export class AppointmentService {
         to: userEmail,
         templateId,
         dynamicTemplateData: {
-          appointmentLink: this.seekerAppointmentRedirectLink,
+          appointmentLink: this.appointmentsRedirectLink,
         },
       });
     } catch (error) {
