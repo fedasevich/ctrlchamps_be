@@ -463,8 +463,6 @@ export class AppointmentService {
             AppointmentStatus.Pending,
           ],
         })
-        .andWhere('DATE(appointment.startDate) <= :date', { date })
-        .andWhere('DATE(appointment.endDate) >= :date', { date })
 
         .orWhere('appointment.status IN (:...statuses)', {
           statuses: [
@@ -499,13 +497,32 @@ export class AppointmentService {
 
         .getMany();
 
-      const filteredAppointments = appointments.filter((appointment) =>
-        appointment.type === TypeOfAppointment.Recurring
-          ? isAppointmentDate(appointment.weekday, new Date(date))
-          : true,
-      );
+      const dateAppointments = appointments.filter((appointment) => {
+        const { startDate, endDate, timezone, type, weekday } = appointment;
 
-      return filteredAppointments;
+        const startDateInUserTimezone = new Date(
+          startDate.toLocaleString('en-US', { timeZone: timezone }),
+        );
+        const endDateInUserTimezone = new Date(
+          endDate.toLocaleString('en-US', { timeZone: timezone }),
+        );
+        const targetDate = new Date(date);
+
+        const isWithinDateRange =
+          targetDate.getTime() >= startDateInUserTimezone.getTime() &&
+          targetDate.getTime() <= endDateInUserTimezone.getTime();
+
+        const isRecurringMatch =
+          type === TypeOfAppointment.Recurring &&
+          isAppointmentDate(weekday, targetDate);
+
+        return (
+          isWithinDateRange &&
+          (type !== TypeOfAppointment.Recurring || isRecurringMatch)
+        );
+      });
+
+      return dateAppointments;
     } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,
