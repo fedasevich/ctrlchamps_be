@@ -39,7 +39,7 @@ export class VirtualAssessmentService {
     );
 
   private readonly caregiverAppointmentRedirectLink =
-    this.configService.get<string>('CAREGIVER_APPOINTMENT_REDIRECT_LINK');
+    this.configService.get<string>('APPOINTMENTS_REDIRECT_LINK');
 
   private readonly seekerUpdateVirtualAssessmentStatusLink =
     this.configService.get<string>(
