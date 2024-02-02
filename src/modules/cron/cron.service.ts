@@ -89,10 +89,12 @@ export class CronService {
         });
       }),
     );
+    console.log('checkVirtualAssessmentStatus CRON END', new Date());
   }
 
   @Cron(EVERY_15_MINUTES)
   async checkUnpaidAppointments(): Promise<void> {
+    console.log('checkUnpaidAppointments CRON START', new Date());
     const todayUnpaidAppointments =
       await this.appointmentService.getTodayUnpaidAppointments();
     const currentTime = TODAY_DATE;
@@ -109,13 +111,16 @@ export class CronService {
         }
       }),
     );
+    console.log('checkUnpaidAppointments CRON END', new Date());
   }
 
   @Cron(EVERY_15_MINUTES)
   async handleAppointmentStatusCron(): Promise<void> {
-    console.log('handleAppointmentStatusCron CRON', new Date());
+    console.log('handleAppointmentStatusCron CRON START', new Date());
 
     await this.checkAndUpdateAppointments();
+
+    console.log('handleAppointmentStatusCron CRON END', new Date());
   }
 
   private async checkAndUpdateAppointments(): Promise<void> {
@@ -247,7 +252,7 @@ export class CronService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async checkAppointmentStatusAndCharge(): Promise<void> {
-    console.log('checkAppointmentStatusAndCharge CRON', new Date());
+    console.log('checkAppointmentStatusAndCharge CRON START', new Date());
     const appointments =
       await this.appointmentService.checkAppointmentToBePaid();
 
@@ -258,10 +263,12 @@ export class CronService {
         await this.paymentService.chargeRecurringPaymentTask(appointment.id);
       }
     });
+    console.log('checkAppointmentStatusAndCharge CRON END', new Date());
   }
 
   @Cron(CronExpression.EVERY_MINUTE)
   async checkRecurringAppointmentDebt(): Promise<void> {
+    console.log('checkRecurringAppointmentDebt CRON START', new Date());
     const appointments =
       await this.appointmentService.checkRecurringAppointmentToBePaid();
 
@@ -270,10 +277,16 @@ export class CronService {
         await this.paymentService.chargeSeekerRecurringDebt(appointment.id);
       }),
     );
+
+    console.log('checkRecurringAppointmentDebt CRON END', new Date());
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async sendVirtualAssessmentStartNotification(): Promise<void> {
+    console.log(
+      'sendVirtualAssessmentStartNotification CRON START',
+      new Date(),
+    );
     const virtualAssessments =
       await this.virtualAssessmentService.getAssessmentsStartingInFiveMinutes();
 
@@ -304,10 +317,12 @@ export class CronService {
         });
       }),
     );
+    console.log('sendVirtualAssessmentStartNotification CRON END', new Date());
   }
 
   @Cron(EVERY_15_MINUTES)
   async handleSeekerReviewReminderCron(): Promise<void> {
+    console.log('handleSeekerReviewReminderCron CRON START', new Date());
     const yesterdayFinishedAppointments =
       await this.appointmentService.getAllAppointmentsOneDayAfterEndDate();
 
@@ -320,5 +335,6 @@ export class CronService {
         },
       });
     });
+    console.log('handleSeekerReviewReminderCron CRON END', new Date());
   }
 }
