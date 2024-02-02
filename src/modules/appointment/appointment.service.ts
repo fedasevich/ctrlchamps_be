@@ -506,7 +506,7 @@ export class AppointmentService {
           appointment.endDate,
           appointment.timezone,
         );
-        const providedDate = new Date(date);
+        const providedDate = utcToZonedTime(new Date(date), UTC_TIMEZONE);
 
         const startOfDayStartDate = startOfDay(startDate);
         const endOfDayEndDate = endOfDay(endDate);
