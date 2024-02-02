@@ -188,6 +188,13 @@ export class Appointment {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
+  @ApiProperty({
+    example: '2023-11-28T15:30:00.000Z',
+    description: 'Date when appointment was paused',
+  })
+  @Column({ type: 'timestamp', default: null, nullable: true })
+  pausedAt: Date;
+
   @OneToMany(
     () => SeekerDiagnosis,
     (seekerDiagnosis) => seekerDiagnosis.appointment,

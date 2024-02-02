@@ -827,7 +827,7 @@ export class PaymentService {
             ) {
               await this.appointmentService.updateByIdWithTransaction(
                 appointment.id,
-                { status: AppointmentStatus.Active },
+                { status: AppointmentStatus.Active, pausedAt: null },
                 transactionalEntityManager,
               );
 
@@ -869,6 +869,7 @@ export class PaymentService {
                 {
                   status: AppointmentStatus.Paused,
                   debtStatus: DebtStatus.NotAccrued,
+                  pausedAt: currentDate,
                 },
                 transactionalEntityManager,
               );
