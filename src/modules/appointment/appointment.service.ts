@@ -523,7 +523,11 @@ export class AppointmentService {
 
       const filteredAppointments = dateAppointments.filter((appointment) =>
         appointment.type === TypeOfAppointment.Recurring
-          ? isAppointmentDate(appointment.weekday, new Date(date))
+          ? isAppointmentDate(
+              appointment.weekday,
+              new Date(date),
+              appointment.pausedAt ? new Date(appointment.pausedAt) : null,
+            )
           : true,
       );
 
