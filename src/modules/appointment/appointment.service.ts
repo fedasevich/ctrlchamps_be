@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { format, subDays } from 'date-fns';
+import { endOfDay, format, startOfDay, subDays } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
 import { ONE_DAY } from 'src/common/constants/constants';
 import {
@@ -463,8 +463,6 @@ export class AppointmentService {
             AppointmentStatus.Pending,
           ],
         })
-        .andWhere('DATE(appointment.startDate) <= :date', { date })
-        .andWhere('DATE(appointment.endDate) >= :date', { date })
 
         .orWhere('appointment.status IN (:...statuses)', {
           statuses: [
@@ -499,7 +497,32 @@ export class AppointmentService {
 
         .getMany();
 
-      const filteredAppointments = appointments.filter((appointment) =>
+      const dateAppointments = appointments.filter((appointment) => {
+        const startDate = utcToZonedTime(
+          appointment.startDate,
+          appointment.timezone,
+        );
+        const endDate = utcToZonedTime(
+          appointment.endDate,
+          appointment.timezone,
+        );
+        const providedDate = new Date(date);
+
+        const startOfDayStartDate = startOfDay(startDate);
+        const endOfDayEndDate = endOfDay(endDate);
+
+        const isDateInRange =
+          appointment.status === AppointmentStatus.Pending ||
+          appointment.status === AppointmentStatus.Virtual ||
+          appointment.status === AppointmentStatus.SignedCaregiver ||
+          appointment.status === AppointmentStatus.SignedSeeker ||
+          (providedDate >= startOfDayStartDate &&
+            providedDate <= endOfDayEndDate);
+
+        return isDateInRange;
+      });
+
+      const filteredAppointments = dateAppointments.filter((appointment) =>
         appointment.type === TypeOfAppointment.Recurring
           ? isAppointmentDate(appointment.weekday, new Date(date))
           : true,
