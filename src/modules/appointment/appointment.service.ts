@@ -512,7 +512,8 @@ export class AppointmentService {
         const endOfDayEndDate = endOfDay(endDate);
 
         const isDateInRange =
-          appointment.status === AppointmentStatus.Pending ||
+          (appointment.status === AppointmentStatus.Pending &&
+            currentDate === date) ||
           appointment.status === AppointmentStatus.Virtual ||
           appointment.status === AppointmentStatus.SignedCaregiver ||
           appointment.status === AppointmentStatus.SignedSeeker ||
