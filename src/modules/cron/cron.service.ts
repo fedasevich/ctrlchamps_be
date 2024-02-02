@@ -129,12 +129,16 @@ export class CronService {
     await Promise.all(
       appointments.map(async (appointment): Promise<void> => {
         const currentDate = utcToZonedTime(new Date(), UTC_TIMEZONE);
-        const currentDateString = currentDate.toString();
-        const startDateString = appointment.startDate.toString();
+        const currentDateString = currentDate.toUTCString();
+
         const startDateUTC = utcToZonedTime(
           appointment.startDate,
           UTC_TIMEZONE,
         );
+        const startDateString = startDateUTC.toUTCString();
+
+        const endDateUTC = utcToZonedTime(appointment.endDate, UTC_TIMEZONE);
+        const endDateString = endDateUTC.toUTCString();
 
         if (
           appointment.type === AppointmentType.OneTime &&
@@ -147,7 +151,7 @@ export class CronService {
         } else if (
           appointment.type === AppointmentType.OneTime &&
           appointment.status === AppointmentStatus.Ongoing &&
-          currentDateString === appointment.endDate.toString()
+          currentDateString === endDateString
         ) {
           await this.appointmentService.updateById(appointment.id, {
             status: AppointmentStatus.Completed,
@@ -160,8 +164,8 @@ export class CronService {
           );
         } else if (
           appointment.status === AppointmentStatus.Ongoing &&
-          currentDate.getHours() === appointment.endDate.getHours() &&
-          currentDate.getMinutes() === appointment.endDate.getMinutes()
+          currentDate.getHours() === endDateUTC.getHours() &&
+          currentDate.getMinutes() === endDateUTC.getMinutes()
         ) {
           await this.notificationService.createNotification(
             appointment.caregiverInfo.user.id,
@@ -171,7 +175,7 @@ export class CronService {
           );
           if (
             this.isMoreAppointmentDays(
-              appointment.endDate,
+              endDateUTC,
               appointment.weekday,
               currentDate,
             )
@@ -187,11 +191,11 @@ export class CronService {
         } else if (
           appointment.status === AppointmentStatus.Active &&
           currentDateString >= startDateString &&
-          appointment.startDate.getHours() === currentDate.getHours() &&
-          appointment.startDate.getMinutes() === currentDate.getMinutes()
+          startDateUTC.getHours() === currentDate.getHours() &&
+          startDateUTC.getMinutes() === currentDate.getMinutes()
         ) {
           const isAppointmentDay = this.IsAppointmentTime(
-            appointment.startDate,
+            startDateUTC,
             appointment.weekday,
             currentDate,
           );

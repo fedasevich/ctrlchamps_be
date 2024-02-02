@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { format, subDays } from 'date-fns';
+import { endOfDay, format, startOfDay, subDays } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
 import { ONE_DAY } from 'src/common/constants/constants';
 import {
@@ -71,11 +71,9 @@ export class AppointmentService {
       'SENDGRID_APPOINTMENT_REQUEST_REJECT_TEMPLATE_ID',
     );
 
-  private readonly seekerAppointmentRedirectLink =
-    this.configService.get<string>('SEEKER_APPOINTMENT_REDIRECT_LINK');
-
-  private readonly caregiverAppointmentRedirectLink =
-    this.configService.get<string>('CAREGIVER_APPOINTMENT_REDIRECT_LINK');
+  private readonly appointmentsRedirectLink = this.configService.get<string>(
+    'APPOINTMENTS_REDIRECT_LINK',
+  );
 
   constructor(
     @InjectRepository(Appointment)
@@ -308,7 +306,7 @@ export class AppointmentService {
         templateId: this.seekerAppointmentTemplateId,
         dynamicTemplateData: {
           name: firstName,
-          link: this.seekerAppointmentRedirectLink,
+          link: this.appointmentsRedirectLink,
         },
       });
 
@@ -316,7 +314,7 @@ export class AppointmentService {
         to: caregiverInfo.user.email,
         templateId: this.caregiverAppointmentTemplateId,
         dynamicTemplateData: {
-          link: this.caregiverAppointmentRedirectLink,
+          link: this.appointmentsRedirectLink,
         },
       });
 
@@ -498,31 +496,38 @@ export class AppointmentService {
         .getMany();
 
       const dateAppointments = appointments.filter((appointment) => {
-        const { startDate, endDate, timezone, type, weekday } = appointment;
-
-        const startDateInUserTimezone = new Date(
-          startDate.toLocaleString('en-US', { timeZone: timezone }),
+        const startDate = utcToZonedTime(
+          appointment.startDate,
+          appointment.timezone,
         );
-        const endDateInUserTimezone = new Date(
-          endDate.toLocaleString('en-US', { timeZone: timezone }),
+        const endDate = utcToZonedTime(
+          appointment.endDate,
+          appointment.timezone,
         );
-        const targetDate = new Date(date);
+        const providedDate = utcToZonedTime(new Date(date), UTC_TIMEZONE);
 
-        const isWithinDateRange =
-          targetDate.getTime() >= startDateInUserTimezone.getTime() &&
-          targetDate.getTime() <= endDateInUserTimezone.getTime();
+        const startOfDayStartDate = startOfDay(startDate);
+        const endOfDayEndDate = endOfDay(endDate);
 
-        const isRecurringMatch =
-          type === TypeOfAppointment.Recurring &&
-          isAppointmentDate(weekday, targetDate);
+        const isDateInRange =
+          (appointment.status === AppointmentStatus.Pending &&
+            currentDate === date) ||
+          appointment.status === AppointmentStatus.Virtual ||
+          appointment.status === AppointmentStatus.SignedCaregiver ||
+          appointment.status === AppointmentStatus.SignedSeeker ||
+          (providedDate >= startOfDayStartDate &&
+            providedDate <= endOfDayEndDate);
 
-        return (
-          isWithinDateRange &&
-          (type !== TypeOfAppointment.Recurring || isRecurringMatch)
-        );
+        return isDateInRange;
       });
 
-      return dateAppointments;
+      const filteredAppointments = dateAppointments.filter((appointment) =>
+        appointment.type === TypeOfAppointment.Recurring
+          ? isAppointmentDate(appointment.weekday, new Date(date))
+          : true,
+      );
+
+      return filteredAppointments;
     } catch (error) {
       throw new HttpException(
         ErrorMessage.InternalServerError,
@@ -738,7 +743,7 @@ export class AppointmentService {
         to: userEmail,
         templateId,
         dynamicTemplateData: {
-          appointmentLink: this.seekerAppointmentRedirectLink,
+          appointmentLink: this.appointmentsRedirectLink,
         },
       });
     } catch (error) {

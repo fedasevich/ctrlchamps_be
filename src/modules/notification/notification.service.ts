@@ -59,7 +59,12 @@ export class NotificationService {
         appointment: { id: appointmentId },
       });
 
-      await this.notificationRepository.save(newNotification);
+      await this.notificationRepository
+        .createQueryBuilder()
+        .insert()
+        .into(Notification)
+        .values(newNotification)
+        .execute();
     } catch (error) {
       throw new HttpException(
         error.message || 'Failed to create notification',
