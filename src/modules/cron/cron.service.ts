@@ -168,9 +168,7 @@ export class CronService {
     return false;
   }
 
-  // @Cron(EVERY_10_MINUTES)
-  // @Cron('*/2 * * * *')
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async checkAppointmentStatusAndCharge(): Promise<void> {
     const appointments =
       await this.appointmentService.checkAppointmentToBePaid();

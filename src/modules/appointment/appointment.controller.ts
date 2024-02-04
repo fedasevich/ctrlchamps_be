@@ -132,6 +132,25 @@ export class AppointmentController {
     return this.appointmentService.findAllByUserId(req.user.id);
   }
 
+  @ApiOperation({ summary: 'All appointments with debts getting' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Appointments with debts were sent successfully',
+    schema: {
+      example: APPOINTMENTS_EXAMPLE,
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: ErrorMessage.InternalServerError,
+  })
+  @Get(AppointmentApiPath.Debt)
+  async getAllWithDebts(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<Appointment[]> {
+    return this.appointmentService.getUserAppointmentsWithDebts(req.user.id);
+  }
+
   @ApiOperation({ summary: 'Getting all appointments by date' })
   @ApiParam({
     name: 'date',

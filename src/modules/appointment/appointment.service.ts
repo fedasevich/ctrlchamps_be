@@ -12,6 +12,7 @@ import { Appointment } from 'src/common/entities/appointment.entity';
 import { ErrorMessage } from 'src/common/enums/error-message.enum';
 import { NotificationMessage } from 'src/common/enums/notification-message.enum';
 import { CreateAppointmentDto } from 'src/modules/appointment/dto/create-appointment.dto';
+import { DebtStatus } from 'src/modules/appointment/enums/debt-status.enum';
 import {
   AppointmentListResponse,
   AppointmentQuery,
@@ -214,11 +215,11 @@ export class AppointmentService {
             appointmentId,
           );
 
-          // await this.sendAppointmentConfirmationEmails(
-          //   userId,
-          //   createAppointment.caregiverInfoId,
-          //   appointmentId,
-          // );
+          await this.sendAppointmentConfirmationEmails(
+            userId,
+            createAppointment.caregiverInfoId,
+            appointmentId,
+          );
         },
       );
     } catch (error) {
@@ -683,6 +684,23 @@ export class AppointmentService {
         .execute();
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getUserAppointmentsWithDebts(userId: string): Promise<Appointment[]> {
+    try {
+      return await this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .where('appointment.userId = :userId', { userId })
+        .andWhere('appointment.debtStatus = :debtStatus', {
+          debtStatus: DebtStatus.NotAccrued,
+        })
+        .getMany();
+    } catch (error) {
+      throw new HttpException(
+        ErrorMessage.InternalServerError,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
