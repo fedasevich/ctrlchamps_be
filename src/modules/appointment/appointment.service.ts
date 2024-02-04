@@ -407,6 +407,7 @@ export class AppointmentService {
       return await this.appointmentRepository
         .createQueryBuilder('appointment')
         .where('appointment.userId = :userId', { userId })
+        .orderBy('appointment.createdAt', SortOrder.DESC)
         .getMany();
     } catch (error) {
       throw new HttpException(
