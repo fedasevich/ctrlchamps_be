@@ -418,6 +418,9 @@ export class VirtualAssessmentService {
       const virtualAssessments = await this.virtualAssessmentRepository
         .createQueryBuilder('virtualAssessment')
         .leftJoinAndSelect('virtualAssessment.appointment', 'appointment')
+        .innerJoinAndSelect('appointment.user', 'user')
+        .innerJoinAndSelect('appointment.caregiverInfo', 'caregiverInfo')
+        .innerJoinAndSelect('caregiverInfo.user', 'caregiverUser')
         .andWhere('virtualAssessment.assessmentDate = :assessmentDate', {
           assessmentDate: currentDate,
         })
